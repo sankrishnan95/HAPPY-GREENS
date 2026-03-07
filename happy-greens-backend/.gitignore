@@ -1,0 +1,36 @@
+# ===========================
+# Node / npm
+# ===========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# ===========================
+# Environment variables  ← SECRET! Never commit these
+# ===========================
+.env
+.env.local
+.env.*.local
+
+# ===========================
+# TypeScript build output
+# ===========================
+dist/
+build/
+
+# ===========================
+# Uploads (runtime-generated)
+# ===========================
+uploads/
+
+# ===========================
+# OS / Editor
+# ===========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
