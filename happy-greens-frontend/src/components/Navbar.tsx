@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getWishlist } from '../services/wishlist.service';
 import { API_BASE_URL } from '../config/api';
+import { normalizeImageUrl } from '../utils/image';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -122,7 +123,7 @@ const Navbar = () => {
                                         className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 cursor-pointer"
                                     >
                                         <div className="h-10 w-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                            <img src={product.images && product.images.length > 0 ? product.images[0] : product.image_url} alt={product.name} className="h-full w-full object-cover" />
+                                            <img src={normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url)} alt={product.name} className="h-full w-full object-cover" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
@@ -230,7 +231,7 @@ const Navbar = () => {
                                         className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 cursor-pointer"
                                     >
                                         <div className="h-10 w-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                            <img src={product.images && product.images.length > 0 ? product.images[0] : product.image_url} alt={product.name} className="h-full w-full object-cover" />
+                                            <img src={normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url)} alt={product.name} className="h-full w-full object-cover" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
@@ -248,6 +249,7 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
 
 
 

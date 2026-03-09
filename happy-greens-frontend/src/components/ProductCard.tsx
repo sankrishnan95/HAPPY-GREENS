@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import Badge from './Badge';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
+import { normalizeImageUrl } from '../utils/image';
 
 interface Product {
     id: number;
@@ -75,7 +76,7 @@ const ProductCard = ({ product }: { product: Product }) => {
             <Link to={`/product/${product.id}`} className="block relative">
                 <div className="aspect-square overflow-hidden bg-gradient-soft relative">
                     <img
-                        src={product.images && product.images.length > 0 ? product.images[0] : product.image_url}
+                        src={normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url)}
                         alt={product.name}
                         className="w-full h-full object-cover p-6 group-hover:scale-110 transition-transform duration-500"
                     />
@@ -164,4 +165,5 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 export default ProductCard;
+
 

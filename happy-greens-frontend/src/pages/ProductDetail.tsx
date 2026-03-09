@@ -6,34 +6,9 @@ import { Minus, Plus, ShoppingCart, ArrowLeft, ChevronRight } from 'lucide-react
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { API_BASE_URL } from '../config/api';
+import { normalizeImageUrl } from '../utils/image';
 
-const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
 
-const resolveImageUrl = (url?: string): string => {
-    if (!url) return FALLBACK_PRODUCT_IMAGE;
-
-    const value = String(url).trim();
-    if (!value) return FALLBACK_PRODUCT_IMAGE;
-
-    if (value.startsWith('http://localhost') || value.startsWith('https://localhost')) {
-        try {
-            const parsed = new URL(value);
-            return `${API_BASE_URL}${parsed.pathname}`;
-        } catch {
-            return FALLBACK_PRODUCT_IMAGE;
-        }
-    }
-
-    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
-        return value;
-    }
-
-    if (value.startsWith('/')) {
-        return `${API_BASE_URL}${value}`;
-    }
-
-    return `${API_BASE_URL}/${value}`;
-};
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -106,7 +81,7 @@ const ProductDetail = () => {
         Array.isArray(product.images) && product.images.length > 0
             ? product.images
             : (product.image_url ? [product.image_url] : [FALLBACK_PRODUCT_IMAGE])
-    ).map((img: string) => resolveImageUrl(img));
+    ).map((img: string) => normalizeImageUrl(img));
 
     return (
         <div className="animate-fade-in">
@@ -130,11 +105,8 @@ const ProductDetail = () => {
                 <div className="bg-gradient-soft p-8 rounded-4xl shadow-soft border border-gray-100">
                     <div className="relative aspect-square md:aspect-auto">
                         <img
-                            src={productImages[selectedImage] || productImages[0] || FALLBACK_PRODUCT_IMAGE}
-                            onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
-                            }}
+                            src={productImages[selectedImage] || productImages[0] }
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }}
                             alt={product.name}
                             className="w-full h-[500px] object-contain transition-opacity duration-300"
                         />
@@ -156,10 +128,7 @@ const ProductDetail = () => {
                                         src={img}
                                         alt={`${product.name} view ${idx + 1}`}
                                         className="w-full h-full object-cover p-2"
-                                        onError={(e) => {
-                                            e.currentTarget.onerror = null;
-                                            e.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
-                                        }}
+                                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }}
                                     />
                                 </button>
                             ))}
@@ -266,3 +235,4 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+

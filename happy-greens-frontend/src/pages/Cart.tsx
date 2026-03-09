@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Trash2, Plus, Minus } from 'lucide-react';
+import { normalizeImageUrl } from '../utils/image';
 
 const Cart = () => {
     const { cart, updateQuantity, removeFromCart } = useStore();
@@ -32,7 +33,7 @@ const Cart = () => {
                         <div key={item.id} className="bg-white rounded-2xl shadow-soft border border-gray-100 p-6 hover:shadow-medium transition-shadow">
                             <div className="flex items-center gap-6">
                                 <div className="bg-gradient-soft p-4 rounded-xl">
-                                    <img src={item.images && item.images.length > 0 ? item.images[0] : item.image_url} alt={item.name} className="w-24 h-24 object-contain" />
+                                    <img src={normalizeImageUrl(item.images && item.images.length > 0 ? item.images[0] : item.image_url)} alt={item.name} className="w-24 h-24 object-contain" />
                                 </div>
 
                                 <div className="flex-1">
@@ -120,3 +121,4 @@ const Cart = () => {
 };
 
 export default Cart;
+
