@@ -24,11 +24,29 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const configuredOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) || [];
+const vercelPreviewPattern = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
 
-app.use(cors({
-  origin: configuredOrigins.length > 0 ? configuredOrigins : true,
-  credentials: true
-}));
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (configuredOrigins.length === 0) {
+      return callback(null, true);
+    }
+
+    if (configuredOrigins.includes(origin) || vercelPreviewPattern.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // IMPORTANT: Webhook routes must be registered BEFORE express.json()
 // Razorpay requires raw body for signature verification
@@ -83,6 +101,7 @@ const startServer = async () => {
 };
 
 startServer();
+
 
 
 
