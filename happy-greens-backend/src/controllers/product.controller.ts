@@ -188,7 +188,13 @@ export const updateProductStatus = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
-
-
+export const getCategories = async (req: Request, res: Response) => {
+    try {
+        const result = await pool.query('SELECT id, name, slug FROM categories ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 
