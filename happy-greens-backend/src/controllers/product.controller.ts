@@ -6,7 +6,7 @@ export const getProducts = async (req: Request, res: Response) => {
         const { category, q, page = 1, limit = 10, sort } = req.query;
         const offset = (Number(page) - 1) * Number(limit);
 
-        let query = 'SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", c.name as category_name FROM products p JOIN categories c ON p.category_id = c.id WHERE p.is_deleted = false';
+        let query = 'SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_deleted = false';
 
         // Hide inactive products unless admin explicitly requests all
         if (req.query.admin !== 'true') {
@@ -41,7 +41,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
         const result = await pool.query(query, params);
 
-        let countQuery = 'SELECT COUNT(*) FROM products p JOIN categories c ON p.category_id = c.id WHERE p.is_deleted = false';
+        let countQuery = 'SELECT COUNT(*) FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_deleted = false';
         const countParams: any[] = [];
         let countParam = 1;
 
@@ -77,7 +77,7 @@ export const getProducts = async (req: Request, res: Response) => {
 export const getProductById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const result = await pool.query('SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", c.name as category_name FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = $1 AND p.is_deleted = false', [id]);
+        const result = await pool.query('SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = $1 AND p.is_deleted = false', [id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Product not found' });
@@ -177,3 +177,4 @@ export const updateProductStatus = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
