@@ -1,6 +1,17 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
 
+const parseIntOrDefault = (value: any, fallback: number): number => {
+    const parsed = Number.parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const parseOptionalInt = (value: any): number | null => {
+    if (value === '' || value === undefined || value === null) return null;
+    const parsed = Number.parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? null : parsed;
+};
+
 export const getProducts = async (req: Request, res: Response) => {
     try {
         const { category, q, page = 1, limit = 10, sort } = req.query;
@@ -93,8 +104,8 @@ export const createProduct = async (req: Request, res: Response) => {
     try {
         const { name, description, price, discountPrice, stock_quantity, category_id, image_url, images = [], isActive = true } = req.body;
         const finalDiscountPrice = discountPrice === '' || discountPrice === undefined ? null : discountPrice;
-        const finalCategoryId = category_id === '' || category_id === undefined ? null : category_id;
-        const finalStockQuantity = stock_quantity === '' || stock_quantity === undefined ? 0 : parseInt(stock_quantity, 10);
+        const finalCategoryId = parseOptionalInt(category_id);
+        const finalStockQuantity = parseIntOrDefault(stock_quantity, 0);
 
         let initialImages = images;
         // Backwards compatibility for single image requests
@@ -118,8 +129,8 @@ export const updateProduct = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { name, description, price, discountPrice, stock_quantity, category_id, image_url, images, isActive } = req.body;
         const finalDiscountPrice = discountPrice === '' || discountPrice === undefined ? null : discountPrice;
-        const finalCategoryId = category_id === '' || category_id === undefined ? null : category_id;
-        const finalStockQuantity = stock_quantity === '' || stock_quantity === undefined ? 0 : parseInt(stock_quantity, 10);
+        const finalCategoryId = parseOptionalInt(category_id);
+        const finalStockQuantity = parseIntOrDefault(stock_quantity, 0);
 
         let query = 'UPDATE products SET name = $1, description = $2, price = $3, discount_price = $4, stock_quantity = $5, category_id = $6, image_url = $7';
         const params: any[] = [name, description, price, finalDiscountPrice, finalStockQuantity, finalCategoryId, image_url];
@@ -177,6 +188,7 @@ export const updateProductStatus = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
 
 
 

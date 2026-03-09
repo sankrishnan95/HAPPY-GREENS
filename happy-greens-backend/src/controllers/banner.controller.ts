@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
 
+const parseDisplayOrder = (value: any): number => {
+    const parsed = Number.parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 // 1. Get all banners
 export const getBanners = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -55,7 +60,7 @@ export const createBanner = async (req: Request, res: Response): Promise<void> =
     try {
         const { title, subheading, description, image_url, link, is_active, display_order } = req.body;
 
-        const parsedDisplayOrder = display_order === '' || isNaN(display_order) ? 0 : parseInt(display_order);
+        const parsedDisplayOrder = parseDisplayOrder(display_order);
 
         const result = await pool.query(
             `INSERT INTO banners (title, subheading, description, image_url, link, is_active, display_order)
@@ -90,7 +95,7 @@ export const updateBanner = async (req: Request, res: Response): Promise<void> =
         const { title, subheading, description, image_url, link, is_active, display_order } = req.body;
 
         // Ensure we handle numeric casting so PG doesn't crash on empty strings
-        const parsedDisplayOrder = display_order === '' || isNaN(display_order) ? 0 : parseInt(display_order);
+        const parsedDisplayOrder = parseDisplayOrder(display_order);
 
         // Dynamically build SET clause to only update what was provided (e.g if image_url isn't sent, keep existing)
         const updates: string[] = [];
@@ -186,3 +191,4 @@ export const deleteBanner = async (req: Request, res: Response): Promise<void> =
         res.status(500).json({ success: false, message: 'Failed to delete banner' });
     }
 };
+
