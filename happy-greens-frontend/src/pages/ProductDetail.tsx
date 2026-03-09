@@ -6,18 +6,33 @@ import { Minus, Plus, ShoppingCart, ArrowLeft, ChevronRight } from 'lucide-react
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { API_BASE_URL } from '../config/api';
+
+const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
+
 const resolveImageUrl = (url?: string): string => {
-    if (!url) return '';
+    if (!url) return FALLBACK_PRODUCT_IMAGE;
 
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
-        return url;
+    const value = String(url).trim();
+    if (!value) return FALLBACK_PRODUCT_IMAGE;
+
+    if (value.startsWith('http://localhost') || value.startsWith('https://localhost')) {
+        try {
+            const parsed = new URL(value);
+            return `${API_BASE_URL}${parsed.pathname}`;
+        } catch {
+            return FALLBACK_PRODUCT_IMAGE;
+        }
     }
 
-    if (url.startsWith('/')) {
-        return `${API_BASE_URL}${url}`;
+    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
+        return value;
     }
 
-    return `${API_BASE_URL}/${url}`;
+    if (value.startsWith('/')) {
+        return `${API_BASE_URL}${value}`;
+    }
+
+    return `${API_BASE_URL}/${value}`;
 };
 
 const ProductDetail = () => {
@@ -66,24 +81,32 @@ const ProductDetail = () => {
         }
     };
 
-    if (loading) return (
-        <div className="text-center py-20">
-            <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading product...</p>
-        </div>
-    );
+    if (loading) {
+        return (
+            <div className="text-center py-20">
+                <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading product...</p>
+            </div>
+        );
+    }
 
-    if (!product) return (
-        <div className="text-center py-20">
-            <p className="text-xl text-gray-600">Product not found</p>
-            <Link to="/shop" className="text-primary-600 hover:text-primary-700 mt-4 inline-block">
-                Back to Shop
-            </Link>
-        </div>
-    );
+    if (!product) {
+        return (
+            <div className="text-center py-20">
+                <p className="text-xl text-gray-600">Product not found</p>
+                <Link to="/shop" className="text-primary-600 hover:text-primary-700 mt-4 inline-block">
+                    Back to Shop
+                </Link>
+            </div>
+        );
+    }
 
     const categoryName = product.category_name || 'Uncategorized';
-    const productImages = (Array.isArray(product.images) && product.images.length > 0 ? product.images : (product.image_url ? [product.image_url] : [])).map((img: string) => resolveImageUrl(img));
+    const productImages = (
+        Array.isArray(product.images) && product.images.length > 0
+            ? product.images
+            : (product.image_url ? [product.image_url] : [FALLBACK_PRODUCT_IMAGE])
+    ).map((img: string) => resolveImageUrl(img));
 
     return (
         <div className="animate-fade-in">
@@ -107,7 +130,11 @@ const ProductDetail = () => {
                 <div className="bg-gradient-soft p-8 rounded-4xl shadow-soft border border-gray-100">
                     <div className="relative aspect-square md:aspect-auto">
                         <img
-                            src={productImages[selectedImage] || productImages[0] || ''}
+                            src={productImages[selectedImage] || productImages[0] || FALLBACK_PRODUCT_IMAGE}
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                            }}
                             alt={product.name}
                             className="w-full h-[500px] object-contain transition-opacity duration-300"
                         />
@@ -119,12 +146,21 @@ const ProductDetail = () => {
                                 <button
                                     key={idx}
                                     onClick={() => setSelectedImage(idx)}
-                                    className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-200 snap-center bg-white ${selectedImage === idx
-                                        ? 'border-primary-500 shadow-md ring-2 ring-primary-200 transform scale-105'
-                                        : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 hover:shadow'
-                                        }`}
+                                    className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-200 snap-center bg-white ${
+                                        selectedImage === idx
+                                            ? 'border-primary-500 shadow-md ring-2 ring-primary-200 transform scale-105'
+                                            : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 hover:shadow'
+                                    }`}
                                 >
-                                    <img src={img} alt={`${product.name} view ${idx + 1}`} className="w-full h-full object-cover p-2" />
+                                    <img
+                                        src={img}
+                                        alt={`${product.name} view ${idx + 1}`}
+                                        className="w-full h-full object-cover p-2"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                                        }}
+                                    />
                                 </button>
                             ))}
                         </div>
@@ -157,8 +193,7 @@ const ProductDetail = () => {
                             <Badge variant={product.stock_quantity < 10 ? 'warning' : 'success'} size="lg">
                                 {product.stock_quantity < 10
                                     ? `Only ${product.stock_quantity} left in stock!`
-                                    : `In Stock (${product.stock_quantity} available)`
-                                }
+                                    : `In Stock (${product.stock_quantity} available)`}
                             </Badge>
                         ) : (
                             <Badge variant="error" size="lg">Out of Stock</Badge>
@@ -231,4 +266,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-
