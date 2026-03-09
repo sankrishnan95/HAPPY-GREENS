@@ -99,14 +99,11 @@ export default function Login() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Default: admin@happygreens.com / admin3012
-          </p>
-        </div>
       </div>
     </div>
   );
 }
+
+
+
 
