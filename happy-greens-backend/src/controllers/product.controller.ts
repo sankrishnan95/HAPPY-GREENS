@@ -17,7 +17,7 @@ export const getProducts = async (req: Request, res: Response) => {
         let paramCount = 1;
 
         if (category) {
-            query += ` AND c.slug = $${paramCount}`;
+            query += ` AND (LOWER(c.slug) = LOWER($${paramCount}) OR LOWER(c.name) = LOWER($${paramCount}))`;
             params.push(category);
             paramCount++;
         }
@@ -50,7 +50,7 @@ export const getProducts = async (req: Request, res: Response) => {
         }
 
         if (category) {
-            countQuery += ` AND c.slug = $${countParam}`;
+            countQuery += ` AND (LOWER(c.slug) = LOWER($${countParam}) OR LOWER(c.name) = LOWER($${countParam}))`;
             countParams.push(category);
             countParam++;
         }
@@ -177,4 +177,6 @@ export const updateProductStatus = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+
 
