@@ -18,6 +18,7 @@ import loyaltyRoutes from './routes/loyalty.routes';
 import wishlistRoutes from './routes/wishlist.routes';
 import path from 'path';
 import { authenticate } from './middleware/auth';
+import { ensureAdminFromEnv } from './bootstrap/admin';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -67,6 +68,18 @@ app.use('/api/wishlist', authenticate, wishlistRoutes);
 // Generic admin routes (MUST be after specific admin routes)
 app.use('/api/admin', adminRoutes);
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+const startServer = async () => {
+  try {
+    await ensureAdminFromEnv();
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+
