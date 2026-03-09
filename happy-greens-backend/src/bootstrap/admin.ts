@@ -1,14 +1,18 @@
 import bcrypt from 'bcryptjs';
 import { pool } from '../db';
 
-export const ensureAdminFromEnv = async (): Promise<void> => {
-    const adminEmail = process.env.ADMIN_EMAIL?.trim();
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    const adminFullName = process.env.ADMIN_FULL_NAME?.trim() || 'Admin User';
+const DEFAULT_ADMIN_EMAIL = 'admin@happygreens.com';
+const DEFAULT_ADMIN_PASSWORD = 'admin3012';
+const DEFAULT_ADMIN_FULL_NAME = 'Happy Greens Admin';
 
-    if (!adminEmail || !adminPassword) {
-        console.log('[Admin Bootstrap] ADMIN_EMAIL/ADMIN_PASSWORD not set. Skipping admin sync.');
-        return;
+export const ensureAdminFromEnv = async (): Promise<void> => {
+    const adminEmail = process.env.ADMIN_EMAIL?.trim() || DEFAULT_ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD;
+    const adminFullName = process.env.ADMIN_FULL_NAME?.trim() || DEFAULT_ADMIN_FULL_NAME;
+
+    const usingFallback = !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD;
+    if (usingFallback) {
+        console.warn('[Admin Bootstrap] ADMIN_EMAIL/ADMIN_PASSWORD not set. Using default admin credentials.');
     }
 
     const salt = await bcrypt.genSalt(10);

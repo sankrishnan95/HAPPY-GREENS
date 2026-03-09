@@ -102,10 +102,11 @@ export default function Login() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500">
-            Default: admin@happygreens.com / admin123
+            Default: admin@happygreens.com / admin3012
           </p>
         </div>
       </div>
     </div>
   );
 }
+
