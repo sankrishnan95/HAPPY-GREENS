@@ -6,6 +6,19 @@ import { Minus, Plus, ShoppingCart, ArrowLeft, ChevronRight } from 'lucide-react
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { API_BASE_URL } from '../config/api';
+const resolveImageUrl = (url?: string): string => {
+    if (!url) return '';
+
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+        return url;
+    }
+
+    if (url.startsWith('/')) {
+        return `${API_BASE_URL}${url}`;
+    }
+
+    return `${API_BASE_URL}/${url}`;
+};
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -70,10 +83,7 @@ const ProductDetail = () => {
     );
 
     const categoryName = product.category_name || 'Uncategorized';
-    const productImages =
-        Array.isArray(product.images) && product.images.length > 0
-            ? product.images
-            : (product.image_url ? [product.image_url] : []);
+    const productImages = (Array.isArray(product.images) && product.images.length > 0 ? product.images : (product.image_url ? [product.image_url] : [])).map((img: string) => resolveImageUrl(img));
 
     return (
         <div className="animate-fade-in">
@@ -221,3 +231,4 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+
