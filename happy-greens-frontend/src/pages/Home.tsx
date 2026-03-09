@@ -4,6 +4,7 @@ import { ArrowRight, Truck, Shield, Clock, Leaf } from 'lucide-react';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { getActiveBanners } from '../services/banner.service';
+import { normalizeImageUrl } from '../utils/image';
 
 const categories = [
     { name: 'Fruits', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=500&q=60', color: 'bg-orange-100', icon: '🍎' },
@@ -54,13 +55,13 @@ const Home = () => {
                 <div className="absolute inset-0">
                     {isVideo(heroBanner?.image_url) ? (
                         <video
-                            src={heroBanner.image_url}
+                            src={normalizeImageUrl(heroBanner.image_url)}
                             className="w-full h-full object-cover opacity-60"
                             autoPlay loop muted playsInline
                         />
                     ) : (
                         <img
-                            src={heroBanner?.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80"}
+                            src={normalizeImageUrl(heroBanner?.image_url)}
                             alt="Storefront Hero"
                             className="w-full h-full object-cover opacity-60"
                         />
@@ -171,13 +172,13 @@ const Home = () => {
                 <div className="flex-1 relative z-10">
                     {isVideo(dealBanner?.image_url) ? (
                         <video
-                            src={dealBanner.image_url}
+                            src={normalizeImageUrl(dealBanner.image_url)}
                             className="w-full h-80 object-cover rounded-3xl shadow-strong hover:scale-105 transition-transform duration-500"
                             autoPlay loop muted playsInline
                         />
                     ) : (
                         <img
-                            src={dealBanner?.image_url || "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=600&q=80"}
+                            src={normalizeImageUrl(dealBanner?.image_url)}
                             alt="Deals Graphic"
                             className="w-full h-80 object-cover rounded-3xl shadow-strong hover:scale-105 transition-transform duration-500"
                         />
@@ -189,3 +190,5 @@ const Home = () => {
 };
 
 export default Home;
+
+
