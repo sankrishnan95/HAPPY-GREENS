@@ -64,14 +64,19 @@ const ProductDetail = () => {
         <div className="text-center py-20">
             <p className="text-xl text-gray-600">Product not found</p>
             <Link to="/shop" className="text-primary-600 hover:text-primary-700 mt-4 inline-block">
-                ← Back to Shop
+                Back to Shop
             </Link>
         </div>
     );
 
+    const categoryName = product.category_name || 'Uncategorized';
+    const productImages =
+        Array.isArray(product.images) && product.images.length > 0
+            ? product.images
+            : (product.image_url ? [product.image_url] : []);
+
     return (
         <div className="animate-fade-in">
-            {/* Breadcrumbs */}
             <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
                 <Link to="/" className="hover:text-primary-600 transition-colors">Home</Link>
                 <ChevronRight className="h-4 w-4" />
@@ -80,7 +85,6 @@ const ProductDetail = () => {
                 <span className="text-gray-900 font-medium">{product.name}</span>
             </nav>
 
-            {/* Back Button */}
             <button
                 onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold mb-6 transition-colors group"
@@ -93,22 +97,21 @@ const ProductDetail = () => {
                 <div className="bg-gradient-soft p-8 rounded-4xl shadow-soft border border-gray-100">
                     <div className="relative aspect-square md:aspect-auto">
                         <img
-                            src={product.images && product.images.length > 0 ? product.images[selectedImage] : product.image_url}
+                            src={productImages[selectedImage] || productImages[0] || ''}
                             alt={product.name}
                             className="w-full h-[500px] object-contain transition-opacity duration-300"
                         />
                     </div>
 
-                    {/* Thumbnail Gallery */}
-                    {product.images && product.images.length > 1 && (
+                    {productImages.length > 1 && (
                         <div className="flex gap-4 mt-8 overflow-x-auto pb-4 justify-center md:justify-start px-2 snap-x hide-scrollbar">
-                            {product.images.map((img: string, idx: number) => (
+                            {productImages.map((img: string, idx: number) => (
                                 <button
                                     key={idx}
                                     onClick={() => setSelectedImage(idx)}
                                     className={`flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-200 snap-center bg-white ${selectedImage === idx
-                                            ? 'border-primary-500 shadow-md ring-2 ring-primary-200 transform scale-105'
-                                            : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 hover:shadow'
+                                        ? 'border-primary-500 shadow-md ring-2 ring-primary-200 transform scale-105'
+                                        : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 hover:shadow'
                                         }`}
                                 >
                                     <img src={img} alt={`${product.name} view ${idx + 1}`} className="w-full h-full object-cover p-2" />
@@ -118,11 +121,10 @@ const ProductDetail = () => {
                     )}
                 </div>
 
-                {/* Product Info */}
                 <div className="space-y-6">
                     <div>
                         <Badge variant="primary" size="md">
-                            {product.category_name}
+                            {categoryName}
                         </Badge>
                         <h1 className="text-5xl font-display font-bold mt-4 mb-3 text-gray-900">{product.name}</h1>
                         <p className="text-gray-600 text-lg leading-relaxed">{product.description}</p>
@@ -131,16 +133,15 @@ const ProductDetail = () => {
                     <div className="flex items-baseline gap-2">
                         {product.discountPrice ? (
                             <>
-                                <span className="line-through text-gray-400 text-3xl">₹{product.price}</span>
-                                <span className="text-5xl font-display font-bold text-green-600">₹{product.discountPrice}</span>
+                                <span className="line-through text-gray-400 text-3xl">Rs. {product.price}</span>
+                                <span className="text-5xl font-display font-bold text-green-600">Rs. {product.discountPrice}</span>
                             </>
                         ) : (
-                            <span className="text-5xl font-display font-bold text-gray-900">₹{product.price}</span>
+                            <span className="text-5xl font-display font-bold text-gray-900">Rs. {product.price}</span>
                         )}
                         <span className="text-lg text-gray-500">/unit</span>
                     </div>
 
-                    {/* Stock Status */}
                     <div>
                         {product.stock_quantity > 0 ? (
                             <Badge variant={product.stock_quantity < 10 ? 'warning' : 'success'} size="lg">
@@ -154,7 +155,6 @@ const ProductDetail = () => {
                         )}
                     </div>
 
-                    {/* Quantity & Add to Cart */}
                     <div className="flex items-center gap-4 pt-4">
                         {quantity > 0 ? (
                             <div className="flex items-center bg-primary-50 rounded-full border-2 border-primary-200 px-2">
@@ -175,7 +175,7 @@ const ProductDetail = () => {
                         ) : null}
 
                         <Button
-                            variant={quantity > 0 ? "secondary" : "primary"}
+                            variant={quantity > 0 ? 'secondary' : 'primary'}
                             size="lg"
                             onClick={() => addToCart(product)}
                             className="flex-1"
@@ -194,11 +194,10 @@ const ProductDetail = () => {
                         )}
                     </div>
 
-                    {/* Product Details */}
                     <div className="border-t border-gray-200 pt-6 space-y-4">
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Delivery</span>
-                            <span className="font-semibold text-gray-900">Free delivery on orders above ₹500</span>
+                            <span className="font-semibold text-gray-900">Free delivery on orders above Rs. 500</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Return Policy</span>
@@ -206,9 +205,13 @@ const ProductDetail = () => {
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">Category</span>
-                            <Link to={`/shop?category=${product.category_name.toLowerCase()}`} className="font-semibold text-primary-600 hover:text-primary-700">
-                                {product.category_name}
-                            </Link>
+                            {product.category_name ? (
+                                <Link to={`/shop?category=${product.category_name.toLowerCase()}`} className="font-semibold text-primary-600 hover:text-primary-700">
+                                    {categoryName}
+                                </Link>
+                            ) : (
+                                <span className="font-semibold text-gray-900">{categoryName}</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -218,5 +221,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-
-
