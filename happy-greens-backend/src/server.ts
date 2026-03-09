@@ -41,7 +41,12 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
-
+app.get('/', (req: Request, res: Response) => {
+  res.json({
+    message: "Happy Greens API running 🌱",
+    health: "/health"
+  });
+});
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
