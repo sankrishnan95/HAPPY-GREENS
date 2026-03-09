@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getWishlist } from '../services/wishlist.service';
+import { API_BASE_URL } from '../config/api';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -42,7 +43,7 @@ const Navbar = () => {
         }
         const timer = setTimeout(async () => {
             try {
-                const res = await axios.get(`http://localhost:3000/api/products?q=${encodeURIComponent(searchQuery)}&limit=5`);
+                const res = await axios.get(`${API_BASE_URL}/api/products?q=${encodeURIComponent(searchQuery)}&limit=5`);
                 setSuggestions(res.data.products);
                 setShowSuggestions(true);
             } catch (error) {
@@ -247,4 +248,6 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
 

@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
+import { API_BASE_URL } from '../config/api';
 
 const AdminDashboard = () => {
     const { user, token } = useStore();
@@ -27,7 +28,7 @@ const AdminDashboard = () => {
     }, []);
 
     const fetchProducts = async () => {
-        const res = await axios.get('http://localhost:3000/api/products?limit=100');
+        const res = await axios.get(`${API_BASE_URL}/api/products?limit=100`);
         setProducts(res.data.products);
     };
 
@@ -39,7 +40,7 @@ const AdminDashboard = () => {
     const handleDelete = async () => {
         if (!productToDelete) return;
         try {
-            await axios.delete(`http://localhost:3000/api/products/${productToDelete}`, {
+            await axios.delete(`${API_BASE_URL}/api/products/${productToDelete}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setDeleteModalOpen(false);
@@ -74,11 +75,11 @@ const AdminDashboard = () => {
         e.preventDefault();
         try {
             if (editingId) {
-                await axios.put(`http://localhost:3000/api/products/${editingId}`, formData, {
+                await axios.put(`${API_BASE_URL}/api/products/${editingId}`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.post('http://localhost:3000/api/products', formData, {
+                await axios.post(`${API_BASE_URL}/api/products`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -248,3 +249,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

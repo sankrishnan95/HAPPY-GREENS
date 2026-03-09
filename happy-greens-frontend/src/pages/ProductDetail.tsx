@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { Minus, Plus, ShoppingCart, ArrowLeft, ChevronRight } from 'lucide-react';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
+import { API_BASE_URL } from '../config/api';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -25,7 +26,7 @@ const ProductDetail = () => {
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const res = await axios.get(`http://localhost:3000/api/products/${id}`);
+                const res = await axios.get(`${API_BASE_URL}/api/products/${id}`);
                 setProduct(res.data);
             } catch (error) {
                 console.error('Error fetching product:', error);
@@ -217,3 +218,5 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+
+
