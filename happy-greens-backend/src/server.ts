@@ -19,7 +19,7 @@ import wishlistRoutes from './routes/wishlist.routes';
 import path from 'path';
 import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
-import { ensureProductImagesColumn } from './bootstrap/schema';
+import { ensureProductImagesColumn, ensureBannerTextColumns } from './bootstrap/schema';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -92,6 +92,7 @@ app.use('/api/admin', adminRoutes);
 const startServer = async () => {
   try {
     await ensureProductImagesColumn();
+    await ensureBannerTextColumns();
     await ensureAdminFromEnv();
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
@@ -103,6 +104,7 @@ const startServer = async () => {
 };
 
 startServer();
+
 
 
 

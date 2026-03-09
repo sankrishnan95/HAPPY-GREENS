@@ -16,3 +16,13 @@ export const ensureProductImagesColumn = async (): Promise<void> => {
 
     console.log('[Schema Bootstrap] products.images ensured');
 };
+
+export const ensureBannerTextColumns = async (): Promise<void> => {
+    await pool.query(`
+        ALTER TABLE banners
+        ADD COLUMN IF NOT EXISTS subheading VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS description TEXT
+    `);
+
+    console.log('[Schema Bootstrap] banners.subheading and banners.description ensured');
+};
