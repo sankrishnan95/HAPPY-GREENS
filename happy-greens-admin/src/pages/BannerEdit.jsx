@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, X, ImageIcon } from 'lucide-react';
 import { getBannerById, createBanner, updateBanner } from '../services/banner.service';
 import { uploadImages } from '../services/upload.service';
+import { API_BASE_URL } from '../services/api';
 import toast, { Toaster } from 'react-hot-toast';
 
 const BannerEdit = () => {
@@ -87,7 +88,7 @@ const BannerEdit = () => {
             toast.success('Image uploaded successfully!', { id: 'upload' });
 
             // Update URL to the server's static path
-            const serverImageUrl = `http://localhost:3000${data.images[0]}`;
+            const serverImageUrl = `${API_BASE_URL}${data.images[0]}`;
             setFormData(prev => ({ ...prev, image_url: serverImageUrl }));
             setImagePreview(serverImageUrl);
         } catch (error) {
@@ -320,3 +321,5 @@ const BannerEdit = () => {
 };
 
 export default BannerEdit;
+
+

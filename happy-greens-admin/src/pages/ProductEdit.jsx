@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, UploadCloud, X, Image as ImageIcon } from 'lucide-react';
 import { getProductById, createProduct, updateProduct, getCategories } from '../services/product.service';
 import { uploadImages } from '../services/upload.service';
+import { API_BASE_URL } from '../services/api';
 
 export default function ProductEdit() {
     const { id } = useParams();
@@ -91,7 +92,7 @@ export default function ProductEdit() {
             const data = await uploadImages(payload);
             const uploadedPaths = data.images;
             // Provide full paths combining URL domain
-            const fullPaths = uploadedPaths.map(p => `http://localhost:3000${p}`);
+            const fullPaths = uploadedPaths.map(p => `${API_BASE_URL}${p}`);
 
             setFormData(prev => ({
                 ...prev,
@@ -372,3 +373,4 @@ export default function ProductEdit() {
         </div>
     );
 }
+

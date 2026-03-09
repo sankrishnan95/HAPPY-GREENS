@@ -1,10 +1,11 @@
 import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { getToken, removeToken } from '../utils/auth';
 
-export const API_BASE_URL: string = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+export const API_BASE_URL: string = (import.meta as any).env.VITE_API_URL || 'https://happy-greens-18n3.onrender.com';
+export const API_URL: string = `${API_BASE_URL}/api`;
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
