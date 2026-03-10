@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 // JWT_SECRET is required - no default fallback for security
@@ -9,7 +9,9 @@ if (!process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET;
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const headerToken = req.header('Authorization')?.replace('Bearer ', '');
+    const queryToken = typeof req.query.token === 'string' ? req.query.token : undefined;
+    const token = headerToken || queryToken;
 
     if (!token) {
         return res.status(401).json({ message: 'No token, authorization denied' });
