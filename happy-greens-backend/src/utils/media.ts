@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const FALLBACK_IMAGE_URL = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80';
-const FALLBACK_VIDEO_URL = 'https://videos.pexels.com/video-files/5946162/5946162-hd_1920_1080_25fps.mp4';
+const FALLBACK_VIDEO_URL = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4';
 
 const getFallbackByExtension = (input: string): string => {
     const lower = input.toLowerCase();
@@ -87,4 +87,5 @@ export const normalizeMediaUrl = (value: any, baseUrl: string): any => {
     if (!hasLocalUploadFile(uploadsPath)) return getFallbackByExtension(raw);
     return `${baseUrl}${uploadsPath}`;
 };
+
 
