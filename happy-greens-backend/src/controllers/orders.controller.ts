@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { pool } from '../db';
 
 /**
@@ -55,7 +55,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             );
         }
 
-        // ── Loyalty Points Logic ──────────────────────────────────────
+        // â”€â”€ Loyalty Points Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (currentOrder.status !== status) {
             // Fetch full order details for loyalty calculation
             const loyaltyOrderRes = await pool.query(
@@ -65,28 +65,30 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             const loyaltyOrder = loyaltyOrderRes.rows[0];
 
             if (status === 'delivered' && currentOrder.status !== 'delivered') {
-                // Award points: 1 point per ₹20 spent
-                const earnedPoints = Math.floor(Number(loyaltyOrder.total_amount) / 20);
-                if (earnedPoints > 0) {
-                    // Record transaction
-                    await pool.query(
-                        `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
-                         VALUES ($1, $2, 'earned', $3, $4)`,
-                        [loyaltyOrder.user_id, id, earnedPoints, `Points earned from Order #${id}`]
-                    );
-                    // Update user loyalty totals
-                    await pool.query(
-                        `UPDATE users
-                         SET loyalty_points = loyalty_points + $1,
-                             total_points_earned = total_points_earned + $1
-                         WHERE id = $2`,
-                        [earnedPoints, loyaltyOrder.user_id]
-                    );
-                    // Record on order
-                    await pool.query(
-                        `UPDATE orders SET points_earned = $1 WHERE id = $2`,
-                        [earnedPoints, id]
-                    );
+                const existingEarned = Number(loyaltyOrder.points_earned || 0);
+                if (existingEarned <= 0) {
+                    // Award points: 1 point per INR 20 spent
+                    const earnedPoints = Math.floor(Number(loyaltyOrder.total_amount) / 20);
+                    if (earnedPoints > 0) {
+                        await pool.query(
+                            `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
+                             VALUES ($1, $2, 'earned', $3, $4)`,
+                            [loyaltyOrder.user_id, id, earnedPoints, `Points earned from Order #${id}`]
+                        );
+
+                        await pool.query(
+                            `UPDATE users
+                             SET loyalty_points = loyalty_points + $1,
+                                 total_points_earned = total_points_earned + $1
+                             WHERE id = $2`,
+                            [earnedPoints, loyaltyOrder.user_id]
+                        );
+
+                        await pool.query(
+                            `UPDATE orders SET points_earned = $1 WHERE id = $2`,
+                            [earnedPoints, id]
+                        );
+                    }
                 }
             }
 
@@ -96,7 +98,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                     await pool.query(
                         `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
                          VALUES ($1, $2, 'reversed', $3, $4)`,
-                        [loyaltyOrder.user_id, id, -loyaltyOrder.points_earned, `Points reversed — Order #${id} cancelled`]
+                        [loyaltyOrder.user_id, id, -loyaltyOrder.points_earned, `Points reversed â€” Order #${id} cancelled`]
                     );
                     await pool.query(
                         `UPDATE users
@@ -112,7 +114,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                     await pool.query(
                         `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
                          VALUES ($1, $2, 'earned', $3, $4)`,
-                        [loyaltyOrder.user_id, id, loyaltyOrder.points_used, `Points refunded — Order #${id} cancelled`]
+                        [loyaltyOrder.user_id, id, loyaltyOrder.points_used, `Points refunded â€” Order #${id} cancelled`]
                     );
                     await pool.query(
                         `UPDATE users
@@ -124,7 +126,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                 }
             }
         }
-        // ── End Loyalty Points Logic ───────────────────────────────────
+        // â”€â”€ End Loyalty Points Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         res.json({
             success: true,
@@ -305,3 +307,6 @@ export const getOrderById = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error fetching order details' });
     }
 };
+
+
+

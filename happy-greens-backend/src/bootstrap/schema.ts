@@ -51,6 +51,7 @@ export const ensureOperationsSchema = async (): Promise<void> => {
 
     await pool.query(`
         ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS points_earned INTEGER NOT NULL DEFAULT 0,
         ADD COLUMN IF NOT EXISTS points_used INTEGER NOT NULL DEFAULT 0
     `);
 
@@ -79,7 +80,7 @@ export const ensureOperationsSchema = async (): Promise<void> => {
             id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
-            type VARCHAR(20) NOT NULL CHECK (type IN ('earned', 'redeemed', 'adjusted')),
+            type VARCHAR(20) NOT NULL CHECK (type IN ('earned', 'redeemed', 'reversed', 'adjusted')),
             points INTEGER NOT NULL,
             description TEXT,
             created_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -106,3 +107,4 @@ export const ensureOperationsSchema = async (): Promise<void> => {
 
     console.log('[Schema Bootstrap] operations schema ensured');
 };
+
