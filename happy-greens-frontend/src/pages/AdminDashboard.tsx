@@ -5,6 +5,7 @@ import { Plus, Trash2, Edit } from 'lucide-react';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { API_BASE_URL } from '../config/api';
+import { normalizeImageUrl } from '../utils/image';
 
 const AdminDashboard = () => {
     const { user, token } = useStore();
@@ -129,7 +130,7 @@ const AdminDashboard = () => {
                                 <td className="p-5">
                                     <div className="flex items-center gap-4">
                                         <div className="bg-gradient-soft p-2 rounded-xl">
-                                            <img src={product.image_url} alt="" className="w-14 h-14 rounded object-contain" />
+                                            <img src={normalizeImageUrl(product.image_url)} alt="" className="w-14 h-14 rounded object-contain" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }} />
                                         </div>
                                         <span className="font-semibold text-gray-900">{product.name}</span>
                                     </div>
@@ -249,4 +250,5 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
 

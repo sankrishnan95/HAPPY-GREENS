@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { getOrderById } from '../services/order.service';
 import { ArrowLeft, MapPin, Package, CreditCard, Clock } from 'lucide-react';
+import { normalizeImageUrl } from '../utils/image';
 
 const STATUS_STYLES: Record<string, string> = {
     placed: 'bg-orange-100 text-orange-800',
@@ -139,7 +140,7 @@ export default function OrderDetail() {
                                         <div className="flex items-center gap-3">
                                             <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
                                                 {item.image_url ? (
-                                                    <img src={item.image_url} alt={item.product_name} className="w-full h-full object-cover" />
+                                                    <img src={normalizeImageUrl(item.image_url)} alt={item.product_name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }} />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-300">
                                                         <Package className="w-5 h-5" />
@@ -219,3 +220,6 @@ export default function OrderDetail() {
         </div>
     );
 }
+
+
+
