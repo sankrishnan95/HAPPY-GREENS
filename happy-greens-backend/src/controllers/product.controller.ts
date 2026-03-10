@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { pool } from '../db';
 import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 
@@ -39,8 +39,13 @@ export const getProducts = async (req: Request, res: Response) => {
         let paramCount = 1;
 
         if (category) {
-            query += ` AND (LOWER(c.slug) = LOWER($${paramCount}) OR LOWER(c.name) = LOWER($${paramCount}))`;
-            params.push(category);
+            const normalizedCategory = String(category).trim().toLowerCase();
+            query += ` AND (
+                LOWER(TRIM(c.slug)) = $${paramCount}
+                OR LOWER(TRIM(c.name)) = $${paramCount}
+                OR LOWER(REPLACE(TRIM(c.name), ' ', '-')) = $${paramCount}
+            )`;
+            params.push(normalizedCategory);
             paramCount++;
         }
 
@@ -72,8 +77,13 @@ export const getProducts = async (req: Request, res: Response) => {
         }
 
         if (category) {
-            countQuery += ` AND (LOWER(c.slug) = LOWER($${countParam}) OR LOWER(c.name) = LOWER($${countParam}))`;
-            countParams.push(category);
+            const normalizedCategory = String(category).trim().toLowerCase();
+            countQuery += ` AND (
+                LOWER(TRIM(c.slug)) = $${countParam}
+                OR LOWER(TRIM(c.name)) = $${countParam}
+                OR LOWER(REPLACE(TRIM(c.name), ' ', '-')) = $${countParam}
+            )`;
+            countParams.push(normalizedCategory);
             countParam++;
         }
 
@@ -213,6 +223,8 @@ export const getCategories = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+
 
 
 

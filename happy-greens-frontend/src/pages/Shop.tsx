@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getProducts } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
@@ -50,7 +50,7 @@ const Shop = () => {
                 // Filter dummy data based on category
                 let filtered = DUMMY_PRODUCTS;
                 if (category) {
-                    filtered = DUMMY_PRODUCTS.filter(p => p.category_name === category);
+                    filtered = DUMMY_PRODUCTS.filter(p => p.category_name.toLowerCase() === category.toLowerCase());
                 }
                 // @ts-ignore
                 setProducts(filtered);
@@ -176,3 +176,4 @@ const Shop = () => {
 };
 
 export default Shop;
+
