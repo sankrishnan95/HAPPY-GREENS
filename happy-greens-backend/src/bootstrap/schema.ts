@@ -102,9 +102,10 @@ export const ensureOperationsSchema = async (): Promise<void> => {
     await pool.query(`
         ALTER TABLE orders
         ADD CONSTRAINT orders_status_check
-        CHECK (status IN ('pending', 'placed', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'))
+        CHECK (status IN ('pending', 'placed', 'accepted', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'))
     `);
 
     console.log('[Schema Bootstrap] operations schema ensured');
 };
+
 
