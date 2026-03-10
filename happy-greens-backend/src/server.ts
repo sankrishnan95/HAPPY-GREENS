@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { pool } from './db';
@@ -19,7 +19,7 @@ import wishlistRoutes from './routes/wishlist.routes';
 import path from 'path';
 import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
-import { ensureProductImagesColumn, ensureBannerTextColumns } from './bootstrap/schema';
+import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns } from './bootstrap/schema';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -65,7 +65,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 app.get('/', (req: Request, res: Response) => {
   res.json({
-    message: "Happy Greens API running 🌱",
+    message: "Happy Greens API running ðŸŒ±",
     health: "/health"
   });
 });
@@ -91,6 +91,7 @@ app.use('/api/admin', adminRoutes);
 
 const startServer = async () => {
   try {
+    await ensureAuthColumns();
     await ensureProductImagesColumn();
     await ensureBannerTextColumns();
     await ensureAdminFromEnv();
@@ -104,6 +105,7 @@ const startServer = async () => {
 };
 
 startServer();
+
 
 
 

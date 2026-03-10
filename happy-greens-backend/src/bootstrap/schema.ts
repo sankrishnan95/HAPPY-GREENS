@@ -1,4 +1,4 @@
-import { pool } from '../db';
+﻿import { pool } from '../db';
 
 export const ensureProductImagesColumn = async (): Promise<void> => {
     await pool.query(`
@@ -25,4 +25,18 @@ export const ensureBannerTextColumns = async (): Promise<void> => {
     `);
 
     console.log('[Schema Bootstrap] banners.subheading and banners.description ensured');
+};
+
+export const ensureAuthColumns = async (): Promise<void> => {
+    await pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE,
+        ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS otp_code VARCHAR(10),
+        ADD COLUMN IF NOT EXISTS otp_expires TIMESTAMP
+    `);
+
+    console.log('[Schema Bootstrap] users auth columns ensured');
 };
