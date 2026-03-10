@@ -1,10 +1,17 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
+import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 
 const parseDisplayOrder = (value: any): number => {
     const parsed = Number.parseInt(String(value), 10);
     return Number.isNaN(parsed) ? 0 : parsed;
 };
+
+
+const mapBannerMedia = (banner: any, baseUrl: string) => ({
+    ...banner,
+    image_url: normalizeMediaUrl(banner.image_url, baseUrl),
+});
 
 // 1. Get all banners
 export const getBanners = async (req: Request, res: Response): Promise<void> => {
@@ -12,7 +19,7 @@ export const getBanners = async (req: Request, res: Response): Promise<void> => 
         const result = await pool.query('SELECT * FROM banners ORDER BY display_order ASC, created_at DESC');
         res.json({
             success: true,
-            banners: result.rows
+            banners: result.rows.map((row: any) => mapBannerMedia(row, getPublicBaseUrl(req)))
         });
     } catch (error) {
         console.error('Error fetching banners:', error);
@@ -26,7 +33,7 @@ export const getActiveBanners = async (req: Request, res: Response): Promise<voi
         const result = await pool.query('SELECT * FROM banners WHERE is_active = true ORDER BY display_order ASC, created_at DESC');
         res.json({
             success: true,
-            banners: result.rows
+            banners: result.rows.map((row: any) => mapBannerMedia(row, getPublicBaseUrl(req)))
         });
     } catch (error) {
         console.error('Error fetching active banners:', error);
@@ -47,7 +54,7 @@ export const getBannerById = async (req: Request, res: Response): Promise<void> 
 
         res.json({
             success: true,
-            banner: result.rows[0]
+            banner: mapBannerMedia(result.rows[0], getPublicBaseUrl(req))
         });
     } catch (error) {
         console.error('Error fetching banner:', error);
@@ -80,7 +87,7 @@ export const createBanner = async (req: Request, res: Response): Promise<void> =
         res.status(201).json({
             success: true,
             message: 'Banner created successfully',
-            banner: result.rows[0]
+            banner: mapBannerMedia(result.rows[0], getPublicBaseUrl(req))
         });
     } catch (error: any) {
         console.error('Error creating banner:', error);
@@ -163,7 +170,7 @@ export const updateBanner = async (req: Request, res: Response): Promise<void> =
         res.json({
             success: true,
             message: 'Banner updated successfully',
-            banner: result.rows[0]
+            banner: mapBannerMedia(result.rows[0], getPublicBaseUrl(req))
         });
     } catch (error: any) {
         console.error('Error updating banner:', error);
@@ -191,4 +198,7 @@ export const deleteBanner = async (req: Request, res: Response): Promise<void> =
         res.status(500).json({ success: false, message: 'Failed to delete banner' });
     }
 };
+
+
+
 

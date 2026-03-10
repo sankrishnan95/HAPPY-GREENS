@@ -1,16 +1,27 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
+import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 
 const parseIntOrDefault = (value: any, fallback: number): number => {
     const parsed = Number.parseInt(String(value), 10);
     return Number.isNaN(parsed) ? fallback : parsed;
 };
 
+
 const parseOptionalInt = (value: any): number | null => {
     if (value === '' || value === undefined || value === null) return null;
     const parsed = Number.parseInt(String(value), 10);
     return Number.isNaN(parsed) ? null : parsed;
 };
+
+
+const mapProductMedia = (product: any, baseUrl: string) => ({
+    ...product,
+    image_url: normalizeMediaUrl(product.image_url, baseUrl),
+    images: Array.isArray(product.images)
+        ? product.images.map((img: any) => normalizeMediaUrl(img, baseUrl))
+        : product.images,
+});
 
 export const getProducts = async (req: Request, res: Response) => {
     try {
@@ -73,8 +84,9 @@ export const getProducts = async (req: Request, res: Response) => {
 
         const totalResult = await pool.query(countQuery, countParams);
 
+        const baseUrl = getPublicBaseUrl(req);
         res.json({
-            products: result.rows,
+            products: result.rows.map((row: any) => mapProductMedia(row, baseUrl)),
             total: Number(totalResult.rows[0].count),
             page: Number(page),
             totalPages: Math.ceil(Number(totalResult.rows[0].count) / Number(limit))
@@ -94,7 +106,8 @@ export const getProductById = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Product not found' });
         }
 
-        res.json(result.rows[0]);
+        const baseUrl = getPublicBaseUrl(req);
+        res.json(mapProductMedia(result.rows[0], baseUrl));
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -117,7 +130,8 @@ export const createProduct = async (req: Request, res: Response) => {
             'INSERT INTO products (name, description, price, discount_price, stock_quantity, category_id, image_url, images, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9) RETURNING *, discount_price as "discountPrice", is_active as "isActive"',
             [name, description, price, finalDiscountPrice, finalStockQuantity, finalCategoryId, image_url, JSON.stringify(initialImages), isActive]
         );
-        res.status(201).json(result.rows[0]);
+        const baseUrl = getPublicBaseUrl(req);
+        res.status(201).json(mapProductMedia(result.rows[0], baseUrl));
     } catch (error) {
         console.error('Error creating product:', error);
         res.status(500).json({ message: 'Server error: ' + (error as Error).message });
@@ -150,7 +164,8 @@ export const updateProduct = async (req: Request, res: Response) => {
 
         const result = await pool.query(query, params);
         if (result.rows.length === 0) return res.status(404).json({ message: 'Product not found' });
-        res.json(result.rows[0]);
+        const baseUrl = getPublicBaseUrl(req);
+        res.json(mapProductMedia(result.rows[0], baseUrl));
     } catch (error) {
         console.error('Error updating product:', error);
         res.status(500).json({ message: 'Server error: ' + (error as Error).message });
@@ -183,7 +198,8 @@ export const updateProductStatus = async (req: Request, res: Response) => {
         );
 
         if (result.rows.length === 0) return res.status(404).json({ message: 'Product not found' });
-        res.json(result.rows[0]);
+        const baseUrl = getPublicBaseUrl(req);
+        res.json(mapProductMedia(result.rows[0], baseUrl));
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -197,4 +213,8 @@ export const getCategories = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+
+
+
 
