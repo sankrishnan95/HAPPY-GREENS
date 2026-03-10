@@ -108,4 +108,50 @@ export const ensureOperationsSchema = async (): Promise<void> => {
     console.log('[Schema Bootstrap] operations schema ensured');
 };
 
+export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void> => {
+    await pool.query(`
+        INSERT INTO categories (name, slug, description)
+        SELECT seed.name, seed.slug, seed.description
+        FROM (
+            VALUES
+                ('Fruits', 'fruits', 'Fresh seasonal fruits'),
+                ('Vegetables', 'vegetables', 'Farm fresh vegetables'),
+                ('Dairy', 'dairy', 'Milk, cheese and dairy products'),
+                ('Staples', 'staples', 'Daily staple foods'),
+                ('Snacks', 'snacks', 'Ready-to-eat snacks'),
+                ('Beverages', 'beverages', 'Juices and drinks')
+        ) AS seed(name, slug, description)
+        ON CONFLICT (slug) DO NOTHING
+    `);
 
+    const categoryResult = await pool.query('SELECT id, slug FROM categories');
+    const categoryIdBySlug = new Map<string, number>(
+        categoryResult.rows.map((row: any) => [String(row.slug), Number(row.id)])
+    );
+
+    const keywordMap: Record<string, string[]> = {
+        fruits: ['apple', 'banana', 'orange', 'mango', 'grape', 'pomegranate', 'papaya', 'watermelon', 'melon'],
+        vegetables: ['tomato', 'potato', 'onion', 'spinach', 'carrot', 'cabbage', 'cauliflower', 'broccoli', 'pepper', 'capsicum'],
+        dairy: ['milk', 'cheese', 'paneer', 'butter', 'yogurt', 'curd'],
+        staples: ['rice', 'flour', 'dal', 'sugar', 'salt', 'wheat'],
+        snacks: ['chips', 'biscuit', 'chocolate', 'popcorn', 'nuts'],
+        beverages: ['juice', 'tea', 'coffee', 'soda', 'water']
+    };
+
+    for (const [slug, keywords] of Object.entries(keywordMap)) {
+        const categoryId = categoryIdBySlug.get(slug);
+        if (!categoryId) continue;
+
+        const likePatterns = keywords.map((keyword) => `%${keyword}%`);
+        await pool.query(
+            `UPDATE products
+             SET category_id = $1, updated_at = NOW()
+             WHERE category_id IS NULL
+               AND LOWER(name) LIKE ANY($2::text[])`,
+            [categoryId, likePatterns]
+        );
+    }
+
+    const unassigned = await pool.query('SELECT COUNT(*)::int AS count FROM products WHERE category_id IS NULL');
+    console.log(`[Schema Bootstrap] categories ensured and product category backfill done (unassigned: ${unassigned.rows[0]?.count ?? 0})`);
+};

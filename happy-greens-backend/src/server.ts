@@ -19,7 +19,7 @@ import wishlistRoutes from './routes/wishlist.routes';
 import path from 'path';
 import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
-import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema } from './bootstrap/schema';
+import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill } from './bootstrap/schema';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -93,6 +93,7 @@ const startServer = async () => {
   try {
     await ensureAuthColumns();
     await ensureOperationsSchema();
+    await ensureCategoriesAndProductCategoryBackfill();
     await ensureProductImagesColumn();
     await ensureBannerTextColumns();
     await ensureAdminFromEnv();
@@ -106,6 +107,7 @@ const startServer = async () => {
 };
 
 startServer();
+
 
 
 

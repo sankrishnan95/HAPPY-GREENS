@@ -153,11 +153,19 @@ export const updateProduct = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { name, description, price, discountPrice, stock_quantity, category_id, image_url, images, isActive } = req.body;
         const finalDiscountPrice = discountPrice === '' || discountPrice === undefined ? null : discountPrice;
-        const finalCategoryId = parseOptionalInt(category_id);
         const finalStockQuantity = parseIntOrDefault(stock_quantity, 0);
 
-        let query = 'UPDATE products SET name = $1, description = $2, price = $3, discount_price = $4, stock_quantity = $5, category_id = $6, image_url = $7';
-        const params: any[] = [name, description, price, finalDiscountPrice, finalStockQuantity, finalCategoryId, image_url];
+        let query = 'UPDATE products SET name = $1, description = $2, price = $3, discount_price = $4, stock_quantity = $5, image_url = $6';
+        const params: any[] = [name, description, price, finalDiscountPrice, finalStockQuantity, image_url];
+
+        if (category_id !== undefined && category_id !== null && String(category_id).trim() !== '') {
+            const finalCategoryId = parseOptionalInt(category_id);
+            if (finalCategoryId === null) {
+                return res.status(400).json({ message: 'Invalid category_id' });
+            }
+            query += `, category_id = $${params.length + 1}`;
+            params.push(finalCategoryId);
+        }
 
         if (images !== undefined) {
             query += `, images = $${params.length + 1}::jsonb`;
@@ -181,7 +189,6 @@ export const updateProduct = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error: ' + (error as Error).message });
     }
 };
-
 export const deleteProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -223,6 +230,8 @@ export const getCategories = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+
 
 
 
