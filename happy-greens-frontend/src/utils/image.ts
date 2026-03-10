@@ -1,11 +1,20 @@
-import { API_BASE_URL } from '../config/api';
+﻿import { API_BASE_URL } from '../config/api';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
+
+const normalizeProtocol = (value: string): string => {
+    const raw = value.trim();
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^https\/\//i.test(raw)) return raw.replace(/^https\/\//i, 'https://');
+    if (/^http\/\//i.test(raw)) return raw.replace(/^http\/\//i, 'http://');
+    if (/^\/\/[^/]/.test(raw)) return `https:${raw}`;
+    return raw;
+};
 
 export const normalizeImageUrl = (value?: string | null, fallback: string = FALLBACK_IMAGE): string => {
     if (!value) return fallback;
 
-    const raw = String(value).trim();
+    const raw = normalizeProtocol(String(value));
     if (!raw) return fallback;
 
     if (raw.startsWith('data:') || raw.startsWith('blob:')) {

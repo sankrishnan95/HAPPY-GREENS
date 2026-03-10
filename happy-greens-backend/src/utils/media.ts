@@ -1,9 +1,18 @@
-import { Request } from 'express';
+﻿import { Request } from 'express';
 import fs from 'fs';
 import path from 'path';
 
 const FALLBACK_IMAGE_URL = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80';
 const FALLBACK_VIDEO_URL = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4';
+
+const normalizeProtocol = (value: string): string => {
+    const raw = value.trim();
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^https\/\//i.test(raw)) return raw.replace(/^https\/\//i, 'https://');
+    if (/^http\/\//i.test(raw)) return raw.replace(/^http\/\//i, 'http://');
+    if (/^\/\/[^/]/.test(raw)) return `https:${raw}`;
+    return raw;
+};
 
 const getFallbackByExtension = (input: string): string => {
     const lower = input.toLowerCase();
@@ -38,7 +47,7 @@ export const getPublicBaseUrl = (req: Request): string => {
 export const normalizeMediaUrl = (value: any, baseUrl: string): any => {
     if (typeof value !== 'string') return value;
 
-    const raw = value.trim();
+    const raw = normalizeProtocol(value);
     if (!raw) return raw;
 
     if (raw.startsWith('data:') || raw.startsWith('blob:')) return raw;
@@ -87,5 +96,3 @@ export const normalizeMediaUrl = (value: any, baseUrl: string): any => {
     if (!hasLocalUploadFile(uploadsPath)) return getFallbackByExtension(raw);
     return `${baseUrl}${uploadsPath}`;
 };
-
-
