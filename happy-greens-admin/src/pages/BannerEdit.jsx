@@ -88,7 +88,8 @@ const BannerEdit = () => {
             toast.success('Image uploaded successfully!', { id: 'upload' });
 
             // Update URL to the server's static path
-            const serverImageUrl = `${API_BASE_URL}${data.images[0]}`;
+            const uploaded = data.images[0];
+            const serverImageUrl = /^https?:\/\//i.test(uploaded) ? uploaded : `${API_BASE_URL}${uploaded}`;
             setFormData(prev => ({ ...prev, image_url: serverImageUrl }));
             setImagePreview(serverImageUrl);
         } catch (error) {
@@ -321,5 +322,9 @@ const BannerEdit = () => {
 };
 
 export default BannerEdit;
+
+
+
+
 
 

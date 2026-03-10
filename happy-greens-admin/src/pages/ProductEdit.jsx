@@ -92,7 +92,7 @@ export default function ProductEdit() {
             const data = await uploadImages(payload);
             const uploadedPaths = data.images;
             // Provide full paths combining URL domain
-            const fullPaths = uploadedPaths.map(p => `${API_BASE_URL}${p}`);
+            const fullPaths = uploadedPaths.map((p) => /^https?:\/\//i.test(p) ? p : `${API_BASE_URL}${p}`);
 
             setFormData(prev => ({
                 ...prev,
@@ -373,4 +373,6 @@ export default function ProductEdit() {
         </div>
     );
 }
+
+
 
