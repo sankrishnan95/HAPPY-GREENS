@@ -72,7 +72,7 @@ export const getWishlist = async (req: Request, res: Response) => {
        FROM wishlist_items wi
        JOIN products p ON p.id = wi.product_id
        LEFT JOIN categories c ON c.id = p.category_id
-       WHERE wi.wishlist_id = $1 AND p.is_deleted = false AND p.is_active = true
+       WHERE wi.wishlist_id = $1 AND p.is_deleted = false AND COALESCE(p.is_active, true) = true
        ORDER BY wi.created_at DESC`,
       [wishlistId]
     );
@@ -152,3 +152,4 @@ export const removeFromWishlist = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Unable to remove from wishlist' });
   }
 };
+

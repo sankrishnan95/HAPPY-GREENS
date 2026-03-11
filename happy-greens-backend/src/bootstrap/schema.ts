@@ -1,9 +1,15 @@
-﻿import { pool } from '../db';
+import { pool } from '../db';
 
 export const ensureProductImagesColumn = async (): Promise<void> => {
     await pool.query(`
         ALTER TABLE products
         ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb
+    `);
+
+    await pool.query(`
+        UPDATE products
+        SET is_active = TRUE
+        WHERE is_active IS NULL
     `);
 
     await pool.query(`
@@ -155,3 +161,5 @@ export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void
     const unassigned = await pool.query('SELECT COUNT(*)::int AS count FROM products WHERE category_id IS NULL');
     console.log(`[Schema Bootstrap] categories ensured and product category backfill done (unassigned: ${unassigned.rows[0]?.count ?? 0})`);
 };
+
+
