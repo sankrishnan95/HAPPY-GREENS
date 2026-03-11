@@ -17,7 +17,12 @@ interface Product {
     stock?: number;
 }
 
-const ProductCard = ({ product }: { product: Product }) => {
+interface ProductCardProps {
+    product: Product;
+    onWishlistChange?: (productId: number, isWishlisted: boolean) => void;
+}
+
+const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const { cart, user, wishlistIds, addToCart, removeFromCart, updateQuantity, addWishlistItem, removeWishlistItem } = useStore((state) => ({
         cart: state.cart,
         user: state.user,
@@ -55,10 +60,12 @@ const ProductCard = ({ product }: { product: Product }) => {
             if (isWishlisted) {
                 removeWishlistItem(product.id);
                 await removeFromWishlist(product.id);
+                onWishlistChange?.(product.id, false);
                 toast.success('Removed from wishlist');
             } else {
                 addWishlistItem(product.id);
                 await addToWishlist(product.id);
+                onWishlistChange?.(product.id, true);
                 toast.success('Added to wishlist');
             }
         } catch (error: any) {
@@ -165,5 +172,3 @@ const ProductCard = ({ product }: { product: Product }) => {
 };
 
 export default ProductCard;
-
-

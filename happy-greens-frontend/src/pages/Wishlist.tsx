@@ -41,6 +41,12 @@ const Wishlist = () => {
         }
     };
 
+    const handleWishlistChange = (productId: number, isWishlisted: boolean) => {
+        if (!isWishlisted) {
+            setItems((prev) => prev.filter((item) => item.id !== productId));
+        }
+    };
+
     if (!user) {
         return (
             <div className="max-w-xl mx-auto text-center py-16">
@@ -76,7 +82,7 @@ const Wishlist = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {items.map((product) => (
                         <div key={product.id} className="relative">
-                            <ProductCard product={product} />
+                            <ProductCard product={product} onWishlistChange={handleWishlistChange} />
                             <button
                                 onClick={() => handleRemove(product.id)}
                                 className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-white/90 border border-rose-200 text-rose-600 hover:bg-rose-50"
@@ -92,4 +98,3 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
-
