@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { pool } from '../db';
 
 /**
@@ -505,8 +505,19 @@ export const getDashboardAnalytics = async (req: Request, res: Response) => {
             WHERE status != 'cancelled' ${dateConstraint}
         `);
 
+        const todayMetricsRes = await pool.query(`
+            SELECT
+                COUNT(id) as today_orders,
+                COALESCE(SUM(total_amount), 0) as today_revenue
+            FROM orders
+            WHERE status != 'cancelled'
+              AND DATE(created_at) = CURRENT_DATE
+        `);
+
         const totalOrders = parseInt(metricsRes.rows[0].total_orders) || 0;
         const totalRevenue = parseFloat(metricsRes.rows[0].total_revenue) || 0;
+        const todayOrders = parseInt(todayMetricsRes.rows[0].today_orders) || 0;
+        const todayRevenue = parseFloat(todayMetricsRes.rows[0].today_revenue) || 0;
         const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders) : 0;
         const avgOrdersPerDay = totalOrders / daysToDivide;
         const avgSalesPerDay = totalRevenue / daysToDivide;
@@ -573,6 +584,8 @@ export const getDashboardAnalytics = async (req: Request, res: Response) => {
             metrics: {
                 totalOrders,
                 totalRevenue,
+                todayOrders,
+                todayRevenue,
                 avgOrderValue,
                 avgOrdersPerDay,
                 avgSalesPerDay,
@@ -588,3 +601,9 @@ export const getDashboardAnalytics = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error calculating dashboard analytics' });
     }
 };
+
+
+
+
+
+

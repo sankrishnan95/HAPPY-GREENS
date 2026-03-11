@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { DollarSign, ShoppingBag, Users, AlertTriangle } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
-import { getRevenueAnalytics, getOrdersAnalytics, getCustomerAnalytics, getProductAnalytics } from '../services/analytics.service';
+import { getDashboardAnalytics, getCustomerAnalytics, getProductAnalytics } from '../services/analytics.service';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -18,15 +19,14 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [revenueRes, ordersRes, customersRes, productsRes] = await Promise.all([
-        getRevenueAnalytics(),
-        getOrdersAnalytics(),
+      const [dashboardRes, customersRes, productsRes] = await Promise.all([
+        getDashboardAnalytics('7'),
         getCustomerAnalytics(),
         getProductAnalytics(),
       ]);
 
-      const todayRevenue = revenueRes.data.revenue_by_day?.[0]?.revenue || revenueRes.data.total_revenue || 0;
-      const todayOrders = ordersRes.data.orders_by_day?.[0]?.count || ordersRes.data.total_orders || 0;
+      const todayRevenue = dashboardRes.data.metrics?.todayRevenue || 0;
+      const todayOrders = dashboardRes.data.metrics?.todayOrders || 0;
       const lowStockCount = productsRes.data.low_stock_products?.length || 0;
 
       setStats({
@@ -91,30 +91,30 @@ export default function Dashboard() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a
-            href="/orders"
+          <Link
+            to="/orders"
             className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-primary-50 transition-colors"
           >
             <ShoppingBag className="w-8 h-8 text-primary mb-2" />
             <h3 className="font-semibold text-gray-900">Manage Orders</h3>
             <p className="text-sm text-gray-600 mt-1">View and process orders</p>
-          </a>
-          <a
-            href="/products"
+          </Link>
+          <Link
+            to="/products"
             className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-primary-50 transition-colors"
           >
             <AlertTriangle className="w-8 h-8 text-orange-600 mb-2" />
             <h3 className="font-semibold text-gray-900">Check Inventory</h3>
             <p className="text-sm text-gray-600 mt-1">Monitor stock levels</p>
-          </a>
-          <a
-            href="/reports"
+          </Link>
+          <Link
+            to="/analytics"
             className="p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-primary-50 transition-colors"
           >
             <DollarSign className="w-8 h-8 text-green-600 mb-2" />
             <h3 className="font-semibold text-gray-900">View Reports</h3>
             <p className="text-sm text-gray-600 mt-1">Analytics and insights</p>
-          </a>
+          </Link>
         </div>
       </div>
     </div>
