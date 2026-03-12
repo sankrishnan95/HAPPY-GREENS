@@ -58,7 +58,14 @@ export const ensureOperationsSchema = async (): Promise<void> => {
     await pool.query(`
         ALTER TABLE orders
         ADD COLUMN IF NOT EXISTS points_earned INTEGER NOT NULL DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS points_used INTEGER NOT NULL DEFAULT 0
+        ADD COLUMN IF NOT EXISTS points_used INTEGER NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS client_order_token VARCHAR(64)
+    `);
+
+    await pool.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_client_order_token
+        ON orders(user_id, client_order_token)
+        WHERE client_order_token IS NOT NULL
     `);
 
     await pool.query(`
@@ -161,5 +168,3 @@ export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void
     const unassigned = await pool.query('SELECT COUNT(*)::int AS count FROM products WHERE category_id IS NULL');
     console.log(`[Schema Bootstrap] categories ensured and product category backfill done (unassigned: ${unassigned.rows[0]?.count ?? 0})`);
 };
-
-

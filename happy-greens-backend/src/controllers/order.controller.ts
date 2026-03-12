@@ -1,53 +1,76 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
 
+const getExistingOrderByToken = async (userId: number, clientOrderToken: string) => {
+    const existing = await pool.query(
+        'SELECT id, total_amount, points_used FROM orders WHERE user_id = $1 AND client_order_token = $2 LIMIT 1',
+        [userId, clientOrderToken]
+    );
+
+    return existing.rows[0] || null;
+};
+
 export const createOrder = async (req: Request, res: Response) => {
     // @ts-ignore
     const userId = req.user?.id;
-    const { items, totalAmount, shippingAddress, paymentIntentId, paymentMethod, pointsUsed = 0 } = req.body;
+    const {
+        items,
+        totalAmount,
+        shippingAddress,
+        paymentIntentId,
+        paymentMethod,
+        pointsUsed = 0,
+        clientOrderToken,
+    } = req.body;
+
+    const sanitizedClientOrderToken = typeof clientOrderToken === 'string' && clientOrderToken.trim().length > 0
+        ? clientOrderToken.trim().slice(0, 64)
+        : null;
+
+    if (sanitizedClientOrderToken) {
+        const existingOrder = await getExistingOrderByToken(userId, sanitizedClientOrderToken);
+        if (existingOrder) {
+            return res.status(200).json({
+                orderId: existingOrder.id,
+                message: 'Order already created',
+                pointsUsed: Number(existingOrder.points_used || 0),
+                discount: Number(existingOrder.points_used || 0),
+                finalTotal: Number(existingOrder.total_amount),
+                duplicate: true,
+            });
+        }
+    }
 
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        // ── Loyalty Points Redemption Validation ────────────────────
         let finalTotal = Number(totalAmount);
         let validatedPointsUsed = 0;
 
         if (pointsUsed > 0) {
-            // Fetch current loyalty balance
             const userRes = await client.query(
                 'SELECT loyalty_points FROM users WHERE id = $1',
                 [userId]
             );
             const availablePoints = userRes.rows[0]?.loyalty_points || 0;
 
-            // Cap: cannot use more than available, and max 50% discount
             const maxRedeemable = Math.floor(finalTotal * 0.5);
             validatedPointsUsed = Math.min(pointsUsed, availablePoints, maxRedeemable);
 
             if (validatedPointsUsed > 0) {
                 finalTotal = Math.max(0, finalTotal - validatedPointsUsed);
-                // Deduct from user immediately
-                await client.query(
-                    `UPDATE users
-                     SET loyalty_points = loyalty_points - $1,
-                         total_points_redeemed = total_points_redeemed + $1
-                     WHERE id = $2`,
-                    [validatedPointsUsed, userId]
-                );
             }
         }
-        // ── End Loyalty Points Validation ───────────────────────────
 
         const orderStatus = paymentMethod === 'cod' ? 'placed' : 'paid';
 
         const orderRes = await client.query(
             `INSERT INTO orders
-               (user_id, total_amount, status, payment_method, payment_intent_id, shipping_address, points_used)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+               (user_id, total_amount, status, payment_method, payment_intent_id, shipping_address, points_used, client_order_token)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING id`,
-            [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify(shippingAddress), validatedPointsUsed]
+            [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify(shippingAddress), validatedPointsUsed, sanitizedClientOrderToken]
         );
         const orderId = orderRes.rows[0].id;
 
@@ -58,14 +81,20 @@ export const createOrder = async (req: Request, res: Response) => {
             );
         }
 
-        // Log initial order placement in order_status_history
         await client.query(
             'INSERT INTO order_status_history (order_id, old_status, new_status, notes) VALUES ($1, $2, $3, $4)',
             [orderId, null, orderStatus, 'Order placed by customer']
         );
 
-        // Record loyalty redemption transaction
         if (validatedPointsUsed > 0) {
+            await client.query(
+                `UPDATE users
+                 SET loyalty_points = loyalty_points - $1,
+                     total_points_redeemed = total_points_redeemed + $1
+                 WHERE id = $2`,
+                [validatedPointsUsed, userId]
+            );
+
             await client.query(
                 `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
                  VALUES ($1, $2, 'redeemed', $3, $4)`,
@@ -73,7 +102,6 @@ export const createOrder = async (req: Request, res: Response) => {
             );
         }
 
-        // Clear cart
         await client.query('DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = $1)', [userId]);
 
         await client.query('COMMIT');
@@ -82,10 +110,25 @@ export const createOrder = async (req: Request, res: Response) => {
             message: 'Order created successfully',
             pointsUsed: validatedPointsUsed,
             discount: validatedPointsUsed,
-            finalTotal
+            finalTotal,
         });
-    } catch (error) {
+    } catch (error: any) {
         await client.query('ROLLBACK');
+
+        if (error?.code === '23505' && sanitizedClientOrderToken) {
+            const existingOrder = await getExistingOrderByToken(userId, sanitizedClientOrderToken);
+            if (existingOrder) {
+                return res.status(200).json({
+                    orderId: existingOrder.id,
+                    message: 'Order already created',
+                    pointsUsed: Number(existingOrder.points_used || 0),
+                    discount: Number(existingOrder.points_used || 0),
+                    finalTotal: Number(existingOrder.total_amount),
+                    duplicate: true,
+                });
+            }
+        }
+
         console.error(error);
         res.status(500).json({ message: 'Server error' });
     } finally {
@@ -110,7 +153,6 @@ export const getOrderById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
-        // Fetch order — ensure it belongs to the authenticated user
         const orderResult = await pool.query(
             'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
             [id, userId]
@@ -122,7 +164,6 @@ export const getOrderById = async (req: Request, res: Response) => {
 
         const order = orderResult.rows[0];
 
-        // Fetch order items with product images
         const itemsResult = await pool.query(
             `SELECT oi.*, p.image_url
              FROM order_items oi
@@ -131,7 +172,6 @@ export const getOrderById = async (req: Request, res: Response) => {
             [id]
         );
 
-        // Fetch timeline from order_status_history
         const timelineResult = await pool.query(
             `SELECT osh.id, osh.old_status, osh.new_status, osh.notes, osh.changed_at
              FROM order_status_history osh

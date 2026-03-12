@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { createOrder } from '../services/order.service';
@@ -11,6 +11,11 @@ const Checkout = () => {
     const navigate = useNavigate();
     const { cart, user, clearCart } = useStore();
     const subtotal = cart.reduce((acc, item) => acc + (item.discountPrice || item.price) * item.quantity, 0);
+    const clientOrderTokenRef = useRef(
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `order_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+    );
 
     const [formData, setFormData] = useState({
         address: '',
@@ -22,6 +27,7 @@ const Checkout = () => {
     // Loyalty state
     const [loyaltyPoints, setLoyaltyPoints] = useState(0);
     const [pointsToUse, setPointsToUse] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const maxRedeemable = Math.min(loyaltyPoints, Math.floor(subtotal * 0.5));
     const discount = Math.min(pointsToUse, maxRedeemable);
@@ -37,6 +43,7 @@ const Checkout = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting) return;
         if (!user) {
             alert('Please login to checkout');
             navigate('/login');
@@ -44,6 +51,7 @@ const Checkout = () => {
         }
 
         try {
+            setIsSubmitting(true);
             const orderData = {
                 items: cart.map(item => ({
                     product_id: item.id,
@@ -59,7 +67,8 @@ const Checkout = () => {
                 },
                 paymentMethod: formData.paymentMethod,
                 paymentIntentId: formData.paymentMethod === 'cod' ? null : 'mock_payment_id_' + Date.now(),
-                pointsUsed: discount
+                pointsUsed: discount,
+                clientOrderToken: clientOrderTokenRef.current
             };
 
             await createOrder(orderData);
@@ -73,6 +82,7 @@ const Checkout = () => {
         } catch (error) {
             console.error('Checkout error:', error);
             toast.error('Failed to place order. Please try again.');
+            setIsSubmitting(false);
         }
     };
 
@@ -218,8 +228,10 @@ const Checkout = () => {
                         type="submit"
                         variant="primary"
                         className="w-full py-4 text-lg shadow-lg shadow-green-200"
+                        isLoading={isSubmitting}
+                        disabled={isSubmitting}
                     >
-                        Pay ₹{total.toFixed(2)}
+                        {isSubmitting ? 'Processing your order...' : <>Pay {String.fromCharCode(8377)}{total.toFixed(2)}</>}
                     </Button>
                 </div>
             </form>
