@@ -106,7 +106,7 @@ const Navbar = () => {
 
                             <Link to="/" className="flex min-w-0 items-center gap-2.5" onClick={() => setMenuOpen(false)}>
                                 <OptimizedImage
-                                    src="/logo.png"
+                                    src="/happy-greens-logo.png"
                                     alt="Happy Greens"
                                     className="h-12 w-12 object-contain sm:h-14 sm:w-14"
                                     width={56}
@@ -232,3 +232,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
