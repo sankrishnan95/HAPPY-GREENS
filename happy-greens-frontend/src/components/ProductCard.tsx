@@ -80,9 +80,9 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     };
 
     return (
-        <div className="mobile-app-card group flex h-full flex-col overflow-hidden rounded-[1.5rem]">
+        <div className="mobile-app-card group flex h-full flex-col overflow-hidden rounded-[1.35rem]">
             <Link to={`/product/${product.id}`} className="relative block">
-                <div className="relative aspect-[0.92] overflow-hidden bg-[#f3f8ee]">
+                <div className="relative aspect-square overflow-hidden bg-[#f3f8ee]">
                     <img
                         loading="lazy"
                         src={primaryImage}
@@ -96,7 +96,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                             e.preventDefault();
                             handleWishlistToggle();
                         }}
-                        className={`safe-touch absolute left-2 top-2 inline-flex items-center justify-center rounded-2xl border shadow-sm backdrop-blur ${isWishlisted
+                        className={`safe-touch absolute left-2 top-2 inline-flex h-9 min-h-0 w-9 min-w-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur ${isWishlisted
                             ? 'border-rose-500 bg-rose-500 text-white'
                             : 'border-white/80 bg-white/90 text-slate-500'
                             }`}
@@ -115,15 +115,15 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                 </div>
             </Link>
 
-            <div className="flex flex-1 flex-col gap-2 p-3">
+            <div className="flex flex-1 flex-col gap-2.5 p-3">
                 {product.category_name && (
-                    <span className="w-fit rounded-full bg-[#eef7e6] px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-green-700">
+                    <span className="max-w-full self-start rounded-full bg-[#eef7e6] px-2.5 py-1 text-[0.68rem] font-semibold text-green-700 whitespace-nowrap">
                         {product.category_name}
                     </span>
                 )}
 
-                <Link to={`/product/${product.id}`} className="block min-h-[2.8rem]">
-                    <h3 className="line-clamp-2 text-[0.95rem] font-semibold leading-snug text-slate-900 break-normal whitespace-normal" title={product.name}>
+                <Link to={`/product/${product.id}`} className="block h-[2.7rem] overflow-hidden">
+                    <h3 className="line-clamp-2 text-[0.94rem] font-semibold leading-[1.35] text-slate-900 [word-break:normal]" title={product.name}>
                         {product.name}
                     </h3>
                 </Link>
@@ -132,13 +132,13 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                     <div className="min-w-0">
                         {product.discountPrice ? (
                             <div className="flex flex-col">
-                                <span className="text-[0.72rem] text-slate-400 line-through">Rs. {product.price}</span>
-                                <span className="text-[1rem] font-bold text-green-700">Rs. {product.discountPrice}</span>
+                                <span className="text-[0.72rem] leading-none text-slate-400 line-through">Rs. {product.price}</span>
+                                <span className="mt-1 text-[1rem] font-bold leading-none text-green-700">Rs. {product.discountPrice}</span>
                             </div>
                         ) : (
-                            <span className="text-[1rem] font-bold text-slate-900">Rs. {product.price}</span>
+                            <span className="text-[1rem] font-bold leading-none text-slate-900">Rs. {product.price}</span>
                         )}
-                        <p className="mt-0.5 text-[0.72rem] text-slate-500">per unit</p>
+                        <p className="mt-1 text-[0.72rem] leading-none text-slate-500">per unit</p>
                     </div>
 
                     {quantity > 0 ? (
@@ -146,15 +146,15 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                             <button
                                 type="button"
                                 onClick={handleDecrement}
-                                className="safe-touch inline-flex h-9 w-9 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"
                             >
                                 <Minus className="h-4 w-4" />
                             </button>
-                            <span className="w-7 text-center text-sm font-bold text-green-800">{quantity}</span>
+                            <span className="w-6 text-center text-sm font-bold text-green-800">{quantity}</span>
                             <button
                                 type="button"
                                 onClick={handleIncrement}
-                                className="safe-touch inline-flex h-9 w-9 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"
                             >
                                 <Plus className="h-4 w-4" />
                             </button>
@@ -163,7 +163,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         <button
                             type="button"
                             onClick={() => addToCart(product)}
-                            className="safe-touch inline-flex h-10 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700"
+                            className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700"
                             title="Add to cart"
                         >
                             <ShoppingCart className="h-4 w-4" />
@@ -174,7 +174,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                 <button
                     type="button"
                     onClick={() => addToCart(product)}
-                    className="safe-touch mt-1 inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-slate-900 px-3 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                    className="mt-auto inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[0.95rem] bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
                     <ShoppingCart className="h-4 w-4" />
                     {quantity > 0 ? 'Add one more' : 'Add to cart'}
@@ -185,4 +185,3 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
 };
 
 export default ProductCard;
-
