@@ -5,6 +5,7 @@ import Badge from './Badge';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
 import { normalizeImageUrl } from '../utils/image';
+import OptimizedImage from './OptimizedImage';
 
 interface Product {
     id: number;
@@ -39,16 +40,11 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const isWishlisted = wishlistIds.includes(product.id);
     const primaryImage = normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url);
 
-    const handleIncrement = () => {
-        addToCart(product);
-    };
+    const handleIncrement = () => addToCart(product);
 
     const handleDecrement = () => {
-        if (quantity > 1) {
-            updateQuantity(product.id, quantity - 1);
-        } else {
-            removeFromCart(product.id);
-        }
+        if (quantity > 1) updateQuantity(product.id, quantity - 1);
+        else removeFromCart(product.id);
     };
 
     const handleWishlistToggle = async () => {
@@ -70,11 +66,8 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                 toast.success('Added to wishlist');
             }
         } catch (error: any) {
-            if (isWishlisted) {
-                addWishlistItem(product.id);
-            } else {
-                removeWishlistItem(product.id);
-            }
+            if (isWishlisted) addWishlistItem(product.id);
+            else removeWishlistItem(product.id);
             toast.error(error?.response?.data?.message || 'Unable to update wishlist');
         }
     };
@@ -83,25 +76,17 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
         <div className="mobile-app-card group flex h-full flex-col overflow-hidden rounded-[1.35rem]">
             <Link to={`/product/${product.id}`} className="relative block">
                 <div className="relative aspect-square overflow-hidden bg-[#f3f8ee]">
-                    <img
-                        loading="lazy"
+                    <OptimizedImage
                         src={primaryImage}
                         alt={product.name}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        width={320}
+                        height={320}
+                        aspectRatio="1 / 1"
+                        sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
                     />
 
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            handleWishlistToggle();
-                        }}
-                        className={`safe-touch absolute left-2 top-2 inline-flex h-9 min-h-0 w-9 min-w-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur ${isWishlisted
-                            ? 'border-rose-500 bg-rose-500 text-white'
-                            : 'border-white/80 bg-white/90 text-slate-500'
-                            }`}
-                        title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-                    >
+                    <button type="button" onClick={(e) => { e.preventDefault(); handleWishlistToggle(); }} className={`safe-touch absolute left-2 top-2 inline-flex h-9 min-h-0 w-9 min-w-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur ${isWishlisted ? 'border-rose-500 bg-rose-500 text-white' : 'border-white/80 bg-white/90 text-slate-500'}`} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
                         <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-white' : ''}`} />
                     </button>
 
@@ -123,9 +108,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                 )}
 
                 <Link to={`/product/${product.id}`} className="block h-[2.7rem] overflow-hidden">
-                    <h3 className="line-clamp-2 text-[0.94rem] font-semibold leading-[1.35] text-slate-900 [word-break:normal]" title={product.name}>
-                        {product.name}
-                    </h3>
+                    <h3 className="line-clamp-2 text-[0.94rem] font-semibold leading-[1.35] text-slate-900 [word-break:normal]" title={product.name}>{product.name}</h3>
                 </Link>
 
                 <div className="flex items-end justify-between gap-2">
@@ -143,39 +126,16 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
 
                     {quantity > 0 ? (
                         <div className="flex items-center rounded-full border border-green-200 bg-green-50 p-1">
-                            <button
-                                type="button"
-                                onClick={handleDecrement}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"
-                            >
-                                <Minus className="h-4 w-4" />
-                            </button>
+                            <button type="button" onClick={handleDecrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"><Minus className="h-4 w-4" /></button>
                             <span className="w-6 text-center text-sm font-bold text-green-800">{quantity}</span>
-                            <button
-                                type="button"
-                                onClick={handleIncrement}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"
-                            >
-                                <Plus className="h-4 w-4" />
-                            </button>
+                            <button type="button" onClick={handleIncrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"><Plus className="h-4 w-4" /></button>
                         </div>
                     ) : (
-                        <button
-                            type="button"
-                            onClick={() => addToCart(product)}
-                            className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700"
-                            title="Add to cart"
-                        >
-                            <ShoppingCart className="h-4 w-4" />
-                        </button>
+                        <button type="button" onClick={() => addToCart(product)} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><ShoppingCart className="h-4 w-4" /></button>
                     )}
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => addToCart(product)}
-                    className="mt-auto inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[0.95rem] bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
+                <button type="button" onClick={() => addToCart(product)} className="mt-auto inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[0.95rem] bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
                     <ShoppingCart className="h-4 w-4" />
                     {quantity > 0 ? 'Add one more' : 'Add to cart'}
                 </button>

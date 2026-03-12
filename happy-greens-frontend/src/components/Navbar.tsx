@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getWishlist } from '../services/wishlist.service';
 import { API_BASE_URL } from '../config/api';
-import { normalizeImageUrl } from '../utils/image';
+import OptimizedImage from './OptimizedImage';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -58,10 +58,20 @@ const Navbar = () => {
     }, [searchQuery]);
 
     useEffect(() => {
-        fetch('https://get.geojs.io/v1/ip/geo.json')
-            .then((res) => res.json())
-            .then((data) => setLocation(data.city))
-            .catch(() => setLocation(''));
+        const idleFetch = () => {
+            fetch('https://get.geojs.io/v1/ip/geo.json')
+                .then((res) => res.json())
+                .then((data) => setLocation(data.city))
+                .catch(() => setLocation(''));
+        };
+
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            const idleId = (window as any).requestIdleCallback(idleFetch, { timeout: 2500 });
+            return () => (window as any).cancelIdleCallback?.(idleId);
+        }
+
+        const timeout = setTimeout(idleFetch, 1500);
+        return () => clearTimeout(timeout);
     }, []);
 
     const handleSearch = (e: React.FormEvent) => {
@@ -96,7 +106,7 @@ const Navbar = () => {
 
                             <Link to="/" className="flex min-w-0 items-center gap-2.5" onClick={() => setMenuOpen(false)}>
                                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-green-600 to-lime-400 shadow-[0_10px_24px_rgba(34,197,94,0.28)]">
-                                    <img src="/logo.png" alt="Happy Greens" className="h-8 w-8 rounded-xl object-cover" />
+                                    <OptimizedImage src="/logo-128.png" alt="Happy Greens" className="h-8 w-8 rounded-xl object-cover" width={32} height={32} loading="eager" fetchPriority="high" decoding="sync" />
                                 </div>
                                 <div className="min-w-0">
                                     <p className="truncate text-[1.05rem] font-display font-bold leading-none text-gradient">Happy Greens</p>
@@ -121,11 +131,7 @@ const Navbar = () => {
                                 </Link>
                             )}
 
-                            <Link
-                                to="/cart"
-                                className="safe-touch relative inline-flex items-center justify-center rounded-2xl bg-slate-900 text-white shadow-[0_10px_22px_rgba(15,23,42,0.2)]"
-                                aria-label="Cart"
-                            >
+                            <Link to="/cart" className="safe-touch relative inline-flex items-center justify-center rounded-2xl bg-slate-900 text-white shadow-[0_10px_22px_rgba(15,23,42,0.2)]" aria-label="Cart">
                                 <ShoppingCart className="h-5 w-5" />
                                 {cartCount > 0 && (
                                     <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lime-400 px-1 text-[10px] font-bold text-slate-900">
@@ -145,64 +151,25 @@ const Navbar = () => {
                             </div>
                         </div>
 
-                        <Link
-                            to={user ? '/profile' : '/login'}
-                            className="safe-touch inline-flex items-center gap-2 rounded-2xl border border-[#dbe7d0] bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm"
-                        >
+                        <Link to={user ? '/profile' : '/login'} className="safe-touch inline-flex items-center gap-2 rounded-2xl border border-[#dbe7d0] bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm">
                             <User className="h-4 w-4" />
                             <span>{user ? 'Account' : 'Login'}</span>
                         </Link>
                     </div>
 
-                    <div
-                        className="mobile-search-shell"
-                        onBlur={(e) => {
-                            if (!e.currentTarget.contains(e.relatedTarget)) {
-                                setShowSuggestions(false);
-                            }
-                        }}
-                    >
+                    <div className="mobile-search-shell" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setShowSuggestions(false); }}>
                         <form onSubmit={handleSearch} className="relative">
                             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    setShowSuggestions(true);
-                                }}
-                                onFocus={() => {
-                                    if (suggestions.length > 0) setShowSuggestions(true);
-                                }}
-                                placeholder="Search vegetables, fruits, milk..."
-                                className="h-12 w-full bg-transparent pl-10 pr-24 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
-                            />
-                            <button type="submit" className="absolute right-1.5 top-1/2 inline-flex h-9 -translate-y-1/2 items-center justify-center rounded-full bg-green-600 px-3 text-xs font-bold text-white shadow-sm">
-                                Search
-                            </button>
+                            <input type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }} onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }} placeholder="Search vegetables, fruits, milk..." className="h-12 w-full bg-transparent pl-10 pr-24 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400" />
+                            <button type="submit" className="absolute right-1.5 top-1/2 inline-flex h-9 -translate-y-1/2 items-center justify-center rounded-full bg-green-600 px-3 text-xs font-bold text-white shadow-sm">Search</button>
                         </form>
 
                         {showSuggestions && suggestions.length > 0 && (
                             <div className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-50 overflow-hidden rounded-[1.25rem] border border-[#e4ecda] bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)]">
                                 {suggestions.map((product) => (
-                                    <button
-                                        key={product.id}
-                                        type="button"
-                                        onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            navigate(`/product/${product.id}`);
-                                            setShowSuggestions(false);
-                                            setSearchQuery('');
-                                        }}
-                                        className="flex w-full items-center gap-3 border-b border-slate-100 px-3 py-3 text-left last:border-0 hover:bg-slate-50"
-                                    >
+                                    <button key={product.id} type="button" onMouseDown={(e) => { e.preventDefault(); navigate(`/product/${product.id}`); setShowSuggestions(false); setSearchQuery(''); }} className="flex w-full items-center gap-3 border-b border-slate-100 px-3 py-3 text-left last:border-0 hover:bg-slate-50">
                                         <div className="h-12 w-12 overflow-hidden rounded-2xl bg-[#f4f8ef]">
-                                            <img
-                                                loading="lazy"
-                                                src={normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url)}
-                                                alt={product.name}
-                                                className="h-full w-full object-cover"
-                                            />
+                                            <OptimizedImage src={product.images && product.images.length > 0 ? product.images[0] : product.image_url} alt={product.name} className="h-full w-full object-cover" width={48} height={48} />
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-semibold text-slate-900">{product.name}</p>
@@ -225,10 +192,7 @@ const Navbar = () => {
                             <Link to="/shop" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-green-700">Shop</Link>
                             {user && <Link to="/wishlist" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-rose-600">Wishlist</Link>}
                             {user && <Link to="/rewards" className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-amber-600"><Star className="h-4 w-4" />Rewards</Link>}
-                            <Link to={user ? '/profile' : '/login'} className="inline-flex items-center gap-2 rounded-full border border-[#dbe7d0] bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-                                <User className="h-4 w-4" />
-                                <span>{user ? user.full_name : 'Login'}</span>
-                            </Link>
+                            <Link to={user ? '/profile' : '/login'} className="inline-flex items-center gap-2 rounded-full border border-[#dbe7d0] bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"><User className="h-4 w-4" /><span>{user ? user.full_name : 'Login'}</span></Link>
                         </div>
                     </div>
                 </div>
@@ -236,28 +200,18 @@ const Navbar = () => {
 
             {menuOpen && (
                 <div className="fixed inset-0 z-[60] bg-slate-950/45 backdrop-blur-sm md:hidden" onClick={() => setMenuOpen(false)}>
-                    <aside
-                        className="mobile-app-card absolute left-3 right-3 top-3 overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                    <aside className="mobile-app-card absolute left-3 right-3 top-3 overflow-hidden" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
                             <div>
                                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-green-700/70">Menu</p>
                                 <p className="mt-1 text-lg font-display font-bold text-slate-900">Browse Happy Greens</p>
                             </div>
-                            <button type="button" onClick={() => setMenuOpen(false)} className="safe-touch inline-flex items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                                <X className="h-5 w-5" />
-                            </button>
+                            <button type="button" onClick={() => setMenuOpen(false)} className="safe-touch inline-flex items-center justify-center rounded-2xl bg-slate-100 text-slate-700"><X className="h-5 w-5" /></button>
                         </div>
 
                         <div className="space-y-2 px-3 py-3">
                             {quickLinks.map((item) => (
-                                <Link
-                                    key={item.to}
-                                    to={item.to}
-                                    onClick={() => setMenuOpen(false)}
-                                    className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-semibold text-slate-800 transition hover:bg-[#f5f8f0]"
-                                >
+                                <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)} className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-semibold text-slate-800 transition hover:bg-[#f5f8f0]">
                                     <span>{item.label}</span>
                                     <ChevronRight className="h-4 w-4 text-slate-400" />
                                 </Link>
@@ -271,4 +225,5 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
 
