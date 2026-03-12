@@ -5,14 +5,33 @@
 @layer base {
   * {
     @apply border-gray-200;
+    box-sizing: border-box;
   }
 
   html {
     scroll-behavior: smooth;
+    font-size: 14px;
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    @apply bg-[#f5f7f2] text-gray-900 font-sans antialiased;
+    overflow-x: hidden;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  button,
+  [role='button'],
+  a.inline-flex,
+  a.flex {
+    min-height: 44px;
   }
 
   h1,
@@ -22,58 +41,108 @@
   h5,
   h6 {
     @apply font-display;
+    overflow-wrap: anywhere;
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 4vw, 3.75rem);
+    line-height: 1.05;
+  }
+
+  h2 {
+    font-size: clamp(1.25rem, 3.6vw, 2.75rem);
+    line-height: 1.1;
+  }
+
+  h3 {
+    font-size: clamp(1rem, 3vw, 1.6rem);
+    line-height: 1.2;
+  }
+
+  p,
+  span,
+  a,
+  li,
+  input,
+  button,
+  select,
+  textarea {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+    overflow-wrap: anywhere;
   }
 }
 
 @layer components {
-
-  /* Glassmorphism effect */
   .glass {
-    @apply bg-white/80 backdrop-blur-md border border-white/20;
+    @apply border border-white/60 bg-white/90 backdrop-blur-xl;
   }
 
-  .glass-dark {
-    @apply bg-gray-900/80 backdrop-blur-md border border-gray-700/20;
+  .page-shell {
+    @apply mx-auto w-full max-w-7xl px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 lg:px-6 lg:py-6;
   }
 
-  /* Custom scrollbar */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  .mobile-app-card {
+    @apply rounded-[1.4rem] border border-[#e6ebdd] bg-white shadow-[0_10px_30px_rgba(59,130,86,0.08)];
   }
 
-  .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-gray-100 rounded-full;
+  .section-title {
+    @apply text-[1.25rem] font-display font-bold tracking-tight text-slate-900;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full hover:bg-gray-400;
+  .section-kicker {
+    @apply text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-green-700/70;
   }
 
-  /* Smooth transitions */
-  .transition-smooth {
-    @apply transition-all duration-300 ease-in-out;
+  .hero-banner {
+    width: 100%;
+    height: auto;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .hero-banner-media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .mobile-search-shell {
+    @apply relative overflow-hidden rounded-full border border-[#d9e7cf] bg-[#f7fbf3] shadow-inner;
+  }
+
+  .safe-touch {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
 
 @layer utilities {
-
-  /* Text gradient */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-700;
+    @apply bg-gradient-to-r from-green-700 via-green-500 to-lime-500 bg-clip-text text-transparent;
   }
 
-  .text-gradient-accent {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-orange to-accent-yellow;
+  .app-grid {
+    @apply grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4;
   }
 
-  /* Hover lift effect */
-  .hover-lift {
-    @apply transition-transform duration-300 hover:-translate-y-1;
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  /* Hover glow effect */
-  .hover-glow {
-    @apply transition-shadow duration-300 hover:shadow-glow;
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 16px;
   }
 }

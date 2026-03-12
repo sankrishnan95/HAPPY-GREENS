@@ -1,8 +1,8 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getProducts } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
-import { Filter } from 'lucide-react';
+import { Filter, SlidersHorizontal } from 'lucide-react';
 
 const categories = ['Fruits', 'Vegetables', 'Dairy', 'Staples', 'Snacks', 'Beverages'];
 
@@ -12,6 +12,7 @@ const Shop = () => {
     const [fetching, setFetching] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const [totalPages, setTotalPages] = useState(1);
+    const [showFilters, setShowFilters] = useState(false);
 
     const category = searchParams.get('category') || '';
     const q = searchParams.get('q') || '';
@@ -33,7 +34,6 @@ const Shop = () => {
 
     useEffect(() => {
         const fetchProducts = async () => {
-            // Only show skeleton loading on initial load
             if (products.length === 0) {
                 setLoading(true);
             } else {
@@ -41,16 +41,14 @@ const Shop = () => {
             }
 
             try {
-                // Try fetching from backend first
                 const res = await getProducts({ category, q, page, sort, limit: 12 });
                 setProducts(res.products);
                 setTotalPages(res.totalPages);
             } catch (error) {
                 console.log('Backend not reachable, using dummy data');
-                // Filter dummy data based on category
                 let filtered = DUMMY_PRODUCTS;
                 if (category) {
-                    filtered = DUMMY_PRODUCTS.filter(p => p.category_name.toLowerCase() === category.toLowerCase());
+                    filtered = DUMMY_PRODUCTS.filter((p) => p.category_name.toLowerCase() === category.toLowerCase());
                 }
                 // @ts-ignore
                 setProducts(filtered);
@@ -64,116 +62,150 @@ const Shop = () => {
         fetchProducts();
     }, [category, q, page, sort]);
 
-    const handleCategoryChange = (cat: string) => {
+    const updateParams = (updater: (params: URLSearchParams) => void) => {
         const newParams = new URLSearchParams(searchParams);
-        if (cat) newParams.set('category', cat.toLowerCase());
-        else newParams.delete('category');
-        newParams.set('page', '1');
+        updater(newParams);
         setSearchParams(newParams);
+    };
+
+    const handleCategoryChange = (cat: string) => {
+        updateParams((params) => {
+            if (cat) params.set('category', cat.toLowerCase());
+            else params.delete('category');
+            params.set('page', '1');
+        });
     };
 
     const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newParams = new URLSearchParams(searchParams);
-        if (e.target.value) newParams.set('sort', e.target.value);
-        else newParams.delete('sort');
-        newParams.set('page', '1');
-        setSearchParams(newParams);
+        updateParams((params) => {
+            if (e.target.value) params.set('sort', e.target.value);
+            else params.delete('sort');
+            params.set('page', '1');
+        });
     };
 
     const handlePageChange = (newPage: number) => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('page', String(newPage));
-        setSearchParams(newParams);
+        updateParams((params) => {
+            params.set('page', String(newPage));
+        });
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-8">
-            {/* Sidebar Filters */}
-            <aside className="w-full md:w-64 flex-shrink-0">
-                <div className="bg-gradient-soft p-6 rounded-3xl shadow-soft border border-gray-100 sticky top-24">
-                    <div className="flex items-center gap-2 mb-6">
-                        <Filter className="h-5 w-5 text-primary-600" />
-                        <h2 className="font-display font-bold text-xl text-gray-900">Filters</h2>
+        <div className="space-y-4">
+            <section className="mobile-app-card rounded-[1.8rem] p-4 md:p-5">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <p className="section-kicker">Browse products</p>
+                        <h1 className="mt-1 text-[1.45rem] font-display font-bold text-slate-900 md:text-[2rem]">
+                            {category ? category.charAt(0).toUpperCase() + category.slice(1) : q ? `Search: ${q}` : 'All groceries'}
+                        </h1>
+                        <p className="mt-1 text-sm text-slate-500">Fast-moving essentials arranged for mobile shopping.</p>
                     </div>
 
-                    <div className="mb-6">
-                        <h3 className="font-semibold mb-4 text-gray-700">Categories</h3>
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => handleCategoryChange('')}
-                                className={`block w-full text-left px-4 py-2.5 rounded-xl transition-all font-medium ${category === '' ? 'bg-gradient-primary text-white shadow-soft' : 'hover:bg-white hover:shadow-sm'}`}
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowFilters((prev) => !prev)}
+                            className="inline-flex min-h-[44px] items-center gap-2 rounded-[1rem] border border-[#d7e4cc] bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 md:hidden"
+                        >
+                            <Filter className="h-4 w-4" />
+                            Filters
+                        </button>
+
+                        <div className="inline-flex min-h-[44px] items-center gap-2 rounded-[1rem] border border-[#d7e4cc] bg-white px-3">
+                            <SlidersHorizontal className="h-4 w-4 text-slate-400" />
+                            <select
+                                value={sort}
+                                onChange={handleSortChange}
+                                className="h-11 bg-transparent pr-2 text-sm font-semibold text-slate-700 outline-none"
                             >
-                                All Products
-                            </button>
-                            {categories.map((cat) => (
-                                <button
-                                    key={cat}
-                                    onClick={() => handleCategoryChange(cat)}
-                                    className={`block w-full text-left px-4 py-2.5 rounded-xl transition-all font-medium ${category === cat.toLowerCase() ? 'bg-gradient-primary text-white shadow-soft' : 'hover:bg-white hover:shadow-sm'}`}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
+                                <option value="">Newest</option>
+                                <option value="price_asc">Price: Low to High</option>
+                                <option value="price_desc">Price: High to Low</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-            </aside>
+            </section>
 
-            {/* Product Grid */}
-            <div className="flex-1">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-4xl font-display font-bold text-gray-900">
-                        {category ? category.charAt(0).toUpperCase() + category.slice(1) : (q ? `Search Results for "${q}"` : 'All Products')}
-                    </h1>
-                    <select
-                        value={sort}
-                        onChange={handleSortChange}
-                        className="border-2 border-gray-200 rounded-xl px-5 py-2.5 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all font-medium"
+            <section className="space-y-3">
+                <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
+                    <button
+                        type="button"
+                        onClick={() => handleCategoryChange('')}
+                        className={`min-h-[40px] whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${category === '' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-[#d7e4cc]'}`}
                     >
-                        <option value="">Sort by: Newest</option>
-                        <option value="price_asc">Price: Low to High</option>
-                        <option value="price_desc">Price: High to Low</option>
-                    </select>
+                        All
+                    </button>
+                    {categories.map((cat) => (
+                        <button
+                            key={cat}
+                            type="button"
+                            onClick={() => handleCategoryChange(cat)}
+                            className={`min-h-[40px] whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${category === cat.toLowerCase() ? 'bg-green-600 text-white' : 'bg-white text-slate-700 border border-[#d7e4cc]'}`}
+                        >
+                            {cat}
+                        </button>
+                    ))}
                 </div>
 
-                {loading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {[...Array(8)].map((_, i) => (
-                            <div key={i} className="bg-gray-100 rounded-xl h-72 animate-pulse"></div>
+                <div className={`${showFilters ? 'block' : 'hidden'} rounded-[1.4rem] border border-[#e1ead8] bg-white p-3 md:hidden`}>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-green-700/70">Quick filter</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {categories.map((cat) => (
+                            <button
+                                key={`mobile-${cat}`}
+                                type="button"
+                                onClick={() => {
+                                    handleCategoryChange(cat);
+                                    setShowFilters(false);
+                                }}
+                                className={`rounded-[1rem] px-3 py-3 text-sm font-semibold ${category === cat.toLowerCase() ? 'bg-green-600 text-white' : 'bg-[#f5f8f1] text-slate-700'}`}
+                            >
+                                {cat}
+                            </button>
                         ))}
                     </div>
-                ) : (
-                    <>
-                        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8 transition-opacity duration-200 ${fetching ? 'opacity-50' : 'opacity-100'}`}>
-                            {products.map((product: any) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
+                </div>
+            </section>
 
-                        {/* Pagination */}
-                        <div className="flex justify-center gap-2">
-                            <button
-                                disabled={page === 1}
-                                onClick={() => handlePageChange(page - 1)}
-                                className="px-4 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50"
-                            >
-                                Previous
-                            </button>
-                            <span className="px-4 py-2 font-medium">Page {page} of {totalPages}</span>
-                            <button
-                                disabled={page === totalPages}
-                                onClick={() => handlePageChange(page + 1)}
-                                className="px-4 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50"
-                            >
-                                Next
-                            </button>
-                        </div>
-                    </>
-                )}
-            </div>
+            {loading ? (
+                <div className="app-grid">
+                    {[...Array(8)].map((_, i) => (
+                        <div key={i} className="h-64 animate-pulse rounded-[1.5rem] bg-[#eaf0e2]"></div>
+                    ))}
+                </div>
+            ) : (
+                <>
+                    <div className={`app-grid transition-opacity duration-200 ${fetching ? 'opacity-50' : 'opacity-100'}`}>
+                        {products.map((product: any) => (
+                            <ProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
+
+                    <div className="mobile-app-card flex items-center justify-between rounded-[1.5rem] px-4 py-3">
+                        <button
+                            type="button"
+                            disabled={page === 1}
+                            onClick={() => handlePageChange(page - 1)}
+                            className="min-h-[44px] rounded-[1rem] border border-[#d7e4cc] px-4 text-sm font-semibold text-slate-700 disabled:opacity-40"
+                        >
+                            Previous
+                        </button>
+                        <span className="text-sm font-semibold text-slate-600">Page {page} / {totalPages}</span>
+                        <button
+                            type="button"
+                            disabled={page === totalPages}
+                            onClick={() => handlePageChange(page + 1)}
+                            className="min-h-[44px] rounded-[1rem] border border-[#d7e4cc] px-4 text-sm font-semibold text-slate-700 disabled:opacity-40"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </>
+            )}
         </div>
     );
 };
 
 export default Shop;
-

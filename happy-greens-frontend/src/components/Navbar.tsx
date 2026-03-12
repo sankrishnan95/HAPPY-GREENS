@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShoppingCart, User, Menu, Search, MapPin, Star, Heart } from 'lucide-react';
+import { ShoppingCart, User, Search, MapPin, Star, Heart, Menu, X, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -21,6 +21,7 @@ const Navbar = () => {
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
         setSearchQuery(searchParams.get('q') || '');
@@ -42,6 +43,7 @@ const Navbar = () => {
             setSuggestions([]);
             return;
         }
+
         const timer = setTimeout(async () => {
             try {
                 const res = await axios.get(`${API_BASE_URL}/api/products?q=${encodeURIComponent(searchQuery)}&limit=5`);
@@ -51,17 +53,9 @@ const Navbar = () => {
                 console.error('Failed to fetch suggestions');
             }
         }, 300);
+
         return () => clearTimeout(timer);
     }, [searchQuery]);
-
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
-        } else {
-            navigate('/shop');
-        }
-    };
 
     useEffect(() => {
         fetch('https://get.geojs.io/v1/ip/geo.json')
@@ -70,186 +64,210 @@ const Navbar = () => {
             .catch(() => setLocation(''));
     }, []);
 
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        const trimmed = searchQuery.trim();
+        navigate(trimmed ? `/shop?q=${encodeURIComponent(trimmed)}` : '/shop');
+        setShowSuggestions(false);
+        setMenuOpen(false);
+    };
+
+    const quickLinks = [
+        { label: 'Shop', to: '/shop' },
+        ...(user ? [{ label: 'Rewards', to: '/rewards' }] : []),
+        ...(user ? [{ label: 'Wishlist', to: '/wishlist' }] : []),
+        { label: user ? 'Profile' : 'Login', to: user ? '/profile' : '/login' },
+    ];
+
     return (
-        <nav className="glass sticky top-0 z-50 shadow-soft">
-            <div className="container mx-auto px-4">
-                <div className="flex justify-between items-center h-16">
-                    <Link to="/" className="flex items-center gap-2 group">
-                        <img
-                            src="/logo.png"
-                            alt="Happy Greens"
-                            className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform shadow-sm"
-                        />
-                        <span className="text-2xl font-display font-bold text-gradient">Happy Greens</span>
-                    </Link>
-
-                    {location && (
-                        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-100 ml-6 mr-2 animate-fade-in shadow-sm">
-                            <MapPin className="h-4 w-4 fill-green-600 text-green-700" />
-                            <span>{location}</span>
-                        </div>
-                    )}
-
-                    <form
-                        onSubmit={handleSearch}
-                        className="hidden md:flex flex-1 max-w-xl mx-4 relative group"
-                        onBlur={(e) => {
-                            if (!e.currentTarget.contains(e.relatedTarget)) {
-                                setShowSuggestions(false);
-                            }
-                        }}
-                    >
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
-                            onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
-                            placeholder="Search for fresh groceries..."
-                            className="w-full px-4 py-2.5 pl-11 border-2 border-gray-200 rounded-full focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all duration-300 bg-white/50 backdrop-blur-sm"
-                        />
-                        <Search className="absolute left-3.5 top-3 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
-
-                        {showSuggestions && suggestions.length > 0 && (
-                            <div className="absolute top-14 left-0 w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-fade-in text-gray-800">
-                                {suggestions.map((product) => (
-                                    <div
-                                        key={product.id}
-                                        onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            navigate(`/product/${product.id}`);
-                                            setShowSuggestions(false);
-                                            setSearchQuery('');
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 cursor-pointer"
-                                    >
-                                        <div className="h-10 w-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                            <img src={normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url)} alt={product.name} className="h-full w-full object-cover" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
-                                            <p className="text-xs text-green-600 font-bold truncate">Rs. {product.discountPrice || product.price}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </form>
-
-                    <div className="flex items-center gap-6">
-                        <Link
-                            to="/shop"
-                            className="hidden md:block font-semibold text-gray-700 hover:text-primary-600 transition-colors"
-                        >
-                            Shop
-                        </Link>
-
-                        {user && (
-                            <Link
-                                to="/wishlist"
-                                className="relative flex items-center gap-1 font-semibold text-rose-600 hover:text-rose-500 transition-colors"
+        <>
+            <nav className="glass sticky top-0 z-50 border-b border-white/70 shadow-[0_10px_35px_rgba(15,23,42,0.08)]">
+                <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-3 py-3 sm:px-4 md:px-5">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                            <button
+                                type="button"
+                                onClick={() => setMenuOpen(true)}
+                                className="safe-touch inline-flex items-center justify-center rounded-2xl border border-[#dbe7d0] bg-white text-slate-700 shadow-sm md:hidden"
+                                aria-label="Open menu"
                             >
-                                <Heart className="w-4 h-4 fill-rose-400 text-rose-500" />
-                                Wishlist
-                                {wishlistIds.length > 0 && (
-                                    <span className="absolute -top-2 -right-4 bg-rose-500 text-white text-[10px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
-                                        {wishlistIds.length}
+                                <Menu className="h-5 w-5" />
+                            </button>
+
+                            <Link to="/" className="flex min-w-0 items-center gap-2.5" onClick={() => setMenuOpen(false)}>
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-green-600 to-lime-400 shadow-[0_10px_24px_rgba(34,197,94,0.28)]">
+                                    <img src="/logo.png" alt="Happy Greens" className="h-8 w-8 rounded-xl object-cover" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="truncate text-[1.05rem] font-display font-bold leading-none text-gradient">Happy Greens</p>
+                                    <p className="truncate text-[0.72rem] font-medium text-slate-500">Groceries in minutes</p>
+                                </div>
+                            </Link>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {user && (
+                                <Link
+                                    to="/wishlist"
+                                    className="safe-touch relative inline-flex items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-rose-600 shadow-sm"
+                                    aria-label="Wishlist"
+                                >
+                                    <Heart className="h-5 w-5 fill-rose-300" />
+                                    {wishlistIds.length > 0 && (
+                                        <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                                            {wishlistIds.length}
+                                        </span>
+                                    )}
+                                </Link>
+                            )}
+
+                            <Link
+                                to="/cart"
+                                className="safe-touch relative inline-flex items-center justify-center rounded-2xl bg-slate-900 text-white shadow-[0_10px_22px_rgba(15,23,42,0.2)]"
+                                aria-label="Cart"
+                            >
+                                <ShoppingCart className="h-5 w-5" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lime-400 px-1 text-[10px] font-bold text-slate-900">
+                                        {cartCount}
                                     </span>
                                 )}
                             </Link>
-                        )}
-
-                        {user && (
-                            <Link
-                                to="/rewards"
-                                className="hidden md:flex items-center gap-1 font-semibold text-yellow-600 hover:text-yellow-500 transition-colors"
-                            >
-                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-500" />
-                                Rewards
-                            </Link>
-                        )}
-
-                        <Link to="/cart" className="relative hover:text-primary-600 transition-colors group">
-                            <ShoppingCart className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                            {cartCount > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-gradient-accent text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-medium animate-bounce-soft">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </Link>
-
-                        {user ? (
-                            <Link to="/profile" className="flex items-center gap-2 hover:text-primary-600 transition-colors group">
-                                <div className="bg-gradient-primary p-1.5 rounded-full group-hover:scale-110 transition-transform">
-                                    <User className="h-4 w-4 text-white" />
-                                </div>
-                                <span className="hidden md:block text-sm font-semibold">{user.full_name}</span>
-                            </Link>
-                        ) : (
-                            <Link to="/login" className="flex items-center gap-2 font-semibold text-gray-700 hover:text-primary-600 transition-colors group">
-                                <User className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                                <span className="hidden md:block text-sm">Login</span>
-                            </Link>
-                        )}
-
-                        <button className="md:hidden hover:text-primary-600 transition-colors">
-                            <Menu className="h-6 w-6" />
-                        </button>
+                        </div>
                     </div>
-                </div>
 
-                <div className="md:hidden pb-4">
-                    <form
-                        onSubmit={handleSearch}
-                        className="relative"
+                    <div className="flex items-center justify-between gap-3 md:hidden">
+                        <div className="min-w-0">
+                            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-green-700/70">Delivery zone</p>
+                            <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-slate-800">
+                                <MapPin className="h-4 w-4 text-green-700" />
+                                <span className="truncate">{location || 'Select location'}</span>
+                            </div>
+                        </div>
+
+                        <Link
+                            to={user ? '/profile' : '/login'}
+                            className="safe-touch inline-flex items-center gap-2 rounded-2xl border border-[#dbe7d0] bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm"
+                        >
+                            <User className="h-4 w-4" />
+                            <span>{user ? 'Account' : 'Login'}</span>
+                        </Link>
+                    </div>
+
+                    <div
+                        className="mobile-search-shell"
                         onBlur={(e) => {
                             if (!e.currentTarget.contains(e.relatedTarget)) {
                                 setShowSuggestions(false);
                             }
                         }}
                     >
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
-                            onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
-                            placeholder="Search..."
-                            className="w-full px-4 py-2 pl-10 border-2 border-gray-200 rounded-full focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all bg-white/50 backdrop-blur-sm"
-                        />
-                        <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                        <form onSubmit={handleSearch} className="relative">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setShowSuggestions(true);
+                                }}
+                                onFocus={() => {
+                                    if (suggestions.length > 0) setShowSuggestions(true);
+                                }}
+                                placeholder="Search vegetables, fruits, milk..."
+                                className="h-12 w-full bg-transparent pl-10 pr-12 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
+                            />
+                            <button type="submit" className="absolute right-1.5 top-1.5 inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-xs font-bold text-white shadow-sm">
+                                Search
+                            </button>
+                        </form>
 
                         {showSuggestions && suggestions.length > 0 && (
-                            <div className="absolute top-12 left-0 w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-fade-in text-gray-800">
+                            <div className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-50 overflow-hidden rounded-[1.25rem] border border-[#e4ecda] bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)]">
                                 {suggestions.map((product) => (
-                                    <div
+                                    <button
                                         key={product.id}
+                                        type="button"
                                         onMouseDown={(e) => {
                                             e.preventDefault();
                                             navigate(`/product/${product.id}`);
                                             setShowSuggestions(false);
                                             setSearchQuery('');
                                         }}
-                                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 cursor-pointer"
+                                        className="flex w-full items-center gap-3 border-b border-slate-100 px-3 py-3 text-left last:border-0 hover:bg-slate-50"
                                     >
-                                        <div className="h-10 w-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                            <img src={normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url)} alt={product.name} className="h-full w-full object-cover" />
+                                        <div className="h-12 w-12 overflow-hidden rounded-2xl bg-[#f4f8ef]">
+                                            <img
+                                                loading="lazy"
+                                                src={normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url)}
+                                                alt={product.name}
+                                                className="h-full w-full object-cover"
+                                            />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
-                                            <p className="text-xs text-green-600 font-bold truncate">Rs. {product.discountPrice || product.price}</p>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-slate-900">{product.name}</p>
+                                            <p className="mt-0.5 text-xs font-bold text-green-700">Rs. {product.discountPrice || product.price}</p>
                                         </div>
-                                    </div>
+                                        <ChevronRight className="h-4 w-4 text-slate-300" />
+                                    </button>
                                 ))}
                             </div>
                         )}
-                    </form>
+                    </div>
+
+                    <div className="hidden items-center justify-between gap-4 md:flex">
+                        <div className="flex items-center gap-2 rounded-full border border-green-100 bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">
+                            <MapPin className="h-4 w-4" />
+                            <span>{location || 'Location unavailable'}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 lg:gap-3">
+                            <Link to="/shop" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-green-700">Shop</Link>
+                            {user && <Link to="/wishlist" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-rose-600">Wishlist</Link>}
+                            {user && <Link to="/rewards" className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-amber-600"><Star className="h-4 w-4" />Rewards</Link>}
+                            <Link to={user ? '/profile' : '/login'} className="inline-flex items-center gap-2 rounded-full border border-[#dbe7d0] bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+                                <User className="h-4 w-4" />
+                                <span>{user ? user.full_name : 'Login'}</span>
+                            </Link>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </nav>
+            </nav>
+
+            {menuOpen && (
+                <div className="fixed inset-0 z-[60] bg-slate-950/45 backdrop-blur-sm md:hidden" onClick={() => setMenuOpen(false)}>
+                    <aside
+                        className="mobile-app-card absolute left-3 right-3 top-3 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-green-700/70">Menu</p>
+                                <p className="mt-1 text-lg font-display font-bold text-slate-900">Browse Happy Greens</p>
+                            </div>
+                            <button type="button" onClick={() => setMenuOpen(false)} className="safe-touch inline-flex items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-2 px-3 py-3">
+                            {quickLinks.map((item) => (
+                                <Link
+                                    key={item.to}
+                                    to={item.to}
+                                    onClick={() => setMenuOpen(false)}
+                                    className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-semibold text-slate-800 transition hover:bg-[#f5f8f0]"
+                                >
+                                    <span>{item.label}</span>
+                                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                                </Link>
+                            ))}
+                        </div>
+                    </aside>
+                </div>
+            )}
+        </>
     );
 };
 
 export default Navbar;
-
-
-
-

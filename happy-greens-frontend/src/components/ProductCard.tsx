@@ -37,6 +37,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const cartItem = cart.find((item) => item.id === product.id);
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = wishlistIds.includes(product.id);
+    const primaryImage = normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url);
 
     const handleIncrement = () => {
         addToCart(product);
@@ -79,23 +80,25 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full group hover-lift">
-            <Link to={`/product/${product.id}`} className="block relative">
-                <div className="aspect-square overflow-hidden bg-gradient-soft relative">
+        <div className="mobile-app-card group flex h-full flex-col overflow-hidden rounded-[1.5rem]">
+            <Link to={`/product/${product.id}`} className="relative block">
+                <div className="relative aspect-[0.92] overflow-hidden bg-[#f3f8ee]">
                     <img
-                        src={normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url)}
+                        loading="lazy"
+                        src={primaryImage}
                         alt={product.name}
-                        className="w-full h-full object-cover p-6 group-hover:scale-110 transition-transform duration-500"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
 
                     <button
+                        type="button"
                         onClick={(e) => {
                             e.preventDefault();
                             handleWishlistToggle();
                         }}
-                        className={`absolute top-3 left-3 p-2 rounded-full border transition-colors ${isWishlisted
-                            ? 'bg-rose-500 text-white border-rose-500'
-                            : 'bg-white/90 text-gray-500 border-gray-200 hover:text-rose-500'
+                        className={`safe-touch absolute left-2 top-2 inline-flex items-center justify-center rounded-2xl border shadow-sm backdrop-blur ${isWishlisted
+                            ? 'border-rose-500 bg-rose-500 text-white'
+                            : 'border-white/80 bg-white/90 text-slate-500'
                             }`}
                         title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                     >
@@ -103,69 +106,79 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                     </button>
 
                     {product.stock !== undefined && product.stock < 10 && (
-                        <div className="absolute top-3 right-3">
+                        <div className="absolute right-2 top-2">
                             <Badge variant={product.stock === 0 ? 'error' : 'warning'} size="sm">
-                                {product.stock === 0 ? 'Out of Stock' : `Only ${product.stock} left`}
+                                {product.stock === 0 ? 'Sold out' : `${product.stock} left`}
                             </Badge>
                         </div>
                     )}
-
-                    <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                 </div>
             </Link>
 
-            <div className="p-4 flex flex-col flex-grow">
+            <div className="flex flex-1 flex-col gap-2 p-3">
                 {product.category_name && (
-                    <Badge variant="primary" size="sm" className="mb-2 w-fit">
+                    <span className="w-fit rounded-full bg-[#eef7e6] px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-green-700">
                         {product.category_name}
-                    </Badge>
+                    </span>
                 )}
 
-                <Link to={`/product/${product.id}`} className="block mb-3 flex-grow">
-                    <h3 className="font-display font-semibold text-gray-800 text-lg hover:text-primary-600 transition-colors line-clamp-2" title={product.name}>
+                <Link to={`/product/${product.id}`} className="block min-h-[2.8rem]">
+                    <h3 className="line-clamp-2 text-[0.95rem] font-semibold leading-snug text-slate-900" title={product.name}>
                         {product.name}
                     </h3>
                 </Link>
 
-                <div className="mt-auto flex items-center justify-between">
-                    <div>
+                <div className="flex items-end justify-between gap-2">
+                    <div className="min-w-0">
                         {product.discountPrice ? (
-                            <>
-                                <span className="line-through text-gray-400 mr-2 text-sm">Rs. {product.price}</span>
-                                <span className="font-display font-bold text-2xl text-green-600">Rs. {product.discountPrice}</span>
-                            </>
+                            <div className="flex flex-col">
+                                <span className="text-[0.72rem] text-slate-400 line-through">Rs. {product.price}</span>
+                                <span className="text-[1rem] font-bold text-green-700">Rs. {product.discountPrice}</span>
+                            </div>
                         ) : (
-                            <span className="font-display font-bold text-2xl text-gray-900">Rs. {product.price}</span>
+                            <span className="text-[1rem] font-bold text-slate-900">Rs. {product.price}</span>
                         )}
-                        <span className="text-sm text-gray-500 ml-1">/unit</span>
+                        <p className="mt-0.5 text-[0.72rem] text-slate-500">per unit</p>
                     </div>
 
                     {quantity > 0 ? (
-                        <div className="flex items-center bg-primary-50 rounded-full border-2 border-primary-200">
+                        <div className="flex items-center rounded-full border border-green-200 bg-green-50 p-1">
                             <button
+                                type="button"
                                 onClick={handleDecrement}
-                                className="p-2 text-primary-600 hover:bg-primary-500 hover:text-white rounded-full transition-all duration-200"
+                                className="safe-touch inline-flex h-9 w-9 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"
                             >
                                 <Minus className="h-4 w-4" />
                             </button>
-                            <span className="font-bold text-primary-700 w-8 text-center text-base">{quantity}</span>
+                            <span className="w-7 text-center text-sm font-bold text-green-800">{quantity}</span>
                             <button
+                                type="button"
                                 onClick={handleIncrement}
-                                className="p-2 text-primary-600 hover:bg-primary-500 hover:text-white rounded-full transition-all duration-200"
+                                className="safe-touch inline-flex h-9 w-9 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"
                             >
                                 <Plus className="h-4 w-4" />
                             </button>
                         </div>
                     ) : (
                         <button
+                            type="button"
                             onClick={() => addToCart(product)}
-                            className="bg-gradient-primary text-white p-3 rounded-full hover:shadow-glow hover:scale-110 transition-all duration-300 group/btn"
+                            className="safe-touch inline-flex h-10 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700"
                             title="Add to cart"
                         >
-                            <ShoppingCart className="h-5 w-5 group-hover/btn:scale-110 transition-transform" />
+                            <ShoppingCart className="h-4 w-4" />
                         </button>
                     )}
                 </div>
+
+                <button
+                    type="button"
+                    onClick={() => addToCart(product)}
+                    className="safe-touch mt-1 inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-slate-900 px-3 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                    <ShoppingCart className="h-4 w-4" />
+                    {quantity > 0 ? 'Add one more' : 'Add to cart'}
+                </button>
             </div>
         </div>
     );

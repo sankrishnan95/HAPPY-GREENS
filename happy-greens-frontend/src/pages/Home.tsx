@@ -7,19 +7,19 @@ import { getActiveBanners } from '../services/banner.service';
 import { normalizeImageUrl } from '../utils/image';
 
 const categories = [
-    { name: 'Fruits', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=500&q=60', color: 'bg-orange-100', icon: '🍎' },
-    { name: 'Vegetables', image: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?auto=format&fit=crop&w=500&q=60', color: 'bg-green-100', icon: '🥬' },
-    { name: 'Dairy', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=500&q=60', color: 'bg-blue-100', icon: '🥛' },
-    { name: 'Staples', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=60', color: 'bg-yellow-100', icon: '🌾' },
-    { name: 'Snacks', image: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=500&q=60', color: 'bg-red-100', icon: '🍿' },
-    { name: 'Beverages', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=500&q=60', color: 'bg-purple-100', icon: '🧃' },
+    { name: 'Fruits', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=500&q=60', tone: 'from-orange-100 to-orange-50', emoji: 'Apple' },
+    { name: 'Vegetables', image: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?auto=format&fit=crop&w=500&q=60', tone: 'from-green-100 to-lime-50', emoji: 'Greens' },
+    { name: 'Dairy', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=500&q=60', tone: 'from-sky-100 to-cyan-50', emoji: 'Milk' },
+    { name: 'Staples', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=60', tone: 'from-yellow-100 to-amber-50', emoji: 'Daily' },
+    { name: 'Snacks', image: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=500&q=60', tone: 'from-rose-100 to-pink-50', emoji: 'Snacks' },
+    { name: 'Beverages', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=500&q=60', tone: 'from-violet-100 to-fuchsia-50', emoji: 'Drinks' },
 ];
 
 const features = [
-    { icon: Truck, title: 'Fast Delivery', description: 'Get your groceries delivered within 30 minutes', color: 'text-primary-600' },
-    { icon: Leaf, title: 'Farm Fresh', description: '100% organic produce directly from farms', color: 'text-green-600' },
-    { icon: Shield, title: 'Quality Assured', description: 'Rigorous quality checks on every product', color: 'text-blue-600' },
-    { icon: Clock, title: '24/7 Service', description: 'Order anytime, we\'re always available', color: 'text-orange-600' },
+    { icon: Truck, title: '10 min delivery', description: 'Fast slots in busy city zones', tone: 'bg-green-50 text-green-700' },
+    { icon: Leaf, title: 'Farm fresh', description: 'Fresh stock with daily replenishment', tone: 'bg-lime-50 text-lime-700' },
+    { icon: Shield, title: 'Quality checked', description: 'Packed and inspected before dispatch', tone: 'bg-sky-50 text-sky-700' },
+    { icon: Clock, title: 'Open all day', description: 'Quick reorder at any hour you need', tone: 'bg-amber-50 text-amber-700' },
 ];
 
 const Home = () => {
@@ -39,7 +39,7 @@ const Home = () => {
                     setBanners(data.banners);
                 }
             } catch (error) {
-                console.error("Failed to fetch banners");
+                console.error('Failed to fetch banners');
             }
         };
         fetchBanners();
@@ -49,140 +49,141 @@ const Home = () => {
     const dealBanner = banners.length > 1 ? banners[1] : null;
 
     return (
-        <div className="space-y-16 animate-fade-in">
-            {/* Hero Section */}
-            <section className="relative bg-gray-900 rounded-4xl overflow-hidden h-[500px] flex items-center shadow-strong">
-                <div className="absolute inset-0">
-                    {isVideo(heroBanner?.image_url) ? (
-                        <video
-                            src={normalizeImageUrl(heroBanner.image_url)}
-                            className="w-full h-full object-cover opacity-60"
-                            autoPlay loop muted playsInline
-                        />
-                    ) : (
-                        <img
-                            src={normalizeImageUrl(heroBanner?.image_url)}
-                            alt="Storefront Hero"
-                            className="w-full h-full object-cover opacity-60"
-                        />
-                    )}
-                </div>
-                <div className="relative container mx-auto px-8 md:px-16 z-10">
-                    <div className="max-w-2xl text-white animate-slide-up">
-                        <Badge variant="accent" size="lg" className="mb-6 animate-bounce-soft">
-                            {heroBanner?.subheading || "🎉 New: Free Delivery on Orders Above ₹500"}
+        <div className="space-y-4 pb-4 md:space-y-6 lg:space-y-8">
+            <section className="mobile-app-card hero-banner overflow-hidden rounded-[1.8rem]">
+                <div className="relative min-h-[240px] md:min-h-[320px] lg:min-h-[380px]">
+                    <div className="absolute inset-0">
+                        {isVideo(heroBanner?.image_url) ? (
+                            <video
+                                src={normalizeImageUrl(heroBanner.image_url)}
+                                className="hero-banner-media"
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                            />
+                        ) : (
+                            <img
+                                src={normalizeImageUrl(heroBanner?.image_url)}
+                                alt="Storefront Hero"
+                                className="hero-banner-media"
+                            />
+                        )}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-950/70 via-slate-900/35 to-lime-500/20" />
+
+                    <div className="relative z-10 flex h-full flex-col justify-end px-4 py-5 sm:px-5 sm:py-6 md:max-w-[70%] md:px-7 md:py-7 lg:px-10 lg:py-9">
+                        <Badge variant="accent" size="sm" className="mb-3 w-fit border-white/20 bg-white/15 text-white backdrop-blur-sm">
+                            {heroBanner?.subheading || 'Express slots available today'}
                         </Badge>
-                        <h1 className="text-6xl md:text-7xl font-display font-bold mb-6 leading-tight drop-shadow-md">
-                            {heroBanner?.title || (
-                                <>Fresh Groceries <br /><span className="text-yellow-300">Delivered Fast</span></>
-                            )}
+                        <h1 className="max-w-[14ch] text-[1.7rem] font-display font-bold text-white sm:text-[2rem] md:text-[2.7rem] lg:text-[3.5rem]">
+                            {heroBanner?.title || 'Fresh groceries delivered like an app, not a store.'}
                         </h1>
-                        <p className="text-xl md:text-2xl mb-10 opacity-95 font-light drop-shadow-md">
-                            {heroBanner?.description || "Get farm-fresh produce and daily essentials delivered to your doorstep in minutes."}
+                        <p className="mt-3 max-w-[34ch] text-sm leading-6 text-white/90 sm:text-[0.95rem] md:text-base">
+                            {heroBanner?.description || 'Daily essentials, fruits, vegetables and dairy packed for fast doorstep delivery.'}
                         </p>
-                        <Link to={heroBanner?.link || "/shop"}>
-                            <Button variant="accent" size="lg" className="group shadow-lg">
-                                Shop Now
-                                <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                        </Link>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                            <Link to={heroBanner?.link || '/shop'} className="w-full sm:w-auto">
+                                <Button variant="accent" size="lg" className="w-full sm:w-auto">
+                                    Shop fresh
+                                    <ArrowRight className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                            <Link to="/shop?category=vegetables" className="w-full sm:w-auto">
+                                <Button variant="outline" size="lg" className="w-full border-white/30 bg-white/10 text-white hover:bg-white/20 sm:w-auto">
+                                    Explore veggies
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Categories */}
-            <section className="animate-slide-up">
-                <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-4xl font-display font-bold text-gray-900">Shop by Category</h2>
-                    <Link to="/shop" className="text-primary-600 font-semibold hover:text-primary-700 flex items-center gap-2 group">
-                        View All
-                        <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+            <section className="space-y-3">
+                <div className="flex items-end justify-between gap-3">
+                    <div>
+                        <p className="section-kicker">Browse faster</p>
+                        <h2 className="section-title mt-1">Shop by category</h2>
+                    </div>
+                    <Link to="/shop" className="text-sm font-semibold text-green-700">View all</Link>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                    {categories.map((cat, index) => (
-                        <Link
-                            key={cat.name}
-                            to={`/shop?category=${cat.name.toLowerCase()}`}
-                            className="group"
-                            style={{ animationDelay: `${index * 50}ms` }}
-                        >
-                            <div className={`${cat.color} rounded-3xl p-6 mb-3 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-medium relative overflow-hidden`}>
-                                <div className="absolute top-2 right-2 text-3xl opacity-20 group-hover:scale-125 transition-transform">
-                                    {cat.icon}
+
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 md:grid-cols-6">
+                    {categories.map((cat) => (
+                        <Link key={cat.name} to={`/shop?category=${cat.name.toLowerCase()}`} className="mobile-app-card overflow-hidden rounded-[1.4rem]">
+                            <div className={`bg-gradient-to-br ${cat.tone} p-3`}>
+                                <div className="mb-2 inline-flex rounded-full bg-white/70 px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-slate-700">
+                                    {cat.emoji}
                                 </div>
-                                <img
-                                    src={cat.image}
-                                    alt={cat.name}
-                                    className="w-full h-32 object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
-                                />
+                                <img loading="lazy" src={cat.image} alt={cat.name} className="mx-auto h-16 w-full object-contain md:h-20" />
                             </div>
-                            <h3 className="text-center font-display font-semibold text-lg text-gray-800 group-hover:text-primary-600 transition-colors">
-                                {cat.name}
-                            </h3>
+                            <div className="px-2 pb-3 pt-2 text-center">
+                                <h3 className="text-[0.82rem] font-semibold text-slate-900 md:text-sm">{cat.name}</h3>
+                            </div>
                         </Link>
                     ))}
                 </div>
             </section>
 
-            {/* Why Choose Us */}
-            <section className="bg-gradient-soft rounded-4xl p-12 animate-slide-up">
-                <h2 className="text-4xl font-display font-bold text-center mb-12 text-gray-900">Why Choose Happy Greens?</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {features.map((feature, index) => (
-                        <div
-                            key={feature.title}
-                            className="bg-white rounded-2xl p-6 shadow-soft hover:shadow-medium transition-all duration-300 hover-lift text-center"
-                            style={{ animationDelay: `${index * 100}ms` }}
-                        >
-                            <div className={`${feature.color} bg-gradient-to-br from-current to-transparent bg-clip-text`}>
-                                <feature.icon className="h-12 w-12 mx-auto mb-4" strokeWidth={1.5} />
+            <section className="mobile-app-card overflow-hidden rounded-[1.8rem] p-4 md:p-5 lg:p-6">
+                <div className="mb-4 flex items-end justify-between gap-3">
+                    <div>
+                        <p className="section-kicker">Why people stay</p>
+                        <h2 className="section-title mt-1">Built for daily groceries</h2>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    {features.map((feature) => (
+                        <div key={feature.title} className="rounded-[1.4rem] bg-[#f8faf5] p-3 md:p-4">
+                            <div className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl ${feature.tone}`}>
+                                <feature.icon className="h-5 w-5" strokeWidth={1.8} />
                             </div>
-                            <h3 className="font-display font-bold text-xl mb-2 text-gray-900">{feature.title}</h3>
-                            <p className="text-gray-600">{feature.description}</p>
+                            <h3 className="text-sm font-bold text-slate-900">{feature.title}</h3>
+                            <p className="mt-1 text-[0.82rem] leading-5 text-slate-600">{feature.description}</p>
                         </div>
                     ))}
                 </div>
             </section>
 
-            {/* Deals Banner */}
-            <section className="relative bg-gradient-accent rounded-4xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden shadow-strong animate-slide-up">
-                <div className="absolute inset-0 opacity-10 pointer-events-none">
-                    <div className="absolute top-10 right-10 text-9xl">🎁</div>
-                    <div className="absolute bottom-10 left-10 text-7xl">✨</div>
-                </div>
-                <div className="flex-1 relative z-10">
-                    <Badge variant="accent" size="lg" className="mb-4 bg-white/20 backdrop-blur-sm border-white/30 animate-pulse-soft">
-                        {dealBanner?.subheading || "🔥 Deal of the Day"}
-                    </Badge>
-                    <h2 className="text-5xl font-display font-bold mb-4 text-white">
-                        {dealBanner?.title || (
-                            <>Get 50% Off on <br />Exotic Fruits</>
+            <section className="mobile-app-card overflow-hidden rounded-[1.8rem] bg-gradient-to-br from-green-700 via-green-600 to-lime-500 text-white">
+                <div className="grid gap-4 p-4 md:grid-cols-[1.15fr_0.85fr] md:items-center md:p-5 lg:p-6">
+                    <div>
+                        <p className="section-kicker !text-white/70">Smart basket deal</p>
+                        <h2 className="mt-1 text-[1.45rem] font-display font-bold md:text-[2rem]">
+                            {dealBanner?.title || 'Save more on fresh baskets this week'}
+                        </h2>
+                        <p className="mt-2 max-w-[34ch] text-sm leading-6 text-white/85 md:text-base">
+                            {dealBanner?.description || 'A rotating set of fruits, vegetables and staples at a better bundle price.'}
+                        </p>
+                        <div className="mt-4">
+                            <Link to={dealBanner?.link || '/shop'} className="w-full sm:w-auto">
+                                <Button variant="accent" size="lg" className="w-full sm:w-auto">
+                                    View offers
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="overflow-hidden rounded-[1.5rem] bg-white/10 p-1 backdrop-blur-sm">
+                        {isVideo(dealBanner?.image_url) ? (
+                            <video
+                                src={normalizeImageUrl(dealBanner.image_url)}
+                                className="hero-banner-media max-h-[230px] rounded-[1.3rem]"
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                            />
+                        ) : (
+                            <img
+                                loading="lazy"
+                                src={normalizeImageUrl(dealBanner?.image_url)}
+                                alt="Deals Graphic"
+                                className="hero-banner-media max-h-[230px] rounded-[1.3rem]"
+                            />
                         )}
-                    </h2>
-                    <p className="text-white/90 mb-8 text-xl font-light">
-                        {dealBanner?.description || "Don't miss out on special promotions on farm-fresh deals right now."}
-                    </p>
-                    <Link to={dealBanner?.link || "/shop"}>
-                        <Button variant="primary" size="lg" className="bg-white text-accent-orange hover:bg-gray-100 shadow-lg">
-                            Grab Deal Now
-                        </Button>
-                    </Link>
-                </div>
-                <div className="flex-1 relative z-10">
-                    {isVideo(dealBanner?.image_url) ? (
-                        <video
-                            src={normalizeImageUrl(dealBanner.image_url)}
-                            className="w-full h-80 object-cover rounded-3xl shadow-strong hover:scale-105 transition-transform duration-500"
-                            autoPlay loop muted playsInline
-                        />
-                    ) : (
-                        <img
-                            src={normalizeImageUrl(dealBanner?.image_url)}
-                            alt="Deals Graphic"
-                            className="w-full h-80 object-cover rounded-3xl shadow-strong hover:scale-105 transition-transform duration-500"
-                        />
-                    )}
+                    </div>
                 </div>
             </section>
         </div>
@@ -190,5 +191,3 @@ const Home = () => {
 };
 
 export default Home;
-
-
