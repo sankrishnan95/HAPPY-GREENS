@@ -175,9 +175,9 @@ const Navbar = () => {
                                     if (suggestions.length > 0) setShowSuggestions(true);
                                 }}
                                 placeholder="Search vegetables, fruits, milk..."
-                                className="h-12 w-full bg-transparent pl-10 pr-12 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
+                                className="h-12 w-full bg-transparent pl-10 pr-24 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
                             />
-                            <button type="submit" className="absolute right-1.5 top-1.5 inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-xs font-bold text-white shadow-sm">
+                            <button type="submit" className="absolute right-1.5 top-1/2 inline-flex h-9 -translate-y-1/2 items-center justify-center rounded-full bg-green-600 px-3 text-xs font-bold text-white shadow-sm">
                                 Search
                             </button>
                         </form>
@@ -271,3 +271,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

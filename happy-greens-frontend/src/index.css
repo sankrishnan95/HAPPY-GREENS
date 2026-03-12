@@ -41,7 +41,8 @@
   h5,
   h6 {
     @apply font-display;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: normal;
   }
 
   h1 {
@@ -68,7 +69,8 @@
   select,
   textarea {
     font-size: clamp(0.875rem, 2.5vw, 1rem);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: normal;
   }
 }
 

@@ -123,7 +123,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                 )}
 
                 <Link to={`/product/${product.id}`} className="block min-h-[2.8rem]">
-                    <h3 className="line-clamp-2 text-[0.95rem] font-semibold leading-snug text-slate-900" title={product.name}>
+                    <h3 className="line-clamp-2 text-[0.95rem] font-semibold leading-snug text-slate-900 break-normal whitespace-normal" title={product.name}>
                         {product.name}
                     </h3>
                 </Link>
@@ -185,3 +185,4 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
 };
 
 export default ProductCard;
+
