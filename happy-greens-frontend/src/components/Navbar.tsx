@@ -105,15 +105,12 @@ const Navbar = () => {
                             </button>
 
                             <Link to="/" className="flex min-w-0 items-center gap-2.5" onClick={() => setMenuOpen(false)}>
-                                <OptimizedImage
+                                <img
                                     src="/logo.png"
                                     alt="Happy Greens"
                                     className="h-12 w-12 object-contain sm:h-14 sm:w-14"
-                                    width={56}
-                                    height={56}
                                     loading="eager"
-                                    fetchPriority="high"
-                                    decoding="sync"
+                                    decoding="async"
                                 />
                                 <div className="min-w-0">
                                     <p className="truncate text-[1.05rem] font-display font-bold leading-none text-gradient">Happy Greens</p>
@@ -232,5 +229,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
-
