@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { Toaster } from 'react-hot-toast';
 import { trackEvent } from './services/analytics.service';
@@ -36,10 +36,29 @@ const PageTracker = () => {
     return null;
 };
 
+const AuthRedirectHandler = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        const handleAuthExpired = () => {
+            if (location.pathname !== '/login') {
+                navigate('/login', { replace: true });
+            }
+        };
+
+        window.addEventListener('auth:expired', handleAuthExpired);
+        return () => window.removeEventListener('auth:expired', handleAuthExpired);
+    }, [location.pathname, navigate]);
+
+    return null;
+};
+
 function App() {
     return (
         <Router>
             <PageTracker />
+            <AuthRedirectHandler />
             <div className="min-h-screen flex flex-col overflow-x-hidden">
                 <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
                 <Navbar />

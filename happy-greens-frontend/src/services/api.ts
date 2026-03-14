@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useStore } from '../store/useStore';
 
 const DEPLOYED_API_BASE_URL = 'https://happy-greens-18n3.onrender.com/api';
 
@@ -31,11 +32,11 @@ api.interceptors.response.use(
 
         if (status === 401 && (message.includes('token') || message.includes('authorization'))) {
             try {
-                localStorage.removeItem('happy-greens-storage');
+                useStore.getState().logout();
             } catch (_) { }
 
             if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-                window.location.href = '/login';
+                window.dispatchEvent(new CustomEvent('auth:expired'));
             }
         }
 
