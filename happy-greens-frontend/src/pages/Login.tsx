@@ -81,7 +81,6 @@ const Login = () => {
         <div className="max-w-md mx-auto mt-16">
             <div className="bg-white p-10 rounded-4xl shadow-medium border border-gray-100">
                 <div className="text-center mb-8">
-                    <div className="text-5xl mb-4">??</div>
                     <h1 className="text-4xl font-display font-bold text-gray-900 mb-2">Welcome Back</h1>
                     <p className="text-gray-600">Sign in to continue shopping</p>
                 </div>
