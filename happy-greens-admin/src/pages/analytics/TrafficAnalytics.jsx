@@ -5,10 +5,14 @@ import MetricCard from '../../components/analytics/MetricCard';
 import ChartCard from '../../components/analytics/ChartCard';
 import ChartTooltip from '../../components/analytics/ChartTooltip';
 import AnalyticsTable from '../../components/analytics/AnalyticsTable';
+import AnalyticsFilter from '../../components/AnalyticsFilter';
+import AnalyticsRefreshButton from '../../components/AnalyticsRefreshButton';
 import { getTrafficAnalytics } from '../../services/analytics.service';
 
 export default function TrafficAnalytics() {
+  const [selectedRange, setSelectedRange] = useState('7d');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState({
     metrics: {
       totalVisits: 0,
@@ -23,24 +27,38 @@ export default function TrafficAnalytics() {
     topPages: [],
   });
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const response = await getTrafficAnalytics();
-        setData(response.data);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const load = async (range, refresh = false) => {
+    try {
+      refresh ? setIsRefreshing(true) : setLoading(true);
+      const response = await getTrafficAnalytics(range);
+      setData(response.data);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
-    load();
-  }, []);
+  useEffect(() => {
+    load(selectedRange);
+  }, [selectedRange]);
+
+  const handleRefresh = async () => {
+    if (!window.confirm('Recalculate analytics from the selected time range?')) return;
+    await load(selectedRange, true);
+  };
+
+  const controls = (
+    <>
+      <AnalyticsFilter value={selectedRange} onChange={setSelectedRange} disabled={loading || isRefreshing} />
+      <AnalyticsRefreshButton onClick={handleRefresh} loading={isRefreshing} disabled={loading || isRefreshing} />
+    </>
+  );
 
   return (
     <AnalyticsLayout
       title="Traffic Analytics"
       description="Real lightweight event tracking from storefront visits through order intent."
+      actions={controls}
     >
       {loading ? (
         <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -57,7 +75,7 @@ export default function TrafficAnalytics() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <ChartCard title="Visits Trend" description="Page views and product views over the last 30 days.">
+            <ChartCard title="Visits Trend" description="Page views and product views over the last 30 days." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.visitsByDay}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -70,7 +88,7 @@ export default function TrafficAnalytics() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Traffic Funnel" description="Movement from visits to product interest to cart intent and orders.">
+            <ChartCard title="Traffic Funnel" description="Movement from visits to product interest to cart intent and orders." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <FunnelChart>
                   <Tooltip content={<ChartTooltip />} />

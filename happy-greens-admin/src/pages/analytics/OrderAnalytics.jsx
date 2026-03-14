@@ -5,10 +5,14 @@ import MetricCard from '../../components/analytics/MetricCard';
 import ChartCard from '../../components/analytics/ChartCard';
 import ChartTooltip from '../../components/analytics/ChartTooltip';
 import AnalyticsTable from '../../components/analytics/AnalyticsTable';
+import AnalyticsFilter from '../../components/AnalyticsFilter';
+import AnalyticsRefreshButton from '../../components/AnalyticsRefreshButton';
 import { getDetailedOrderAnalytics } from '../../services/analytics.service';
 
 export default function OrderAnalytics() {
+  const [selectedRange, setSelectedRange] = useState('7d');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState({
     metrics: {
       totalOrders: 0,
@@ -22,24 +26,38 @@ export default function OrderAnalytics() {
     ordersByHour: [],
   });
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const response = await getDetailedOrderAnalytics();
-        setData(response.data);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const load = async (range, refresh = false) => {
+    try {
+      refresh ? setIsRefreshing(true) : setLoading(true);
+      const response = await getDetailedOrderAnalytics(range);
+      setData(response.data);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
-    load();
-  }, []);
+  useEffect(() => {
+    load(selectedRange);
+  }, [selectedRange]);
+
+  const handleRefresh = async () => {
+    if (!window.confirm('Recalculate analytics from the selected time range?')) return;
+    await load(selectedRange, true);
+  };
+
+  const controls = (
+    <>
+      <AnalyticsFilter value={selectedRange} onChange={setSelectedRange} disabled={loading || isRefreshing} />
+      <AnalyticsRefreshButton onClick={handleRefresh} loading={isRefreshing} disabled={loading || isRefreshing} />
+    </>
+  );
 
   return (
     <AnalyticsLayout
       title="Order Analytics"
       description="Track operational load, status mix, and peak order timings."
+      actions={controls}
     >
       {loading ? (
         <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -55,7 +73,7 @@ export default function OrderAnalytics() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <ChartCard title="Orders Timeline" description="Daily order volume over the last 30 days.">
+            <ChartCard title="Orders Timeline" description="Daily order volume over the last 30 days." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.ordersByDay}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -67,7 +85,7 @@ export default function OrderAnalytics() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Orders by Hour" description="When order activity peaks through the day.">
+            <ChartCard title="Orders by Hour" description="When order activity peaks through the day." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.ordersByHour}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

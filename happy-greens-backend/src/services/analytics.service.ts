@@ -7,9 +7,71 @@ interface AnalyticsEventPayload {
     page: string | null;
 }
 
+export interface AnalyticsRange {
+    range?: string;
+    from?: string;
+    to?: string;
+}
+
 const ACTIVE_ORDER_FILTER = "o.status <> 'cancelled'";
+const ACTIVE_ORDER_FILTER_NO_ALIAS = "status <> 'cancelled'";
 
 const toNumber = (value: unknown): number => Number(value || 0);
+
+const getRangeStart = ({ range = '7d', from, to }: AnalyticsRange): Date => {
+    if (range === 'custom' && from) {
+        const customDate = new Date(from);
+        if (!Number.isNaN(customDate.getTime())) {
+            return customDate;
+        }
+    }
+
+    const now = new Date();
+    switch (range) {
+        case '24h':
+            return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        case '30d':
+            return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        case '90d':
+            return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        case 'custom':
+            if (to) {
+                const endDate = new Date(to);
+                if (!Number.isNaN(endDate.getTime())) {
+                    return new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+                }
+            }
+            return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case '7d':
+        default:
+            return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+};
+
+const getRangeEnd = ({ range, to }: AnalyticsRange): Date => {
+    if (range === 'custom' && to) {
+        const customDate = new Date(to);
+        if (!Number.isNaN(customDate.getTime())) {
+            return customDate;
+        }
+    }
+
+    return new Date();
+};
+
+const buildRangeMeta = (rangeInput: AnalyticsRange) => {
+    const start = getRangeStart(rangeInput);
+    const end = getRangeEnd(rangeInput);
+    const normalizedEnd = start > end ? new Date(start.getTime() + 24 * 60 * 60 * 1000) : end;
+    const days = Math.max(1, Math.ceil((normalizedEnd.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)));
+
+    return {
+        start,
+        end: normalizedEnd,
+        label: rangeInput.range || '7d',
+        days,
+    };
+};
 
 export const recordAnalyticsEvent = async ({ eventType, userId, productId, page }: AnalyticsEventPayload): Promise<void> => {
     await pool.query(
@@ -19,32 +81,36 @@ export const recordAnalyticsEvent = async ({ eventType, userId, productId, page 
     );
 };
 
-export const getSalesAnalyticsData = async () => {
+export const getSalesAnalyticsData = async (range: AnalyticsRange = {}) => {
+    const { start, end, label } = buildRangeMeta(range);
     const [summaryResult, dailyResult, categoryResult] = await Promise.all([
         pool.query(
             `WITH base AS (
                 SELECT total_amount, created_at
                 FROM orders
-                WHERE status <> 'cancelled'
-            ), monthly AS (
+                WHERE ${ACTIVE_ORDER_FILTER_NO_ALIAS}
+                  AND created_at >= $1
+                  AND created_at <= $2
+            ), comparison AS (
                 SELECT
-                    COALESCE(SUM(total_amount) FILTER (WHERE created_at >= date_trunc('month', CURRENT_DATE)), 0) AS current_month_revenue,
+                    COALESCE(SUM(total_amount) FILTER (WHERE created_at >= $1 AND created_at <= $2), 0) AS current_period_revenue,
                     COALESCE(SUM(total_amount) FILTER (
-                        WHERE created_at >= date_trunc('month', CURRENT_DATE - INTERVAL '1 month')
-                          AND created_at < date_trunc('month', CURRENT_DATE)
-                    ), 0) AS previous_month_revenue
-                FROM base
+                        WHERE created_at >= ($1 - ($2::timestamp - $1::timestamp))
+                          AND created_at < $1
+                    ), 0) AS previous_period_revenue
+                FROM orders
+                WHERE ${ACTIVE_ORDER_FILTER_NO_ALIAS}
             )
             SELECT
                 COALESCE(SUM(total_amount), 0) AS total_revenue,
                 COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE) AS orders_today,
-                COUNT(*) FILTER (WHERE created_at >= date_trunc('week', CURRENT_DATE)) AS orders_this_week,
-                COUNT(*) FILTER (WHERE created_at >= date_trunc('month', CURRENT_DATE)) AS orders_this_month,
+                COUNT(*) AS orders_in_range,
                 COALESCE(AVG(total_amount), 0) AS average_order_value,
-                monthly.current_month_revenue,
-                monthly.previous_month_revenue
-            FROM base, monthly
-            GROUP BY monthly.current_month_revenue, monthly.previous_month_revenue`
+                comparison.current_period_revenue,
+                comparison.previous_period_revenue
+            FROM base, comparison
+            GROUP BY comparison.current_period_revenue, comparison.previous_period_revenue`,
+            [start, end]
         ),
         pool.query(
             `SELECT
@@ -53,10 +119,12 @@ export const getSalesAnalyticsData = async () => {
                 COUNT(*) AS orders,
                 COALESCE(SUM(total_amount), 0) AS revenue
              FROM orders
-             WHERE status <> 'cancelled'
-               AND created_at >= CURRENT_DATE - INTERVAL '29 days'
+             WHERE ${ACTIVE_ORDER_FILTER_NO_ALIAS}
+               AND created_at >= $1
+               AND created_at <= $2
              GROUP BY DATE(created_at)
-             ORDER BY sort_date ASC`
+             ORDER BY sort_date ASC`,
+            [start, end]
         ),
         pool.query(
             `SELECT
@@ -67,25 +135,28 @@ export const getSalesAnalyticsData = async () => {
              LEFT JOIN products p ON p.id = oi.product_id
              LEFT JOIN categories c ON c.id = p.category_id
              WHERE ${ACTIVE_ORDER_FILTER}
+               AND o.created_at >= $1
+               AND o.created_at <= $2
              GROUP BY COALESCE(c.name, 'Uncategorized')
              ORDER BY revenue DESC
-             LIMIT 8`
+             LIMIT 8`,
+            [start, end]
         )
     ]);
 
     const summary = summaryResult.rows[0] || {};
-    const currentMonthRevenue = toNumber(summary.current_month_revenue);
-    const previousMonthRevenue = toNumber(summary.previous_month_revenue);
-    const revenueGrowth = previousMonthRevenue > 0
-        ? ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100
-        : (currentMonthRevenue > 0 ? 100 : 0);
+    const currentPeriodRevenue = toNumber(summary.current_period_revenue);
+    const previousPeriodRevenue = toNumber(summary.previous_period_revenue);
+    const revenueGrowth = previousPeriodRevenue > 0
+        ? ((currentPeriodRevenue - previousPeriodRevenue) / previousPeriodRevenue) * 100
+        : (currentPeriodRevenue > 0 ? 100 : 0);
 
     return {
         metrics: {
             totalRevenue: toNumber(summary.total_revenue),
             ordersToday: toNumber(summary.orders_today),
-            ordersThisWeek: toNumber(summary.orders_this_week),
-            ordersThisMonth: toNumber(summary.orders_this_month),
+            ordersThisWeek: label === '7d' ? toNumber(summary.orders_in_range) : 0,
+            ordersThisMonth: label === '30d' ? toNumber(summary.orders_in_range) : 0,
             averageOrderValue: toNumber(summary.average_order_value),
             revenueGrowth,
         },
@@ -101,55 +172,59 @@ export const getSalesAnalyticsData = async () => {
     };
 };
 
-export const getProductAnalyticsData = async () => {
+export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
+    const { start, end } = buildRangeMeta(range);
     const [tableResult, topResult, lowResult] = await Promise.all([
         pool.query(
             `SELECT
                 p.id,
                 p.name,
-                COUNT(DISTINCT o.id) FILTER (WHERE ${ACTIVE_ORDER_FILTER}) AS orders,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase) FILTER (WHERE ${ACTIVE_ORDER_FILTER}), 0) AS revenue,
+                COUNT(DISTINCT o.id) FILTER (WHERE ${ACTIVE_ORDER_FILTER} AND o.created_at >= $1 AND o.created_at <= $2) AS orders,
+                COALESCE(SUM(oi.quantity * oi.price_at_purchase) FILTER (WHERE ${ACTIVE_ORDER_FILTER} AND o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue,
                 COALESCE(p.stock_quantity, 0) AS stock,
                 CASE
                     WHEN COALESCE(p.stock_quantity, 0) = 0 THEN 'Out of stock'
                     WHEN COALESCE(p.stock_quantity, 0) < 10 THEN 'Low stock'
                     ELSE 'Healthy'
                 END AS status,
-                COALESCE(SUM(oi.quantity) FILTER (WHERE ${ACTIVE_ORDER_FILTER}), 0) AS units_sold
+                COALESCE(SUM(oi.quantity) FILTER (WHERE ${ACTIVE_ORDER_FILTER} AND o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id
              WHERE COALESCE(p.is_deleted, false) = false
              GROUP BY p.id, p.name, p.stock_quantity
-             ORDER BY revenue DESC, orders DESC, p.name ASC`
+             ORDER BY revenue DESC, orders DESC, p.name ASC`,
+            [start, end]
         ),
         pool.query(
             `SELECT
                 p.id,
                 p.name,
-                COALESCE(SUM(oi.quantity), 0) AS units_sold,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) AS revenue
+                COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
+                COALESCE(SUM(oi.quantity * oi.price_at_purchase) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id AND ${ACTIVE_ORDER_FILTER}
              WHERE COALESCE(p.is_deleted, false) = false
              GROUP BY p.id, p.name
              ORDER BY units_sold DESC, revenue DESC
-             LIMIT 5`
+             LIMIT 5`,
+            [start, end]
         ),
         pool.query(
             `SELECT
                 p.id,
                 p.name,
-                COALESCE(SUM(oi.quantity), 0) AS units_sold,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) AS revenue
+                COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
+                COALESCE(SUM(oi.quantity * oi.price_at_purchase) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id AND ${ACTIVE_ORDER_FILTER}
              WHERE COALESCE(p.is_deleted, false) = false
              GROUP BY p.id, p.name
              ORDER BY units_sold ASC, revenue ASC, p.name ASC
-             LIMIT 5`
+             LIMIT 5`,
+            [start, end]
         )
     ]);
 
@@ -192,15 +267,16 @@ export const getProductAnalyticsData = async () => {
     };
 };
 
-export const getCustomerAnalyticsData = async () => {
+export const getCustomerAnalyticsData = async (range: AnalyticsRange = {}) => {
+    const { start, end } = buildRangeMeta(range);
     const [summaryResult, newUsersByWeekResult] = await Promise.all([
         pool.query(
             `WITH customer_orders AS (
                 SELECT
                     u.id,
                     u.created_at,
-                    COUNT(o.id) FILTER (WHERE o.status <> 'cancelled') AS order_count,
-                    COALESCE(SUM(o.total_amount) FILTER (WHERE o.status <> 'cancelled'), 0) AS total_spent
+                    COUNT(o.id) FILTER (WHERE o.status <> 'cancelled' AND o.created_at >= $1 AND o.created_at <= $2) AS order_count,
+                    COALESCE(SUM(o.total_amount) FILTER (WHERE o.status <> 'cancelled' AND o.created_at >= $1 AND o.created_at <= $2), 0) AS total_spent
                 FROM users u
                 LEFT JOIN orders o ON o.user_id = u.id
                 WHERE u.role = 'customer'
@@ -215,7 +291,8 @@ export const getCustomerAnalyticsData = async () => {
                     100.0 * COUNT(*) FILTER (WHERE order_count > 1) / NULLIF(COUNT(*) FILTER (WHERE order_count > 0), 0),
                     0
                 ) AS repeat_purchase_rate
-            FROM customer_orders`
+            FROM customer_orders`,
+            [start, end]
         ),
         pool.query(
             `SELECT
@@ -224,9 +301,11 @@ export const getCustomerAnalyticsData = async () => {
                 COUNT(*) AS new_users
              FROM users
              WHERE role = 'customer'
-               AND created_at >= CURRENT_DATE - INTERVAL '11 weeks'
+               AND created_at >= $1
+               AND created_at <= $2
              GROUP BY sort_week
-             ORDER BY sort_week ASC`
+             ORDER BY sort_week ASC`,
+            [start, end]
         )
     ]);
 
@@ -251,21 +330,26 @@ export const getCustomerAnalyticsData = async () => {
     };
 };
 
-export const getOrderAnalyticsData = async () => {
+export const getOrderAnalyticsData = async (range: AnalyticsRange = {}) => {
+    const { start, end } = buildRangeMeta(range);
     const [summaryResult, statusResult, dayResult, hourResult] = await Promise.all([
         pool.query(
             `SELECT
-                COUNT(*) AS total_orders,
-                COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled_orders,
+                COUNT(*) FILTER (WHERE created_at >= $1 AND created_at <= $2) AS total_orders,
+                COUNT(*) FILTER (WHERE status = 'cancelled' AND created_at >= $1 AND created_at <= $2) AS cancelled_orders,
                 COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE) AS orders_today,
-                COALESCE(AVG(total_amount), 0) AS average_order_value
-             FROM orders`
+                COALESCE(AVG(total_amount) FILTER (WHERE created_at >= $1 AND created_at <= $2), 0) AS average_order_value
+             FROM orders`,
+            [start, end]
         ),
         pool.query(
             `SELECT status, COUNT(*) AS count
              FROM orders
+             WHERE created_at >= $1
+               AND created_at <= $2
              GROUP BY status
-             ORDER BY count DESC`
+             ORDER BY count DESC`,
+            [start, end]
         ),
         pool.query(
             `SELECT
@@ -273,18 +357,22 @@ export const getOrderAnalyticsData = async () => {
                 DATE(created_at) AS sort_date,
                 COUNT(*) AS orders
              FROM orders
-             WHERE created_at >= CURRENT_DATE - INTERVAL '29 days'
+             WHERE created_at >= $1
+               AND created_at <= $2
              GROUP BY DATE(created_at)
-             ORDER BY sort_date ASC`
+             ORDER BY sort_date ASC`,
+            [start, end]
         ),
         pool.query(
             `SELECT
                 LPAD(EXTRACT(HOUR FROM created_at)::text, 2, '0') || ':00' AS hour,
                 COUNT(*) AS orders
              FROM orders
-             WHERE created_at >= CURRENT_DATE - INTERVAL '29 days'
+             WHERE created_at >= $1
+               AND created_at <= $2
              GROUP BY EXTRACT(HOUR FROM created_at)
-             ORDER BY EXTRACT(HOUR FROM created_at) ASC`
+             ORDER BY EXTRACT(HOUR FROM created_at) ASC`,
+            [start, end]
         )
     ]);
 
@@ -305,7 +393,8 @@ export const getOrderAnalyticsData = async () => {
     };
 };
 
-export const getInventoryInsightsData = async () => {
+export const getInventoryInsightsData = async (range: AnalyticsRange = {}) => {
+    const { start, end } = buildRangeMeta(range);
     const [lowStockResult, fastSellingResult, slowMovingResult] = await Promise.all([
         pool.query(
             `SELECT id, name, COALESCE(stock_quantity, 0) AS stock
@@ -319,7 +408,7 @@ export const getInventoryInsightsData = async () => {
             `SELECT
                 p.id,
                 p.name,
-                COALESCE(SUM(oi.quantity), 0) AS units_sold,
+                COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
                 COALESCE(p.stock_quantity, 0) AS stock
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
@@ -327,13 +416,14 @@ export const getInventoryInsightsData = async () => {
              WHERE COALESCE(p.is_deleted, false) = false
              GROUP BY p.id, p.name, p.stock_quantity
              ORDER BY units_sold DESC, p.name ASC
-             LIMIT 10`
+             LIMIT 10`,
+            [start, end]
         ),
         pool.query(
             `SELECT
                 p.id,
                 p.name,
-                COALESCE(SUM(oi.quantity), 0) AS units_sold,
+                COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
                 COALESCE(p.stock_quantity, 0) AS stock
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
@@ -341,7 +431,8 @@ export const getInventoryInsightsData = async () => {
              WHERE COALESCE(p.is_deleted, false) = false
              GROUP BY p.id, p.name, p.stock_quantity
              ORDER BY units_sold ASC, p.name ASC
-             LIMIT 10`
+             LIMIT 10`,
+            [start, end]
         )
     ]);
 
@@ -371,7 +462,8 @@ export const getInventoryInsightsData = async () => {
     };
 };
 
-export const getTrafficAnalyticsData = async () => {
+export const getTrafficAnalyticsData = async (range: AnalyticsRange = {}) => {
+    const { start, end } = buildRangeMeta(range);
     const [summaryResult, visitsByDayResult, topPagesResult, ordersResult] = await Promise.all([
         pool.query(
             `SELECT
@@ -380,7 +472,9 @@ export const getTrafficAnalyticsData = async () => {
                 COUNT(*) FILTER (WHERE event_type = 'add_to_cart') AS add_to_cart,
                 COUNT(*) FILTER (WHERE event_type = 'checkout_start') AS checkout_starts
              FROM analytics_events
-             WHERE created_at >= CURRENT_DATE - INTERVAL '29 days'`
+             WHERE created_at >= $1
+               AND created_at <= $2`,
+            [start, end]
         ),
         pool.query(
             `SELECT
@@ -389,24 +483,30 @@ export const getTrafficAnalyticsData = async () => {
                 COUNT(*) FILTER (WHERE event_type = 'page_view') AS visits,
                 COUNT(*) FILTER (WHERE event_type = 'product_view') AS product_views
              FROM analytics_events
-             WHERE created_at >= CURRENT_DATE - INTERVAL '29 days'
+             WHERE created_at >= $1
+               AND created_at <= $2
              GROUP BY DATE(created_at)
-             ORDER BY sort_date ASC`
+             ORDER BY sort_date ASC`,
+            [start, end]
         ),
         pool.query(
             `SELECT COALESCE(page, 'Unknown') AS page, COUNT(*) AS visits
              FROM analytics_events
              WHERE event_type = 'page_view'
-               AND created_at >= CURRENT_DATE - INTERVAL '29 days'
+               AND created_at >= $1
+               AND created_at <= $2
              GROUP BY COALESCE(page, 'Unknown')
              ORDER BY visits DESC
-             LIMIT 10`
+             LIMIT 10`,
+            [start, end]
         ),
         pool.query(
             `SELECT COUNT(*) AS orders
              FROM orders
              WHERE status <> 'cancelled'
-               AND created_at >= CURRENT_DATE - INTERVAL '29 days'`
+               AND created_at >= $1
+               AND created_at <= $2`,
+            [start, end]
         )
     ]);
 

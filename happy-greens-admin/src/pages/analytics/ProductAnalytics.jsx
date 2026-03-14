@@ -5,12 +5,16 @@ import MetricCard from '../../components/analytics/MetricCard';
 import ChartCard from '../../components/analytics/ChartCard';
 import ChartTooltip from '../../components/analytics/ChartTooltip';
 import AnalyticsTable from '../../components/analytics/AnalyticsTable';
+import AnalyticsFilter from '../../components/AnalyticsFilter';
+import AnalyticsRefreshButton from '../../components/AnalyticsRefreshButton';
 import { getDetailedProductAnalytics } from '../../services/analytics.service';
 
 const formatCurrency = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
 export default function ProductAnalytics() {
+  const [selectedRange, setSelectedRange] = useState('7d');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState({
     metrics: {
       topSellingProducts: [],
@@ -22,24 +26,38 @@ export default function ProductAnalytics() {
     table: [],
   });
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const response = await getDetailedProductAnalytics();
-        setData(response.data);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const load = async (range, refresh = false) => {
+    try {
+      refresh ? setIsRefreshing(true) : setLoading(true);
+      const response = await getDetailedProductAnalytics(range);
+      setData(response.data);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
-    load();
-  }, []);
+  useEffect(() => {
+    load(selectedRange);
+  }, [selectedRange]);
+
+  const handleRefresh = async () => {
+    if (!window.confirm('Recalculate analytics from the selected time range?')) return;
+    await load(selectedRange, true);
+  };
+
+  const controls = (
+    <>
+      <AnalyticsFilter value={selectedRange} onChange={setSelectedRange} disabled={loading || isRefreshing} />
+      <AnalyticsRefreshButton onClick={handleRefresh} loading={isRefreshing} disabled={loading || isRefreshing} />
+    </>
+  );
 
   return (
     <AnalyticsLayout
       title="Product Analytics"
       description="Measure product demand, stock pressure, and revenue contribution."
+      actions={controls}
     >
       {loading ? (
         <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -55,7 +73,7 @@ export default function ProductAnalytics() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <ChartCard title="Revenue per Product" description="Top products by revenue contribution.">
+            <ChartCard title="Revenue per Product" description="Top products by revenue contribution." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.metrics.revenuePerProduct} layout="vertical" margin={{ left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

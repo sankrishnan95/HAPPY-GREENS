@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import {
+    AnalyticsRange,
     getCustomerAnalyticsData,
     getInventoryInsightsData,
     getOrderAnalyticsData,
@@ -38,6 +39,14 @@ const sanitizeProductId = (value: unknown): number | null => {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
+const getAnalyticsRange = (req: Request): AnalyticsRange => {
+    const range = typeof req.query.range === 'string' ? req.query.range : '7d';
+    const from = typeof req.query.from === 'string' ? req.query.from : undefined;
+    const to = typeof req.query.to === 'string' ? req.query.to : undefined;
+
+    return { range, from, to };
+};
+
 export const trackAnalyticsEvent = async (req: Request, res: Response) => {
     const eventType = sanitizeText(req.body?.event_type, 64);
     const page = sanitizeText(req.body?.page, 255);
@@ -62,54 +71,54 @@ export const trackAnalyticsEvent = async (req: Request, res: Response) => {
     });
 };
 
-export const getSalesAnalytics = async (_req: Request, res: Response) => {
+export const getSalesAnalytics = async (req: Request, res: Response) => {
     try {
-        res.json(await getSalesAnalyticsData());
+        res.json(await getSalesAnalyticsData(getAnalyticsRange(req)));
     } catch (error) {
         console.error('Sales analytics error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-export const getProductAnalytics = async (_req: Request, res: Response) => {
+export const getProductAnalytics = async (req: Request, res: Response) => {
     try {
-        res.json(await getProductAnalyticsData());
+        res.json(await getProductAnalyticsData(getAnalyticsRange(req)));
     } catch (error) {
         console.error('Product analytics detail error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-export const getCustomerAnalytics = async (_req: Request, res: Response) => {
+export const getCustomerAnalytics = async (req: Request, res: Response) => {
     try {
-        res.json(await getCustomerAnalyticsData());
+        res.json(await getCustomerAnalyticsData(getAnalyticsRange(req)));
     } catch (error) {
         console.error('Customer analytics detail error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-export const getOrderAnalytics = async (_req: Request, res: Response) => {
+export const getOrderAnalytics = async (req: Request, res: Response) => {
     try {
-        res.json(await getOrderAnalyticsData());
+        res.json(await getOrderAnalyticsData(getAnalyticsRange(req)));
     } catch (error) {
         console.error('Order analytics detail error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-export const getInventoryInsights = async (_req: Request, res: Response) => {
+export const getInventoryInsights = async (req: Request, res: Response) => {
     try {
-        res.json(await getInventoryInsightsData());
+        res.json(await getInventoryInsightsData(getAnalyticsRange(req)));
     } catch (error) {
         console.error('Inventory analytics error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-export const getTrafficAnalytics = async (_req: Request, res: Response) => {
+export const getTrafficAnalytics = async (req: Request, res: Response) => {
     try {
-        res.json(await getTrafficAnalyticsData());
+        res.json(await getTrafficAnalyticsData(getAnalyticsRange(req)));
     } catch (error) {
         console.error('Traffic analytics error:', error);
         res.status(500).json({ message: 'Server error' });

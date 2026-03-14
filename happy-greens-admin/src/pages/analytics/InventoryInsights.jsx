@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react';
 import AnalyticsLayout from '../../components/analytics/AnalyticsLayout';
 import MetricCard from '../../components/analytics/MetricCard';
 import AnalyticsTable from '../../components/analytics/AnalyticsTable';
+import AnalyticsFilter from '../../components/AnalyticsFilter';
+import AnalyticsRefreshButton from '../../components/AnalyticsRefreshButton';
 import { getInventoryInsights } from '../../services/analytics.service';
 
 export default function InventoryInsights() {
+  const [selectedRange, setSelectedRange] = useState('7d');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState({
     metrics: { lowStockCount: 0, fastSellingCount: 0, slowMovingCount: 0 },
     lowStockItems: [],
@@ -13,24 +17,38 @@ export default function InventoryInsights() {
     slowMovingProducts: [],
   });
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const response = await getInventoryInsights();
-        setData(response.data);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const load = async (range, refresh = false) => {
+    try {
+      refresh ? setIsRefreshing(true) : setLoading(true);
+      const response = await getInventoryInsights(range);
+      setData(response.data);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
-    load();
-  }, []);
+  useEffect(() => {
+    load(selectedRange);
+  }, [selectedRange]);
+
+  const handleRefresh = async () => {
+    if (!window.confirm('Recalculate analytics from the selected time range?')) return;
+    await load(selectedRange, true);
+  };
+
+  const controls = (
+    <>
+      <AnalyticsFilter value={selectedRange} onChange={setSelectedRange} disabled={loading || isRefreshing} />
+      <AnalyticsRefreshButton onClick={handleRefresh} loading={isRefreshing} disabled={loading || isRefreshing} />
+    </>
+  );
 
   return (
     <AnalyticsLayout
       title="Inventory Insights"
       description="Spot low stock, fast movers, and products that need stocking decisions."
+      actions={controls}
     >
       {loading ? (
         <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">

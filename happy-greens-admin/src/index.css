@@ -104,3 +104,15 @@ code {
         radial-gradient(circle at 18% 86%, rgba(251, 191, 36, 0.22), transparent 24%),
         linear-gradient(155deg, #0f2f2a 0%, #114b45 32%, #1c4f69 62%, #312e81 100%);
 }
+
+.sidebar-scroll-hidden {
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sidebar-scroll-hidden::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}

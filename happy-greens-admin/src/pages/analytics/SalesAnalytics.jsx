@@ -15,12 +15,16 @@ import AnalyticsLayout from '../../components/analytics/AnalyticsLayout';
 import MetricCard from '../../components/analytics/MetricCard';
 import ChartCard from '../../components/analytics/ChartCard';
 import ChartTooltip from '../../components/analytics/ChartTooltip';
+import AnalyticsFilter from '../../components/AnalyticsFilter';
+import AnalyticsRefreshButton from '../../components/AnalyticsRefreshButton';
 import { getSalesAnalytics } from '../../services/analytics.service';
 
 const formatCurrency = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
 export default function SalesAnalytics() {
+  const [selectedRange, setSelectedRange] = useState('7d');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState({
     metrics: {
       totalRevenue: 0,
@@ -34,24 +38,38 @@ export default function SalesAnalytics() {
     revenueByCategory: [],
   });
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const response = await getSalesAnalytics();
-        setData(response.data);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async (range, refresh = false) => {
+    try {
+      refresh ? setIsRefreshing(true) : setLoading(true);
+      const response = await getSalesAnalytics(range);
+      setData(response.data);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
-    load();
-  }, []);
+  useEffect(() => {
+    fetchData(selectedRange);
+  }, [selectedRange]);
+
+  const handleRefresh = async () => {
+    if (!window.confirm('Recalculate analytics from the selected time range?')) return;
+    await fetchData(selectedRange, true);
+  };
+
+  const controls = (
+    <>
+      <AnalyticsFilter value={selectedRange} onChange={setSelectedRange} disabled={loading || isRefreshing} />
+      <AnalyticsRefreshButton onClick={handleRefresh} loading={isRefreshing} disabled={loading} />
+    </>
+  );
 
   return (
     <AnalyticsLayout
-      title="Sales Analytics"
+      title="Analytics Dashboard"
       description="Revenue, order velocity, and category contribution in one view."
+      actions={controls}
     >
       {loading ? (
         <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -62,14 +80,14 @@ export default function SalesAnalytics() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <MetricCard title="Total Revenue" value={formatCurrency(data.metrics.totalRevenue)} helper="All non-cancelled orders" tone="emerald" />
             <MetricCard title="Orders Today" value={data.metrics.ordersToday} helper="Placed since midnight" tone="blue" />
-            <MetricCard title="Orders This Week" value={data.metrics.ordersThisWeek} helper="From the current week" tone="amber" />
-            <MetricCard title="Orders This Month" value={data.metrics.ordersThisMonth} helper="Current month volume" tone="violet" />
+            <MetricCard title="Orders This Week" value={data.metrics.ordersThisWeek} helper="From the selected range" tone="amber" />
+            <MetricCard title="Orders This Month" value={data.metrics.ordersThisMonth} helper="Volume inside the selected range" tone="violet" />
             <MetricCard title="Average Order Value" value={formatCurrency(data.metrics.averageOrderValue)} helper="Average basket size" tone="slate" />
-            <MetricCard title="Revenue Growth" value={`${Number(data.metrics.revenueGrowth || 0).toFixed(1)}%`} helper="Current month vs previous month" tone="rose" />
+            <MetricCard title="Revenue Growth" value={`${Number(data.metrics.revenueGrowth || 0).toFixed(1)}%`} helper="Compared against the previous period" tone="rose" />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <ChartCard title="Revenue by Day" description="Daily revenue for the last 30 days.">
+            <ChartCard title="Revenue by Day" description="Daily revenue for the selected period." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.revenueByDay}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -82,7 +100,7 @@ export default function SalesAnalytics() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Orders by Day" description="Daily order count for the same period.">
+            <ChartCard title="Orders by Day" description="Daily order count for the same period." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.revenueByDay}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -96,7 +114,7 @@ export default function SalesAnalytics() {
             </ChartCard>
           </div>
 
-          <ChartCard title="Revenue by Category" description="Which categories contribute the most revenue.">
+          <ChartCard title="Revenue by Category" description="Which categories contribute the most revenue." loading={isRefreshing}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.revenueByCategory} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

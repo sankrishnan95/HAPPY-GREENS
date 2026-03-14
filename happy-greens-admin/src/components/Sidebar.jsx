@@ -42,7 +42,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="relative flex-1 overflow-y-auto px-4 py-6">
+      <nav className="sidebar-scroll-hidden relative flex-1 overflow-y-auto px-4 py-6">
         <ul className="space-y-2">
           {navItems.map((item, index) => {
             const isAnalyticsSection = item.children?.some((child) => location.pathname.startsWith(child.to.replace(/\/(sales|products|customers|orders|inventory|traffic)$/, ''))) || false;

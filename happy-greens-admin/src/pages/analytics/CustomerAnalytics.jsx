@@ -4,13 +4,17 @@ import AnalyticsLayout from '../../components/analytics/AnalyticsLayout';
 import MetricCard from '../../components/analytics/MetricCard';
 import ChartCard from '../../components/analytics/ChartCard';
 import ChartTooltip from '../../components/analytics/ChartTooltip';
+import AnalyticsFilter from '../../components/AnalyticsFilter';
+import AnalyticsRefreshButton from '../../components/AnalyticsRefreshButton';
 import { getDetailedCustomerAnalytics } from '../../services/analytics.service';
 
 const PIE_COLORS = ['#10b981', '#6366f1'];
 const formatCurrency = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
 export default function CustomerAnalytics() {
+  const [selectedRange, setSelectedRange] = useState('7d');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [data, setData] = useState({
     metrics: {
       totalCustomers: 0,
@@ -23,24 +27,38 @@ export default function CustomerAnalytics() {
     customerMix: [],
   });
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const response = await getDetailedCustomerAnalytics();
-        setData(response.data);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const load = async (range, refresh = false) => {
+    try {
+      refresh ? setIsRefreshing(true) : setLoading(true);
+      const response = await getDetailedCustomerAnalytics(range);
+      setData(response.data);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
-    load();
-  }, []);
+  useEffect(() => {
+    load(selectedRange);
+  }, [selectedRange]);
+
+  const handleRefresh = async () => {
+    if (!window.confirm('Recalculate analytics from the selected time range?')) return;
+    await load(selectedRange, true);
+  };
+
+  const controls = (
+    <>
+      <AnalyticsFilter value={selectedRange} onChange={setSelectedRange} disabled={loading || isRefreshing} />
+      <AnalyticsRefreshButton onClick={handleRefresh} loading={isRefreshing} disabled={loading || isRefreshing} />
+    </>
+  );
 
   return (
     <AnalyticsLayout
       title="Customer Analytics"
       description="Understand customer acquisition, retention, and spend behavior."
+      actions={controls}
     >
       {loading ? (
         <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -57,7 +75,7 @@ export default function CustomerAnalytics() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <ChartCard title="New Users per Week" description="Customer signups over the last 12 weeks.">
+            <ChartCard title="New Users per Week" description="Customer signups over the last 12 weeks." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.newUsersByWeek}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -69,7 +87,7 @@ export default function CustomerAnalytics() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Customer Mix" description="New versus returning customers.">
+            <ChartCard title="Customer Mix" description="New versus returning customers." loading={isRefreshing}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={data.customerMix} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={4}>
