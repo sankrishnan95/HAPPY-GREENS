@@ -149,7 +149,7 @@ export default function Orders() {
         ) : (
           <OrdersTable
             orders={filteredOrders}
-            onUpdateStatus={handleStatusUpdate}
+            onStatusUpdate={handleStatusUpdate}
             onViewOrder={handleViewOrder}
             onPrintInvoice={handlePrintInvoice}
           />
