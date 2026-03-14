@@ -31,7 +31,9 @@ export default function CustomerAnalytics() {
     try {
       refresh ? setIsRefreshing(true) : setLoading(true);
       const response = await getDetailedCustomerAnalytics(range);
-      setData(response.data);
+      setData(response?.data || data);
+    } catch (error) {
+      console.error('Customer analytics load failed:', error);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
