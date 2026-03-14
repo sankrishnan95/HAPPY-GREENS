@@ -28,8 +28,9 @@ export default function Sidebar() {
   const location = useLocation();
 
   return (
-    <aside className="flex h-full w-[280px] flex-col border-r border-emerald-900/10 bg-[#123b2f] text-white shadow-[0_20px_50px_rgba(7,24,18,0.28)] lg:h-screen lg:w-[288px]">
-      <div className="border-b border-white/10 px-6 py-7">
+    <aside className="admin-sidebar-gradient relative flex h-full w-[280px] flex-col overflow-hidden border-r border-white/10 text-white shadow-[0_20px_50px_rgba(7,24,18,0.22)] lg:h-screen lg:w-[288px]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent_35%)]" />
+      <div className="relative border-b border-white/10 px-6 py-7">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/12 text-emerald-100 ring-1 ring-white/10 backdrop-blur-sm">
             <Leaf className="h-6 w-6" />
@@ -41,7 +42,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-4 py-6">
+      <nav className="relative flex-1 overflow-y-auto px-4 py-6">
         <ul className="space-y-2">
           {navItems.map((item, index) => {
             const isAnalyticsSection = item.children?.some((child) => location.pathname.startsWith(child.to.replace(/\/(sales|products|customers|orders|inventory|traffic)$/, ''))) || false;
@@ -54,8 +55,8 @@ export default function Sidebar() {
                   end={item.to === '/'}
                   className={({ isActive }) =>
                     `group flex min-h-[48px] items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 ${isActive || isAnalyticsSection
-                      ? 'bg-emerald-50 text-emerald-800 shadow-[0_12px_24px_rgba(134,239,172,0.18)]'
-                      : 'text-emerald-50/88 hover:bg-white/8 hover:text-white'
+                      ? 'bg-white/88 text-emerald-900 shadow-[0_12px_24px_rgba(255,255,255,0.14)]'
+                      : 'text-white/88 hover:bg-white/10 hover:text-white'
                     }`
                   }
                 >
@@ -71,8 +72,8 @@ export default function Sidebar() {
                           to={child.to}
                           className={({ isActive }) =>
                             `block rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${isActive
-                              ? 'bg-white/12 text-white'
-                              : 'text-emerald-100/76 hover:bg-white/6 hover:text-white'
+                              ? 'bg-white/16 text-white'
+                              : 'text-white/72 hover:bg-white/8 hover:text-white'
                             }`
                           }
                         >
@@ -88,9 +89,9 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      <div className="border-t border-white/10 px-6 py-5">
+      <div className="relative border-t border-white/10 px-6 py-5">
         <div className="rounded-2xl bg-white/6 px-4 py-3 ring-1 ring-white/8 backdrop-blur-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-emerald-100/60">Workspace</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-white/60">Workspace</p>
           <p className="mt-2 text-sm font-medium text-white/90">Store operations, analytics, and fulfillment.</p>
         </div>
       </div>

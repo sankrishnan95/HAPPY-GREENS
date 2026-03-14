@@ -20,7 +20,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-[#f4f7f2] text-slate-900">
-      <div className="hidden lg:block">
+      <div className="hidden self-start lg:sticky lg:top-0 lg:block lg:h-screen">
         <Sidebar />
       </div>
 

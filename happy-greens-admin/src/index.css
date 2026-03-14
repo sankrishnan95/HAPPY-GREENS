@@ -95,3 +95,12 @@ code {
     box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
     transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
+
+.admin-sidebar-gradient {
+    background:
+        radial-gradient(circle at 10% 12%, rgba(72, 187, 120, 0.45), transparent 28%),
+        radial-gradient(circle at 88% 18%, rgba(56, 189, 248, 0.35), transparent 26%),
+        radial-gradient(circle at 78% 82%, rgba(168, 85, 247, 0.28), transparent 30%),
+        radial-gradient(circle at 18% 86%, rgba(251, 191, 36, 0.22), transparent 24%),
+        linear-gradient(155deg, #0f2f2a 0%, #114b45 32%, #1c4f69 62%, #312e81 100%);
+}
