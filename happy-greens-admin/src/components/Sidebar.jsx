@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ShoppingCart, Package, Truck, Tag, BarChart3, Leaf, Image as ImageIcon, Users } from 'lucide-react';
 
 const navItems = [
@@ -25,62 +25,74 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const location = useLocation();
+
   return (
-    <aside className="w-full bg-primary text-white lg:w-72 lg:flex-shrink-0">
-      <div className="flex items-center gap-3 border-b border-primary-700 px-4 py-4 sm:px-6">
-        <Leaf className="h-7 w-7 sm:h-8 sm:w-8" />
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-bold sm:text-xl">Happy Greens</h1>
-          <p className="text-xs text-primary-200">Admin Dashboard</p>
+    <aside className="flex h-full w-[280px] flex-col border-r border-emerald-900/10 bg-[#123b2f] text-white shadow-[0_20px_50px_rgba(7,24,18,0.28)] lg:h-screen lg:w-[288px]">
+      <div className="border-b border-white/10 px-6 py-7">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/12 text-emerald-100 ring-1 ring-white/10 backdrop-blur-sm">
+            <Leaf className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">Happy Greens</h1>
+            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-emerald-100/70">Admin Dashboard</p>
+          </div>
         </div>
       </div>
 
-      <nav className="overflow-x-auto px-3 py-3 custom-scrollbar lg:flex-1 lg:px-4">
-        <ul className="flex min-w-max gap-2 lg:min-w-0 lg:flex-col lg:space-y-2 lg:gap-0">
-          {navItems.map((item) => (
-            <li key={item.to} className="lg:w-full">
-              <NavLink
-                to={item.to}
-                end={item.to === '/'}
-                className={({ isActive }) =>
-                  `flex min-h-[44px] items-center gap-3 rounded-lg px-4 py-3 whitespace-nowrap transition-colors ${isActive
-                    ? 'bg-primary-700 text-white'
-                    : 'text-primary-100 hover:bg-primary-700/50'
-                  }`
-                }
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="font-medium">{item.label}</span>
-              </NavLink>
+      <nav className="flex-1 overflow-y-auto px-4 py-6">
+        <ul className="space-y-2">
+          {navItems.map((item, index) => {
+            const isAnalyticsSection = item.children?.some((child) => location.pathname.startsWith(child.to.replace(/\/(sales|products|customers|orders|inventory|traffic)$/, ''))) || false;
 
-              {item.children ? (
-                <ul className="mt-2 flex min-w-max gap-2 pl-2 lg:min-w-0 lg:flex-col lg:gap-1 lg:pl-12">
-                  {item.children.map((child) => (
-                    <li key={child.to}>
-                      <NavLink
-                        to={child.to}
-                        className={({ isActive }) =>
-                          `block rounded-lg px-3 py-2 text-sm whitespace-nowrap transition-colors ${isActive
-                            ? 'bg-primary-800 text-white'
-                            : 'text-primary-200 hover:bg-primary-700/40 hover:text-white'
-                          }`
-                        }
-                      >
-                        {child.label}
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </li>
-          ))}
+            return (
+              <li key={item.to}>
+                {index === 1 ? <div className="mb-4 mt-2 border-t border-white/10" /> : null}
+                <NavLink
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) =>
+                    `group flex min-h-[48px] items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 ${isActive || isAnalyticsSection
+                      ? 'bg-emerald-50 text-emerald-800 shadow-[0_12px_24px_rgba(134,239,172,0.18)]'
+                      : 'text-emerald-50/88 hover:bg-white/8 hover:text-white'
+                    }`
+                  }
+                >
+                  <item.icon className="h-[22px] w-[22px] flex-shrink-0" strokeWidth={1.9} />
+                  <span className="font-medium">{item.label}</span>
+                </NavLink>
+
+                {item.children ? (
+                  <ul className="mt-3 space-y-1 border-l border-white/10 pl-4">
+                    {item.children.map((child) => (
+                      <li key={child.to}>
+                        <NavLink
+                          to={child.to}
+                          className={({ isActive }) =>
+                            `block rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${isActive
+                              ? 'bg-white/12 text-white'
+                              : 'text-emerald-100/76 hover:bg-white/6 hover:text-white'
+                            }`
+                          }
+                        >
+                          {child.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
-      <div className="hidden border-t border-primary-700 p-4 lg:block">
-        <p className="text-center text-xs text-primary-200">
-          © 2026 Happy Greens
-        </p>
+      <div className="border-t border-white/10 px-6 py-5">
+        <div className="rounded-2xl bg-white/6 px-4 py-3 ring-1 ring-white/8 backdrop-blur-sm">
+          <p className="text-xs uppercase tracking-[0.18em] text-emerald-100/60">Workspace</p>
+          <p className="mt-2 text-sm font-medium text-white/90">Store operations, analytics, and fulfillment.</p>
+        </div>
       </div>
     </aside>
   );
