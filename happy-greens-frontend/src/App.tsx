@@ -1,7 +1,8 @@
-import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { Toaster } from 'react-hot-toast';
+import { trackEvent } from './services/analytics.service';
 
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Shop'));
@@ -25,9 +26,20 @@ const PageFallback = () => (
     </div>
 );
 
+const PageTracker = () => {
+    const location = useLocation();
+
+    useEffect(() => {
+        trackEvent('page_view', { page: `${location.pathname}${location.search}` });
+    }, [location.pathname, location.search]);
+
+    return null;
+};
+
 function App() {
     return (
         <Router>
+            <PageTracker />
             <div className="min-h-screen flex flex-col overflow-x-hidden">
                 <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
                 <Navbar />

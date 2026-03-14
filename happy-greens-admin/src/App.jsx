@@ -11,9 +11,14 @@ import Banners from './pages/Banners';
 import BannerEdit from './pages/BannerEdit';
 import Customers from './pages/Customers';
 import CustomerDetails from './pages/CustomerDetails';
-import Analytics from './pages/Analytics';
 import OrderDetails from './pages/OrderDetails';
 import ProtectedRoute from './components/ProtectedRoute';
+import SalesAnalytics from './pages/analytics/SalesAnalytics';
+import ProductAnalytics from './pages/analytics/ProductAnalytics';
+import CustomerAnalytics from './pages/analytics/CustomerAnalytics';
+import OrderAnalytics from './pages/analytics/OrderAnalytics';
+import InventoryInsights from './pages/analytics/InventoryInsights';
+import TrafficAnalytics from './pages/analytics/TrafficAnalytics';
 
 function App() {
   return (
@@ -39,7 +44,13 @@ function App() {
           <Route path="banners/edit/:id" element={<BannerEdit />} />
           <Route path="customers" element={<Customers />} />
           <Route path="customers/:id" element={<CustomerDetails />} />
-          <Route path="analytics" element={<Analytics />} />
+          <Route path="analytics" element={<Navigate to="/analytics/sales" replace />} />
+          <Route path="analytics/sales" element={<SalesAnalytics />} />
+          <Route path="analytics/products" element={<ProductAnalytics />} />
+          <Route path="analytics/customers" element={<CustomerAnalytics />} />
+          <Route path="analytics/orders" element={<OrderAnalytics />} />
+          <Route path="analytics/inventory" element={<InventoryInsights />} />
+          <Route path="analytics/traffic" element={<TrafficAnalytics />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

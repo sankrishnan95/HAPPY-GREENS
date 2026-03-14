@@ -19,7 +19,8 @@ import wishlistRoutes from './routes/wishlist.routes';
 import path from 'path';
 import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
-import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill } from './bootstrap/schema';
+import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill, ensureAnalyticsSchema } from './bootstrap/schema';
+import analyticsRoutes from './routes/analytics.routes';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -85,6 +86,7 @@ app.use('/api/coupons', couponsRoutes); // Public coupon validation
 app.use('/api/banners', bannerRoutes); // Banners management & storefront usage
 app.use('/api/loyalty', loyaltyRoutes); // Loyalty points
 app.use('/api/wishlist', authenticate, wishlistRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Generic admin routes (MUST be after specific admin routes)
 app.use('/api/admin', adminRoutes);
@@ -93,6 +95,7 @@ const startServer = async () => {
   try {
     await ensureAuthColumns();
     await ensureOperationsSchema();
+    await ensureAnalyticsSchema();
     await ensureCategoriesAndProductCategoryBackfill();
     await ensureProductImagesColumn();
     await ensureBannerTextColumns();

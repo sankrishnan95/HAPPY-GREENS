@@ -11,6 +11,14 @@ import {
     getDashboardAnalytics
 } from '../controllers/admin.controller';
 import { getOrderInvoice } from '../controllers/invoice.controller';
+import {
+    getCustomerAnalytics as getCustomerAnalyticsDetail,
+    getInventoryInsights,
+    getOrderAnalytics,
+    getProductAnalytics as getProductAnalyticsDetail,
+    getSalesAnalytics,
+    getTrafficAnalytics,
+} from '../controllers/analytics.controller';
 
 const router = Router();
 
@@ -35,6 +43,7 @@ const router = Router();
  * Auth: Admin only
  */
 router.get('/analytics/dashboard', authenticate, requireAdmin, getDashboardAnalytics);
+router.get('/analytics/sales', authenticate, requireAdmin, getSalesAnalytics);
 
 /**
  * Revenue Analytics
@@ -63,6 +72,7 @@ router.get('/analytics/revenue', authenticate, requireAdmin, getRevenueAnalytics
  * Auth: Admin only
  */
 router.get('/analytics/orders', authenticate, requireAdmin, getOrdersAnalytics);
+router.get('/analytics/orders/insights', authenticate, requireAdmin, getOrderAnalytics);
 
 /**
  * Customer Analytics
@@ -77,6 +87,7 @@ router.get('/analytics/orders', authenticate, requireAdmin, getOrdersAnalytics);
  * Auth: Admin only
  */
 router.get('/analytics/customers', authenticate, requireAdmin, getCustomerAnalytics);
+router.get('/analytics/customers/insights', authenticate, requireAdmin, getCustomerAnalyticsDetail);
 
 /**
  * Product Analytics
@@ -91,6 +102,9 @@ router.get('/analytics/customers', authenticate, requireAdmin, getCustomerAnalyt
  * Auth: Admin only
  */
 router.get('/analytics/products', authenticate, requireAdmin, getProductAnalytics);
+router.get('/analytics/products/insights', authenticate, requireAdmin, getProductAnalyticsDetail);
+router.get('/analytics/inventory', authenticate, requireAdmin, getInventoryInsights);
+router.get('/analytics/traffic', authenticate, requireAdmin, getTrafficAnalytics);
 
 /**
  * Get All Orders

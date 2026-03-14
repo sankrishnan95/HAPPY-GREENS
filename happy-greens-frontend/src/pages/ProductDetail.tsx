@@ -9,6 +9,7 @@ import { API_BASE_URL } from '../config/api';
 import { normalizeImageUrl } from '../utils/image';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
+import { trackEvent } from '../services/analytics.service';
 
 const FALLBACK_PRODUCT_IMAGE = normalizeImageUrl(null);
 
@@ -38,6 +39,10 @@ const ProductDetail = () => {
             try {
                 const res = await axios.get(`${API_BASE_URL}/api/products/${id}`);
                 setProduct(res.data);
+                trackEvent('product_view', {
+                    product_id: Number(id),
+                    page: `/product/${id}`,
+                });
             } catch (error) {
                 console.error('Error fetching product:', error);
             } finally {
@@ -53,6 +58,10 @@ const ProductDetail = () => {
         } else {
             addToCart(product);
         }
+        trackEvent('add_to_cart', {
+            product_id: Number(id),
+            page: `/product/${id}`,
+        });
     };
 
     const handleDecrement = () => {
@@ -226,7 +235,13 @@ const ProductDetail = () => {
                         <Button
                             variant={quantity > 0 ? 'secondary' : 'primary'}
                             size="lg"
-                            onClick={() => addToCart(product)}
+                            onClick={() => {
+                                addToCart(product);
+                                trackEvent('add_to_cart', {
+                                    product_id: Number(id),
+                                    page: `/product/${id}`,
+                                });
+                            }}
                             className="flex-1 lg:w-auto"
                             disabled={product.stock_quantity === 0}
                         >

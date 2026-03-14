@@ -121,6 +121,40 @@ export const ensureOperationsSchema = async (): Promise<void> => {
     console.log('[Schema Bootstrap] operations schema ensured');
 };
 
+export const ensureAnalyticsSchema = async (): Promise<void> => {
+    await pool.query(`
+        CREATE EXTENSION IF NOT EXISTS pgcrypto
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS analytics_events (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            event_type TEXT NOT NULL,
+            user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+            page TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_analytics_events_event_type
+        ON analytics_events(event_type)
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at
+        ON analytics_events(created_at)
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_analytics_events_product_id
+        ON analytics_events(product_id)
+    `);
+
+    console.log('[Schema Bootstrap] analytics schema ensured');
+};
+
 export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void> => {
     await pool.query(`
         INSERT INTO categories (name, slug, description)

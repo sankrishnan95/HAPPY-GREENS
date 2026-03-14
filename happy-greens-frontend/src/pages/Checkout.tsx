@@ -6,6 +6,7 @@ import { getLoyaltyInfo } from '../services/loyalty.service';
 import Button from '../components/Button';
 import { Star, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { trackEvent } from '../services/analytics.service';
 
 const Checkout = () => {
     const navigate = useNavigate();
@@ -40,6 +41,12 @@ const Checkout = () => {
                 .catch(() => { }); // silently fail — not critical for checkout
         }
     }, [user]);
+
+    useEffect(() => {
+        if (cart.length > 0) {
+            trackEvent('checkout_start', { page: '/checkout' });
+        }
+    }, [cart.length]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

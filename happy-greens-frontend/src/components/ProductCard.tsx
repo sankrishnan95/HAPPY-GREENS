@@ -6,6 +6,7 @@ import { addToWishlist, removeFromWishlist } from '../services/wishlist.service'
 import toast from 'react-hot-toast';
 import { normalizeImageUrl } from '../utils/image';
 import OptimizedImage from './OptimizedImage';
+import { trackEvent } from '../services/analytics.service';
 
 interface Product {
     id: number;
@@ -40,7 +41,17 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const isWishlisted = wishlistIds.includes(product.id);
     const primaryImage = normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url);
 
-    const handleIncrement = () => addToCart(product);
+    const trackAddToCart = () => {
+        trackEvent('add_to_cart', {
+            product_id: product.id,
+            page: typeof window !== 'undefined' ? window.location.pathname + window.location.search : `/product/${product.id}`,
+        });
+    };
+
+    const handleIncrement = () => {
+        addToCart(product);
+        trackAddToCart();
+    };
 
     const handleDecrement = () => {
         if (quantity > 1) updateQuantity(product.id, quantity - 1);
@@ -131,11 +142,11 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                             <button type="button" onClick={handleIncrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"><Plus className="h-4 w-4" /></button>
                         </div>
                     ) : (
-                        <button type="button" onClick={() => addToCart(product)} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><ShoppingCart className="h-4 w-4" /></button>
+                        <button type="button" onClick={() => { addToCart(product); trackAddToCart(); }} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><ShoppingCart className="h-4 w-4" /></button>
                     )}
                 </div>
 
-                <button type="button" onClick={() => addToCart(product)} className="mt-auto inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[0.95rem] bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
+                <button type="button" onClick={() => { addToCart(product); trackAddToCart(); }} className="mt-auto inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[0.95rem] bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
                     <ShoppingCart className="h-4 w-4" />
                     {quantity > 0 ? 'Add one more' : 'Add to cart'}
                 </button>
