@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Truck, Tag, BarChart3, Leaf, Image as ImageIcon, Users } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Truck, Tag, BarChart3, Image as ImageIcon, Users } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -32,8 +32,12 @@ export default function Sidebar() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent_35%)]" />
       <div className="relative border-b border-white/10 px-6 py-7">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/12 text-emerald-100 ring-1 ring-white/10 backdrop-blur-sm">
-            <Leaf className="h-6 w-6" />
+          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white/10 p-1 ring-1 ring-white/10 backdrop-blur-sm">
+            <img
+              src="/logo.png"
+              alt="Happy Greens"
+              className="h-full w-full rounded-[14px] object-contain"
+            />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">Happy Greens</h1>
