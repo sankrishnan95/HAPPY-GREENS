@@ -7,6 +7,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
+    "keepalive": "node scripts/keep-alive.js",
     "migrate": "ts-node src/db/migrate.ts",
     "migrate:status": "ts-node src/db/migrate.ts status",
     "seed": "ts-node src/db/seed.ts",

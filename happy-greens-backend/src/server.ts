@@ -24,6 +24,7 @@ import analyticsRoutes from './routes/analytics.routes';
 
 const app = express();
 const port = process.env.PORT || 3000;
+const debugHealthChecks = process.env.DEBUG_HEALTHCHECKS === 'true';
 
 const configuredOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) || [];
 const vercelPreviewPattern = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
@@ -60,13 +61,19 @@ app.use(express.json());
 // Expose the static uploads folder broadly
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Basic health check
-app.get('/health', (req: Request, res: Response) => {
+// Lightweight health endpoint for uptime monitors such as UptimeRobot.
+// Ping https://your-backend.onrender.com/api/health every 10 minutes to reduce cold starts.
+const sendHealthResponse = (req: Request, res: Response) => {
+  if (debugHealthChecks) {
+    console.log(`[health] ${req.method} ${req.originalUrl} @ ${new Date().toISOString()}`);
+  }
+
+  res.setHeader('Cache-Control', 'no-store');
   res.json({ status: 'ok', service: 'happy-greens-backend', timestamp: new Date().toISOString() });
-});
-app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'happy-greens-backend', timestamp: new Date().toISOString() });
-});
+};
+
+app.get('/health', sendHealthResponse);
+app.get('/api/health', sendHealthResponse);
 app.get('/', (req: Request, res: Response) => {
   res.json({
     message: "Happy Greens API running ðŸŒ±",
