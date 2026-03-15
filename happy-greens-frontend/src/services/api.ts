@@ -2,9 +2,11 @@ import axios from 'axios';
 import { useStore } from '../store/useStore';
 
 const DEPLOYED_API_BASE_URL = 'https://happy-greens-18n3.onrender.com/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || DEPLOYED_API_BASE_URL;
+export const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || DEPLOYED_API_BASE_URL,
+    baseURL: API_BASE_URL,
     withCredentials: true
 });
 
@@ -43,5 +45,22 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+export const checkBackendHealth = async (signal?: AbortSignal) => {
+    const response = await fetch(`${API_ROOT_URL}/api/health`, {
+        method: 'GET',
+        signal,
+        cache: 'no-store',
+        headers: {
+            Accept: 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Health check failed with status ${response.status}`);
+    }
+
+    return response.json();
+};
 
 export default api;

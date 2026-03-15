@@ -62,12 +62,15 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Basic health check
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+  res.json({ status: 'ok', service: 'happy-greens-backend', timestamp: new Date().toISOString() });
+});
+app.get('/api/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok', service: 'happy-greens-backend', timestamp: new Date().toISOString() });
 });
 app.get('/', (req: Request, res: Response) => {
   res.json({
     message: "Happy Greens API running ðŸŒ±",
-    health: "/health"
+    health: "/api/health"
   });
 });
 // API Routes

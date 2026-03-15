@@ -1,8 +1,9 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { ReactNode, Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { Toaster } from 'react-hot-toast';
 import { trackEvent } from './services/analytics.service';
+import { checkBackendHealth } from './services/api';
 
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Shop'));
@@ -25,6 +26,58 @@ const PageFallback = () => (
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
     </div>
 );
+
+const BackendReadinessGate = ({ children }: { children: ReactNode }) => {
+    const [isReady, setIsReady] = useState(false);
+    const [attempts, setAttempts] = useState(0);
+
+    useEffect(() => {
+        let timeoutId: number | undefined;
+        let isMounted = true;
+        const controller = new AbortController();
+
+        const verifyBackend = async () => {
+            try {
+                await checkBackendHealth(controller.signal);
+                if (isMounted) {
+                    setIsReady(true);
+                }
+            } catch (_) {
+                if (isMounted) {
+                    setAttempts((current) => current + 1);
+                    timeoutId = window.setTimeout(verifyBackend, 2000);
+                }
+            }
+        };
+
+        verifyBackend();
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+        };
+    }, []);
+
+    if (isReady) {
+        return children;
+    }
+
+    return (
+        <div className="page-shell flex min-h-screen flex-col items-center justify-center px-6 text-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
+            <h1 className="mt-6 text-xl font-semibold text-slate-900">Starting storefront services</h1>
+            <p className="mt-2 max-w-md text-sm text-slate-600">
+                The backend is waking up. We&apos;ll continue automatically as soon as it&apos;s ready.
+            </p>
+            {attempts > 2 ? (
+                <p className="mt-3 text-xs text-slate-500">Still checking backend readiness. Retrying every 2 seconds.</p>
+            ) : null}
+        </div>
+    );
+};
 
 const PageTracker = () => {
     const location = useLocation();
@@ -57,36 +110,38 @@ const AuthRedirectHandler = () => {
 function App() {
     return (
         <Router>
-            <PageTracker />
-            <AuthRedirectHandler />
-            <div className="min-h-screen flex flex-col overflow-x-hidden">
-                <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-                <Navbar />
-                <main className="page-shell flex-grow w-full">
-                    <Suspense fallback={<PageFallback />}>
-                        <Routes>
-                            <Route path="/" element={<Home />} />
-                            <Route path="/shop" element={<Shop />} />
-                            <Route path="/product/:id" element={<ProductDetail />} />
-                            <Route path="/cart" element={<Cart />} />
-                            <Route path="/checkout" element={<Checkout />} />
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/register" element={<Register />} />
-                            <Route path="/forgot-password" element={<ForgotPassword />} />
-                            <Route path="/reset-password" element={<ResetPassword />} />
-                            <Route path="/admin" element={<AdminDashboard />} />
-                            <Route path="/profile" element={<Profile />} />
-                            <Route path="/orders" element={<OrdersList />} />
-                            <Route path="/orders/:id" element={<OrderDetail />} />
-                            <Route path="/rewards" element={<Rewards />} />
-                            <Route path="/wishlist" element={<Wishlist />} />
-                        </Routes>
-                    </Suspense>
-                </main>
-                <footer className="bg-gray-800 px-4 py-5 text-center text-white sm:px-6 sm:py-6">
-                    <p className="text-sm sm:text-base">&copy; 2026 Happy Greens. All rights reserved.</p>
-                </footer>
-            </div>
+            <BackendReadinessGate>
+                <PageTracker />
+                <AuthRedirectHandler />
+                <div className="min-h-screen flex flex-col overflow-x-hidden">
+                    <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+                    <Navbar />
+                    <main className="page-shell flex-grow w-full">
+                        <Suspense fallback={<PageFallback />}>
+                            <Routes>
+                                <Route path="/" element={<Home />} />
+                                <Route path="/shop" element={<Shop />} />
+                                <Route path="/product/:id" element={<ProductDetail />} />
+                                <Route path="/cart" element={<Cart />} />
+                                <Route path="/checkout" element={<Checkout />} />
+                                <Route path="/login" element={<Login />} />
+                                <Route path="/register" element={<Register />} />
+                                <Route path="/forgot-password" element={<ForgotPassword />} />
+                                <Route path="/reset-password" element={<ResetPassword />} />
+                                <Route path="/admin" element={<AdminDashboard />} />
+                                <Route path="/profile" element={<Profile />} />
+                                <Route path="/orders" element={<OrdersList />} />
+                                <Route path="/orders/:id" element={<OrderDetail />} />
+                                <Route path="/rewards" element={<Rewards />} />
+                                <Route path="/wishlist" element={<Wishlist />} />
+                            </Routes>
+                        </Suspense>
+                    </main>
+                    <footer className="bg-gray-800 px-4 py-5 text-center text-white sm:px-6 sm:py-6">
+                        <p className="text-sm sm:text-base">&copy; 2026 Happy Greens. All rights reserved.</p>
+                    </footer>
+                </div>
+            </BackendReadinessGate>
         </Router>
     );
 }
