@@ -2,7 +2,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useEffect, useState } from 'react';
 import { getOrders } from '../services/order.service';
-import { sendOtp, verifyOtp } from '../services/auth.service';
+import { sendPhoneVerificationOtp, verifyPhoneVerificationOtp } from '../services/auth.service';
 import Button from '../components/Button';
 
 const Profile = () => {
@@ -64,7 +64,7 @@ const Profile = () => {
         setError('');
         setMessage('');
         try {
-            await sendOtp(phoneInput);
+            await sendPhoneVerificationOtp(phoneInput);
             setOtpSent(true);
             setMessage('OTP sent! Check your messages.');
         } catch (err: any) {
@@ -83,9 +83,11 @@ const Profile = () => {
         setError('');
         setMessage('');
         try {
-            await verifyOtp(phoneInput, otpInput);
-            setUser({ ...user, phone: phoneInput, phone_verified: true }, token);
+            const data = await verifyPhoneVerificationOtp(phoneInput, otpInput);
+            setUser(data.user, token);
             setIsVerifyingPhone(false);
+            setOtpSent(false);
+            setOtpInput('');
             setMessage('Phone verified successfully!');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Invalid or expired OTP');

@@ -11,6 +11,63 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const normalizePhone = (phone: unknown): string | null => {
+    if (typeof phone !== 'string') return null;
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 10) return digits;
+    if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
+    return null;
+};
+
+const createAndStoreOtp = async (phone: string) => {
+    const rateLimitCheck = await pool.query(
+        `SELECT COUNT(*) FROM phone_otps WHERE phone = $1 AND created_at > NOW() - INTERVAL '1 hour'`,
+        [phone]
+    );
+    if (parseInt(rateLimitCheck.rows[0].count, 10) >= 5) {
+        throw new Error('RATE_LIMIT');
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const salt = await bcrypt.genSalt(10);
+    const otpHash = await bcrypt.hash(otp, salt);
+
+    await pool.query(
+        `INSERT INTO phone_otps (phone, otp_hash, expires_at) VALUES ($1, $2, NOW() + INTERVAL '5 minutes')`,
+        [phone, otpHash]
+    );
+
+    return otp;
+};
+
+const validateLatestOtp = async (phone: string, otp: string) => {
+    const otpRecordResult = await pool.query(
+        `SELECT * FROM phone_otps
+         WHERE phone = $1 AND verified = false AND expires_at > NOW()
+         ORDER BY created_at DESC LIMIT 1`,
+        [phone]
+    );
+
+    if (otpRecordResult.rows.length === 0) {
+        throw new Error('OTP_EXPIRED');
+    }
+
+    const otpRecord = otpRecordResult.rows[0];
+
+    if (otpRecord.attempts >= 3) {
+        throw new Error('OTP_ATTEMPTS');
+    }
+
+    await pool.query('UPDATE phone_otps SET attempts = attempts + 1 WHERE id = $1', [otpRecord.id]);
+
+    const isMatch = await bcrypt.compare(otp.toString(), otpRecord.otp_hash);
+    if (!isMatch) {
+        throw new Error('OTP_INVALID');
+    }
+
+    await pool.query('UPDATE phone_otps SET verified = true WHERE id = $1', [otpRecord.id]);
+};
+
 export const register = async (req: Request, res: Response) => {
     const { email, password, full_name } = req.body;
     try {
@@ -196,33 +253,13 @@ export const googleLogin = async (req: Request, res: Response) => {
 // PASSWORDLESS OTP AUTHENTICATION
 // ============================================================================
 export const sendOtp = async (req: Request, res: Response) => {
-    const { phone } = req.body;
+    const phone = normalizePhone(req.body?.phone);
     if (!phone) {
         return res.status(400).json({ message: 'Phone number is required' });
     }
 
     try {
-        // Rate Limiting: Max 5 OTP requests per hour for this phone
-        const rateLimitCheck = await pool.query(
-            `SELECT COUNT(*) FROM phone_otps WHERE phone = $1 AND created_at > NOW() - INTERVAL '1 hour'`,
-            [phone]
-        );
-        if (parseInt(rateLimitCheck.rows[0].count) >= 5) {
-            return res.status(429).json({ message: 'Too many OTP requests. Please try again later.' });
-        }
-
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-        // Hash the OTP
-        const salt = await bcrypt.genSalt(10);
-        const otpHash = await bcrypt.hash(otp, salt);
-
-        // Store OTP in database with 5 mins expiry
-        await pool.query(
-            `INSERT INTO phone_otps (phone, otp_hash, expires_at) VALUES ($1, $2, NOW() + INTERVAL '5 minutes')`,
-            [phone, otpHash]
-        );
+        const otp = await createAndStoreOtp(phone);
 
         // Send SMS
         const message = `Your Happy Greens verification code is ${otp}. It will expire in 5 minutes.`;
@@ -230,48 +267,23 @@ export const sendOtp = async (req: Request, res: Response) => {
 
         res.json({ message: 'OTP sent successfully' });
     } catch (error) {
+        if (error instanceof Error && error.message === 'RATE_LIMIT') {
+            return res.status(429).json({ message: 'Too many OTP requests. Please try again later.' });
+        }
         console.error('Error sending OTP:', error);
         res.status(500).json({ message: 'Failed to send OTP' });
     }
 };
 
 export const verifyOtp = async (req: Request, res: Response) => {
-    const { phone, otp } = req.body;
+    const phone = normalizePhone(req.body?.phone);
+    const { otp } = req.body;
     if (!phone || !otp) {
         return res.status(400).json({ message: 'Phone and OTP are required' });
     }
 
     try {
-        // Find latest unverified OTP that hasn't expired
-        const otpRecordResult = await pool.query(
-            `SELECT * FROM phone_otps 
-             WHERE phone = $1 AND verified = false AND expires_at > NOW() 
-             ORDER BY created_at DESC LIMIT 1`,
-            [phone]
-        );
-
-        if (otpRecordResult.rows.length === 0) {
-            return res.status(400).json({ message: 'Invalid or expired OTP' });
-        }
-
-        const otpRecord = otpRecordResult.rows[0];
-
-        // Enforce max 3 attempts
-        if (otpRecord.attempts >= 3) {
-            return res.status(429).json({ message: 'Maximum verification attempts reached. Please request a new OTP.' });
-        }
-
-        // Increment attempts immediately
-        await pool.query('UPDATE phone_otps SET attempts = attempts + 1 WHERE id = $1', [otpRecord.id]);
-
-        // Validate OTP hash
-        const isMatch = await bcrypt.compare(otp.toString(), otpRecord.otp_hash);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid OTP' });
-        }
-
-        // Mark OTP as verified
-        await pool.query('UPDATE phone_otps SET verified = true WHERE id = $1', [otpRecord.id]);
+        await validateLatestOtp(phone, otp);
 
         // Find existing user or create a new one
         let userResult = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
@@ -317,8 +329,107 @@ export const verifyOtp = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === 'OTP_EXPIRED') {
+                return res.status(400).json({ message: 'Invalid or expired OTP' });
+            }
+            if (error.message === 'OTP_ATTEMPTS') {
+                return res.status(429).json({ message: 'Maximum verification attempts reached. Please request a new OTP.' });
+            }
+            if (error.message === 'OTP_INVALID') {
+                return res.status(400).json({ message: 'Invalid OTP' });
+            }
+        }
         console.error('Error verifying OTP:', error);
         res.status(500).json({ message: 'Failed to verify OTP' });
+    }
+};
+
+export const sendPhoneVerificationOtp = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const phone = normalizePhone(req.body?.phone);
+
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!phone) {
+        return res.status(400).json({ message: 'Valid phone number is required' });
+    }
+
+    try {
+        const existingPhoneOwner = await pool.query(
+            'SELECT id FROM users WHERE phone = $1 AND id <> $2',
+            [phone, userId]
+        );
+        if (existingPhoneOwner.rows.length > 0) {
+            return res.status(400).json({ message: 'This phone number is already linked to another account' });
+        }
+
+        const otp = await createAndStoreOtp(phone);
+        const message = `Your Happy Greens verification code is ${otp}. It will expire in 5 minutes.`;
+        await sendSms(phone, message, otp);
+
+        res.json({ message: 'OTP sent successfully' });
+    } catch (error) {
+        if (error instanceof Error && error.message === 'RATE_LIMIT') {
+            return res.status(429).json({ message: 'Too many OTP requests. Please try again later.' });
+        }
+        console.error('Error sending phone verification OTP:', error);
+        res.status(500).json({ message: 'Failed to send OTP' });
+    }
+};
+
+export const verifyPhoneVerificationOtp = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const phone = normalizePhone(req.body?.phone);
+    const { otp } = req.body;
+
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!phone || !otp) {
+        return res.status(400).json({ message: 'Phone and OTP are required' });
+    }
+
+    try {
+        const existingPhoneOwner = await pool.query(
+            'SELECT id FROM users WHERE phone = $1 AND id <> $2',
+            [phone, userId]
+        );
+        if (existingPhoneOwner.rows.length > 0) {
+            return res.status(400).json({ message: 'This phone number is already linked to another account' });
+        }
+
+        await validateLatestOtp(phone, otp);
+
+        const updatedUserResult = await pool.query(
+            `UPDATE users
+             SET phone = $1, phone_verified = true
+             WHERE id = $2
+             RETURNING id, email, full_name, role, phone, phone_verified`,
+            [phone, userId]
+        );
+
+        res.json({
+            message: 'Phone verified successfully',
+            user: updatedUserResult.rows[0],
+        });
+    } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === 'OTP_EXPIRED') {
+                return res.status(400).json({ message: 'Invalid or expired OTP' });
+            }
+            if (error.message === 'OTP_ATTEMPTS') {
+                return res.status(429).json({ message: 'Maximum verification attempts reached. Please request a new OTP.' });
+            }
+            if (error.message === 'OTP_INVALID') {
+                return res.status(400).json({ message: 'Invalid OTP' });
+            }
+        }
+        console.error('Error verifying phone for existing user:', error);
+        res.status(500).json({ message: 'Failed to verify phone' });
     }
 };
 
