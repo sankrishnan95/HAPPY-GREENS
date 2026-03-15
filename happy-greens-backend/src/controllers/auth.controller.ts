@@ -141,7 +141,7 @@ export const googleLogin = async (req: Request, res: Response) => {
 
         const { email, name, sub: google_id } = payload;
 
-        let userResult = await pool.query('SELECT * FROM users WHERE email = ', [email]);
+        let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
         if (userResult.rows.length === 0) {
             const randomPassword = crypto.randomBytes(16).toString('hex');
@@ -149,12 +149,24 @@ export const googleLogin = async (req: Request, res: Response) => {
             const passwordHash = await bcrypt.hash(randomPassword, salt);
 
             userResult = await pool.query(
-                'INSERT INTO users (email, password_hash, full_name, google_id) VALUES (, , , ) RETURNING *',
+                `INSERT INTO users (email, password_hash, full_name, google_id)
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING id, email, full_name, role, phone, phone_verified, google_id`,
                 [email, passwordHash, name || 'Google User', google_id]
             );
         } else if (!userResult.rows[0].google_id) {
-            await pool.query('UPDATE users SET google_id =  WHERE id = ', [google_id, userResult.rows[0].id]);
-            userResult = await pool.query('SELECT * FROM users WHERE id = ', [userResult.rows[0].id]);
+            await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [google_id, userResult.rows[0].id]);
+            userResult = await pool.query(
+                'SELECT id, email, full_name, role, phone, phone_verified, google_id FROM users WHERE id = $1',
+                [userResult.rows[0].id]
+            );
+        } else if (userResult.rows[0].google_id !== google_id) {
+            return res.status(400).json({ message: 'This email is already linked to a different Google account' });
+        } else {
+            userResult = await pool.query(
+                'SELECT id, email, full_name, role, phone, phone_verified, google_id FROM users WHERE id = $1',
+                [userResult.rows[0].id]
+            );
         }
 
         const user = userResult.rows[0];
