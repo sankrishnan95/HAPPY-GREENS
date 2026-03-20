@@ -6,6 +6,7 @@ import { uploadImages } from '../services/upload.service';
 import { API_BASE_URL } from '../services/api';
 
 const UNIT_OPTIONS = [
+    { value: 'KG', label: 'Kilogram', priceLabel: 'Price per kg', minLabel: 'Minimum grams', stepLabel: 'Step grams' },
     { value: 'GRAM', label: 'Gram', priceLabel: 'Price per kg', minLabel: 'Minimum grams', stepLabel: 'Step grams' },
     { value: 'LITRE', label: 'Litre', priceLabel: 'Price per litre', minLabel: 'Minimum litres', stepLabel: 'Step litres' },
     { value: 'DOZEN', label: 'Dozen', priceLabel: 'Price per dozen', minLabel: 'Minimum dozens', stepLabel: 'Step dozens' },
@@ -13,7 +14,7 @@ const UNIT_OPTIONS = [
 ];
 
 const validateQuantityRules = (unit, minQty, stepQty) => {
-    if (['GRAM', 'DOZEN', 'PIECE'].includes(unit) && (!Number.isInteger(minQty) || !Number.isInteger(stepQty))) {
+    if (['KG', 'GRAM', 'DOZEN', 'PIECE'].includes(unit) && (!Number.isInteger(minQty) || !Number.isInteger(stepQty))) {
         return 'Minimum quantity and step must be whole numbers for Gram, Dozen, and Piece products';
     }
     if (minQty <= 0 || stepQty <= 0) {
