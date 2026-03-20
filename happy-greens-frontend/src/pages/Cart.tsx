@@ -28,7 +28,9 @@ const Cart = () => {
 
             <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
                 <div className="space-y-4 lg:col-span-2">
-                    {cart.map((item) => (
+                    {cart.map((item) => {
+                        const itemUnit = item.unit || 'piece';
+                        return (
                         <div key={item.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-soft transition-shadow hover:shadow-medium sm:p-6">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                                 <div className="rounded-xl bg-gradient-soft p-3 sm:p-4">
@@ -47,10 +49,10 @@ const Cart = () => {
                                                 {item.discountPrice ? (
                                                     <>
                                                         <span className="mr-2 line-through text-gray-400">Rs. {item.price}</span>
-                                                        <span className="font-bold text-green-600">Rs. {item.discountPrice} / unit</span>
+                                                        <span className="font-bold text-green-600">Rs. {item.discountPrice} / {itemUnit}</span>
                                                     </>
                                                 ) : (
-                                                    <span className="text-gray-500">Rs. {item.price} / unit</span>
+                                                    <span className="text-gray-500">Rs. {item.price} / {itemUnit}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -97,12 +99,13 @@ const Cart = () => {
                                         Rs. {(item.discountPrice || item.price) * item.quantity}
                                     </div>
                                     <div className="mt-1 text-sm text-gray-500">
-                                        {item.quantity} x Rs. {item.discountPrice || item.price}
+                                        {item.quantity} x Rs. {item.discountPrice || item.price} / {itemUnit}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 <div className="lg:col-span-1">

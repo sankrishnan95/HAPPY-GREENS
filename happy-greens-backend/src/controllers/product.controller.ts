@@ -113,6 +113,12 @@ const sanitizeText = (value: unknown, maxLength: number): string | null => {
     return trimmed ? trimmed.slice(0, maxLength) : null;
 };
 
+const sanitizeUnit = (value: unknown): string => {
+    if (typeof value !== 'string') return 'piece';
+    const trimmed = value.trim().slice(0, 50);
+    return trimmed || 'piece';
+};
+
 const parsePositiveNumber = (value: unknown): number | null => {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed < 0) return null;
@@ -137,9 +143,10 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        const { name, description, price, discountPrice, stock_quantity, category_id, image_url, images = [], isActive = true } = req.body;
+        const { name, description, price, discountPrice, stock_quantity, category_id, image_url, images = [], unit, isActive = true } = req.body;
         const safeName = sanitizeText(name, 150);
         const safeDescription = typeof description === 'string' ? description.trim().slice(0, 5000) : '';
+        const safeUnit = sanitizeUnit(unit);
         const safePrice = parsePositiveNumber(price);
         if (!safeName || safePrice === null) {
             return res.status(400).json({ message: 'Valid product name and price are required' });
@@ -162,8 +169,8 @@ export const createProduct = async (req: Request, res: Response) => {
         }
 
         const result = await pool.query(
-            'INSERT INTO products (name, description, price, discount_price, stock_quantity, category_id, image_url, images, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9) RETURNING *, discount_price as "discountPrice", is_active as "isActive"',
-            [safeName, safeDescription, safePrice, safeDiscountPrice, finalStockQuantity, finalCategoryId, image_url, JSON.stringify(initialImages), Boolean(isActive)]
+            'INSERT INTO products (name, description, price, discount_price, stock_quantity, category_id, image_url, images, unit, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10) RETURNING *, discount_price as "discountPrice", is_active as "isActive"',
+            [safeName, safeDescription, safePrice, safeDiscountPrice, finalStockQuantity, finalCategoryId, image_url, JSON.stringify(initialImages), safeUnit, Boolean(isActive)]
         );
         const baseUrl = getPublicBaseUrl(req);
         res.status(201).json(mapProductMedia(result.rows[0], baseUrl));
@@ -176,9 +183,10 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, description, price, discountPrice, stock_quantity, category_id, image_url, images, isActive } = req.body;
+        const { name, description, price, discountPrice, stock_quantity, category_id, image_url, images, unit, isActive } = req.body;
         const safeName = sanitizeText(name, 150);
         const safeDescription = typeof description === 'string' ? description.trim().slice(0, 5000) : '';
+        const safeUnit = sanitizeUnit(unit);
         const safePrice = parsePositiveNumber(price);
         if (!safeName || safePrice === null) {
             return res.status(400).json({ message: 'Valid product name and price are required' });
@@ -193,8 +201,8 @@ export const updateProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Invalid stock quantity' });
         }
 
-        let query = 'UPDATE products SET name = $1, description = $2, price = $3, discount_price = $4, stock_quantity = $5, image_url = $6';
-        const params: any[] = [safeName, safeDescription, safePrice, safeDiscountPrice, finalStockQuantity, image_url];
+        let query = 'UPDATE products SET name = $1, description = $2, price = $3, discount_price = $4, stock_quantity = $5, image_url = $6, unit = $7';
+        const params: any[] = [safeName, safeDescription, safePrice, safeDiscountPrice, finalStockQuantity, image_url, safeUnit];
 
         if (category_id !== undefined && category_id !== null && String(category_id).trim() !== '') {
             const finalCategoryId = parseOptionalInt(category_id);

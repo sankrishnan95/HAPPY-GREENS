@@ -13,6 +13,7 @@ interface Product {
     name: string;
     price: number;
     discountPrice?: number;
+    unit?: string;
     image_url: string;
     images?: string[];
     category_name?: string;
@@ -40,6 +41,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = wishlistIds.includes(product.id);
     const primaryImage = normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url);
+    const productUnit = product.unit || 'piece';
 
     const trackAddToCart = () => {
         trackEvent('add_to_cart', {
@@ -132,7 +134,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         ) : (
                             <span className="text-[1rem] font-bold leading-none text-slate-900">Rs. {product.price}</span>
                         )}
-                        <p className="mt-1 text-[0.72rem] leading-none text-slate-500">per unit</p>
+                        <p className="mt-1 text-[0.72rem] leading-none text-slate-500">per {productUnit}</p>
                     </div>
 
                     {quantity > 0 ? (

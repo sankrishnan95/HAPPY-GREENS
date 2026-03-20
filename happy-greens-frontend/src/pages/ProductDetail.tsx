@@ -121,6 +121,7 @@ const ProductDetail = () => {
     }
 
     const categoryName = product.category_name || 'Uncategorized';
+    const productUnit = product.unit || 'piece';
     const productImages = (
         Array.isArray(product.images) && product.images.length > 0
             ? product.images
@@ -198,7 +199,7 @@ const ProductDetail = () => {
                         ) : (
                             <span className="text-3xl font-display font-bold text-gray-900 sm:text-4xl lg:text-5xl">Rs. {product.price}</span>
                         )}
-                        <span className="text-base text-gray-500 sm:text-lg">/unit</span>
+                        <span className="text-base text-gray-500 sm:text-lg">/{productUnit}</span>
                     </div>
 
                     <div>

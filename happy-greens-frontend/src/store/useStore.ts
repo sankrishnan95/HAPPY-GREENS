@@ -6,6 +6,7 @@ interface Product {
     name: string;
     price: number;
     discountPrice?: number;
+    unit?: string;
     image_url: string;
     images?: string[];
 }
