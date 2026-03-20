@@ -10,6 +10,7 @@ import { normalizeImageUrl } from '../utils/image';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
 import { trackEvent } from '../services/analytics.service';
+import { decrementQuantity, formatQuantity, getQuantityRules, getUnitLabel, incrementQuantity } from '../utils/productUnits';
 
 const FALLBACK_PRODUCT_IMAGE = normalizeImageUrl(null);
 
@@ -54,7 +55,7 @@ const ProductDetail = () => {
 
     const handleIncrement = () => {
         if (quantity > 0) {
-            updateQuantity(Number(id), quantity + 1);
+            updateQuantity(Number(id), incrementQuantity(product, quantity));
         } else {
             addToCart(product);
         }
@@ -65,9 +66,10 @@ const ProductDetail = () => {
     };
 
     const handleDecrement = () => {
-        if (quantity > 1) {
-            updateQuantity(Number(id), quantity - 1);
-        } else if (quantity === 1) {
+        const nextQuantity = decrementQuantity(product, quantity);
+        if (nextQuantity > 0) {
+            updateQuantity(Number(id), nextQuantity);
+        } else if (quantity > 0) {
             removeFromCart(Number(id));
         }
     };
@@ -121,7 +123,8 @@ const ProductDetail = () => {
     }
 
     const categoryName = product.category_name || 'Uncategorized';
-    const productUnit = product.unit || 'piece';
+    const unitLabel = getUnitLabel(product.unit);
+    const { minQty, stepQty } = getQuantityRules(product);
     const productImages = (
         Array.isArray(product.images) && product.images.length > 0
             ? product.images
@@ -197,9 +200,15 @@ const ProductDetail = () => {
                                 <span className="text-3xl font-display font-bold text-green-600 sm:text-4xl lg:text-5xl">Rs. {product.discountPrice}</span>
                             </>
                         ) : (
-                            <span className="text-3xl font-display font-bold text-gray-900 sm:text-4xl lg:text-5xl">Rs. {product.price}</span>
+                            <span className="text-3xl font-display font-bold text-gray-900 sm:text-4xl lg:text-5xl">Rs. {product.pricePerUnit ?? product.price}</span>
                         )}
-                        <span className="text-base text-gray-500 sm:text-lg">/{productUnit}</span>
+                        <span className="text-base text-gray-500 sm:text-lg">/{unitLabel}</span>
+                    </div>
+
+                    <div className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
+                        Minimum quantity: <strong>{formatQuantity(product, minQty)}</strong>
+                        <span className="mx-2">•</span>
+                        Step size: <strong>{formatQuantity(product, stepQty)}</strong>
                     </div>
 
                     <div>
@@ -223,7 +232,7 @@ const ProductDetail = () => {
                                 >
                                     <Minus className="h-5 w-5" />
                                 </button>
-                                <span className="w-12 text-center text-xl font-bold text-primary-700">{quantity}</span>
+                                <span className="min-w-[5.5rem] px-2 text-center text-lg font-bold text-primary-700">{formatQuantity(product, quantity)}</span>
                                 <button
                                     onClick={handleIncrement}
                                     className="rounded-full p-3 text-primary-600 transition-all duration-200 hover:bg-primary-500 hover:text-white"
@@ -236,18 +245,12 @@ const ProductDetail = () => {
                         <Button
                             variant={quantity > 0 ? 'secondary' : 'primary'}
                             size="lg"
-                            onClick={() => {
-                                addToCart(product);
-                                trackEvent('add_to_cart', {
-                                    product_id: Number(id),
-                                    page: `/product/${id}`,
-                                });
-                            }}
+                            onClick={handleIncrement}
                             className="flex-1 lg:w-auto"
                             disabled={product.stock_quantity === 0}
                         >
                             <ShoppingCart className="h-5 w-5" />
-                            {quantity > 0 ? 'Add More' : 'Add to Cart'}
+                            {quantity > 0 ? 'Add next step' : `Add ${formatQuantity(product, minQty)}`}
                         </Button>
 
                         <button

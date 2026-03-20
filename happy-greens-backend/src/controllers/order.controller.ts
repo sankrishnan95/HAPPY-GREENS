@@ -102,8 +102,8 @@ export const createOrder = async (req: Request, res: Response) => {
 
         for (const item of pricedItems) {
             await client.query(
-                'INSERT INTO order_items (order_id, product_id, product_name, quantity, price_at_purchase) VALUES ($1, $2, $3, $4, $5)',
-                [orderId, item.product_id, item.product_name, item.quantity, item.price]
+                'INSERT INTO order_items (order_id, product_id, product_name, quantity, unit, price_at_purchase) VALUES ($1, $2, $3, $4, $5, $6)',
+                [orderId, item.product_id, item.product_name, item.quantity, item.unit, item.price]
             );
         }
 
@@ -226,7 +226,10 @@ export const getOrderById = async (req: Request, res: Response) => {
 
         res.json({
             ...order,
-            items: itemsResult.rows,
+            items: itemsResult.rows.map((item) => ({
+                ...item,
+                quantity: Number(item.quantity),
+            })),
             timeline: [...timelineResult.rows, placedEvent]
         });
     } catch (error) {

@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import { Star, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { trackEvent } from '../services/analytics.service';
+import { calculateLineTotal } from '../utils/productUnits';
 
 declare global {
     interface Window {
@@ -33,7 +34,7 @@ const loadRazorpayScript = () =>
 const Checkout = () => {
     const navigate = useNavigate();
     const { cart, user, clearCart } = useStore();
-    const subtotal = cart.reduce((acc, item) => acc + (item.discountPrice || item.price) * item.quantity, 0);
+    const subtotal = cart.reduce((acc, item) => acc + calculateLineTotal(item, item.quantity), 0);
     const clientOrderTokenRef = useRef(
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
             ? crypto.randomUUID()

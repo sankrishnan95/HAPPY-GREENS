@@ -304,6 +304,7 @@ export const getOrderById = async (req: Request, res: Response) => {
                     Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : item.image_url,
                     baseUrl
                 ),
+                quantity: Number(item.quantity),
                 price: parseFloat(item.price_at_purchase) || 0,
                 price_at_purchase: parseFloat(item.price_at_purchase) || 0
             })),

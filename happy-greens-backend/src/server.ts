@@ -20,7 +20,7 @@ import chatRoutes from './routes/chat.routes';
 import path from 'path';
 import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
-import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill, ensureAnalyticsSchema } from './bootstrap/schema';
+import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill, ensureAnalyticsSchema, ensureMultiUnitSchema } from './bootstrap/schema';
 import analyticsRoutes from './routes/analytics.routes';
 import { analyticsRateLimiter, authRateLimiter, globalRateLimiter, paymentRateLimiter, uploadRateLimiter } from './middleware/rateLimit';
 import { applySecurityHeaders, enforceHttps } from './middleware/security';
@@ -136,6 +136,7 @@ const startServer = async () => {
     await ensureAnalyticsSchema();
     await ensureCategoriesAndProductCategoryBackfill();
     await ensureProductImagesColumn();
+    await ensureMultiUnitSchema();
     await ensureBannerTextColumns();
     await ensureAdminFromEnv();
     app.listen(port, () => {

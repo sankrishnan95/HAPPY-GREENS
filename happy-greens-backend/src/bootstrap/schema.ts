@@ -23,6 +23,75 @@ export const ensureProductImagesColumn = async (): Promise<void> => {
     console.log('[Schema Bootstrap] products.images ensured');
 };
 
+export const ensureMultiUnitSchema = async (): Promise<void> => {
+    await pool.query(`
+        ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS price_per_unit DECIMAL(10, 2),
+        ADD COLUMN IF NOT EXISTS min_qty DECIMAL(10, 3) DEFAULT 1,
+        ADD COLUMN IF NOT EXISTS step_qty DECIMAL(10, 3) DEFAULT 1
+    `);
+
+    await pool.query(`
+        ALTER TABLE cart_items
+        ADD COLUMN IF NOT EXISTS unit VARCHAR(20)
+    `);
+
+    await pool.query(`
+        ALTER TABLE order_items
+        ADD COLUMN IF NOT EXISTS unit VARCHAR(20)
+    `);
+
+    await pool.query(`
+        ALTER TABLE cart_items
+        ALTER COLUMN quantity TYPE DECIMAL(10, 3)
+        USING quantity::DECIMAL(10, 3)
+    `);
+
+    await pool.query(`
+        ALTER TABLE order_items
+        ALTER COLUMN quantity TYPE DECIMAL(10, 3)
+        USING quantity::DECIMAL(10, 3)
+    `);
+
+    await pool.query(`
+        UPDATE products
+        SET unit = CASE
+            WHEN UPPER(COALESCE(unit, '')) IN ('G', 'GRAM', 'GRAMS', 'KG', 'KILOGRAM') THEN 'GRAM'
+            WHEN UPPER(COALESCE(unit, '')) IN ('L', 'LT', 'LITRE', 'LITER', 'LITRES', 'LITERS') THEN 'LITRE'
+            WHEN UPPER(COALESCE(unit, '')) IN ('DOZEN', 'DOZ') THEN 'DOZEN'
+            ELSE 'PIECE'
+        END
+    `);
+
+    await pool.query(`
+        UPDATE products
+        SET price_per_unit = COALESCE(price_per_unit, price),
+            min_qty = COALESCE(min_qty, 1),
+            step_qty = COALESCE(step_qty, 1)
+    `);
+
+    await pool.query(`
+        ALTER TABLE products
+        ALTER COLUMN unit SET DEFAULT 'PIECE'
+    `);
+
+    await pool.query(`
+        UPDATE cart_items ci
+        SET unit = COALESCE(ci.unit, p.unit, 'PIECE')
+        FROM products p
+        WHERE p.id = ci.product_id
+    `);
+
+    await pool.query(`
+        UPDATE order_items oi
+        SET unit = COALESCE(oi.unit, p.unit, 'PIECE')
+        FROM products p
+        WHERE p.id = oi.product_id
+    `);
+
+    console.log('[Schema Bootstrap] multi-unit product schema ensured');
+};
+
 export const ensureBannerTextColumns = async (): Promise<void> => {
     await pool.query(`
         ALTER TABLE banners

@@ -1,12 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getInitialQuantity, incrementQuantity, normalizeUnit } from '../utils/productUnits';
 
 interface Product {
     id: number;
     name: string;
     price: number;
     discountPrice?: number;
+    pricePerUnit?: number;
     unit?: string;
+    minQty?: number;
+    stepQty?: number;
     image_url: string;
     images?: string[];
 }
@@ -40,6 +44,26 @@ interface AppState {
     logout: () => void;
 }
 
+const normalizeCartItem = (item: any): CartItem => {
+    const baseProduct = {
+        ...item,
+        unit: normalizeUnit(item?.unit),
+        minQty: Number(item?.minQty ?? 1),
+        stepQty: Number(item?.stepQty ?? 1),
+        pricePerUnit: Number(item?.pricePerUnit ?? item?.price ?? 0),
+    };
+
+    const rawQuantity = Number(item?.quantity);
+    const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0
+        ? rawQuantity
+        : getInitialQuantity(baseProduct);
+
+    return {
+        ...baseProduct,
+        quantity,
+    };
+};
+
 export const useStore = create<AppState>()(
     persist(
         (set) => ({
@@ -49,15 +73,16 @@ export const useStore = create<AppState>()(
             wishlistIds: [],
             addToCart: (product) =>
                 set((state) => {
+                    const normalizedProduct = normalizeCartItem(product);
                     const existing = state.cart.find((item) => item.id === product.id);
                     if (existing) {
                         return {
                             cart: state.cart.map((item) =>
-                                item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+                                item.id === product.id ? { ...item, quantity: incrementQuantity(item, item.quantity) } : item
                             ),
                         };
                     }
-                    return { cart: [...state.cart, { ...product, quantity: 1 }] };
+                    return { cart: [...state.cart, { ...normalizedProduct, quantity: getInitialQuantity(normalizedProduct) }] };
                 }),
             removeFromCart: (productId) =>
                 set((state) => ({
@@ -65,9 +90,11 @@ export const useStore = create<AppState>()(
                 })),
             updateQuantity: (productId, quantity) =>
                 set((state) => ({
-                    cart: state.cart.map((item) =>
-                        item.id === productId ? { ...item, quantity } : item
-                    ),
+                    cart: state.cart.flatMap((item) => {
+                        if (item.id !== productId) return [item];
+                        const nextQuantity = Number(quantity);
+                        return nextQuantity <= 0 ? [] : [{ ...item, quantity: nextQuantity }];
+                    }),
                 })),
             clearCart: () => set({ cart: [] }),
             setUser: (user, token) => set({ user, token }),
@@ -86,6 +113,15 @@ export const useStore = create<AppState>()(
         }),
         {
             name: 'happy-greens-storage',
+            merge: (persistedState: any, currentState) => {
+                const nextState = { ...currentState, ...(persistedState || {}) } as AppState;
+                return {
+                    ...nextState,
+                    cart: Array.isArray((persistedState as any)?.cart)
+                        ? (persistedState as any).cart.map(normalizeCartItem)
+                        : nextState.cart,
+                };
+            },
         }
     )
 );

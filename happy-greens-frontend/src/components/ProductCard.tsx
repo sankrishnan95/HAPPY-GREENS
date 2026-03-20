@@ -7,13 +7,17 @@ import toast from 'react-hot-toast';
 import { normalizeImageUrl } from '../utils/image';
 import OptimizedImage from './OptimizedImage';
 import { trackEvent } from '../services/analytics.service';
+import { decrementQuantity, formatQuantity, getUnitLabel, incrementQuantity } from '../utils/productUnits';
 
 interface Product {
     id: number;
     name: string;
     price: number;
     discountPrice?: number;
+    pricePerUnit?: number;
     unit?: string;
+    minQty?: number;
+    stepQty?: number;
     image_url: string;
     images?: string[];
     category_name?: string;
@@ -41,7 +45,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = wishlistIds.includes(product.id);
     const primaryImage = normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url);
-    const productUnit = product.unit || 'piece';
+    const productUnitLabel = getUnitLabel(product.unit);
 
     const trackAddToCart = () => {
         trackEvent('add_to_cart', {
@@ -51,12 +55,17 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     };
 
     const handleIncrement = () => {
-        addToCart(product);
+        if (quantity > 0) {
+            updateQuantity(product.id, incrementQuantity(product, quantity));
+        } else {
+            addToCart(product);
+        }
         trackAddToCart();
     };
 
     const handleDecrement = () => {
-        if (quantity > 1) updateQuantity(product.id, quantity - 1);
+        const nextQuantity = decrementQuantity(product, quantity);
+        if (nextQuantity > 0) updateQuantity(product.id, nextQuantity);
         else removeFromCart(product.id);
     };
 
@@ -132,25 +141,25 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                                 <span className="mt-1 text-[1rem] font-bold leading-none text-green-700">Rs. {product.discountPrice}</span>
                             </div>
                         ) : (
-                            <span className="text-[1rem] font-bold leading-none text-slate-900">Rs. {product.price}</span>
+                            <span className="text-[1rem] font-bold leading-none text-slate-900">Rs. {product.pricePerUnit ?? product.price}</span>
                         )}
-                        <p className="mt-1 text-[0.72rem] leading-none text-slate-500">per {productUnit}</p>
+                        <p className="mt-1 text-[0.72rem] leading-none text-slate-500">per {productUnitLabel}</p>
                     </div>
 
                     {quantity > 0 ? (
                         <div className="flex items-center rounded-full border border-green-200 bg-green-50 p-1">
                             <button type="button" onClick={handleDecrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"><Minus className="h-4 w-4" /></button>
-                            <span className="w-6 text-center text-sm font-bold text-green-800">{quantity}</span>
+                            <span className="min-w-[3.5rem] px-1 text-center text-sm font-bold text-green-800">{formatQuantity(product, quantity)}</span>
                             <button type="button" onClick={handleIncrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"><Plus className="h-4 w-4" /></button>
                         </div>
                     ) : (
-                        <button type="button" onClick={() => { addToCart(product); trackAddToCart(); }} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><ShoppingCart className="h-4 w-4" /></button>
+                        <button type="button" onClick={handleIncrement} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><ShoppingCart className="h-4 w-4" /></button>
                     )}
                 </div>
 
-                <button type="button" onClick={() => { addToCart(product); trackAddToCart(); }} className="mt-auto inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[0.95rem] bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
+                <button type="button" onClick={handleIncrement} className="mt-auto inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[0.95rem] bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
                     <ShoppingCart className="h-4 w-4" />
-                    {quantity > 0 ? 'Add one more' : 'Add to cart'}
+                    {quantity > 0 ? 'Add step' : 'Add to cart'}
                 </button>
             </div>
         </div>

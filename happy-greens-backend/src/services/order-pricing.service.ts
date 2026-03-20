@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg';
-import { pool } from '../db';
+import { buildUnitConfig, calculateLineTotal, isValidQuantityForConfig, normalizeQuantityForUnit, roundCurrency } from './unit-pricing.service';
 
 type DbClient = Pool | PoolClient;
 
@@ -12,7 +12,11 @@ interface CalculatedOrderItem {
     product_id: number;
     product_name: string;
     quantity: number;
+    unit: string;
     price: number;
+    pricePerUnit: number;
+    minQty: number;
+    stepQty: number;
 }
 
 export interface CalculatedOrderTotals {
@@ -21,8 +25,6 @@ export interface CalculatedOrderTotals {
     validatedPointsUsed: number;
     finalTotal: number;
 }
-
-const roundCurrency = (value: number) => Math.round(value * 100) / 100;
 
 export const calculateOrderTotals = async (
     dbClient: DbClient,
@@ -39,13 +41,13 @@ export const calculateOrderTotals = async (
         quantity: Number(item?.quantity),
     }));
 
-    if (normalizedItems.some((item) => !Number.isInteger(item.productId) || item.productId <= 0 || !Number.isInteger(item.quantity) || item.quantity <= 0 || item.quantity > 100)) {
+    if (normalizedItems.some((item) => !Number.isInteger(item.productId) || item.productId <= 0 || !Number.isFinite(item.quantity) || item.quantity <= 0)) {
         throw new Error('INVALID_ITEMS');
     }
 
     const productIds = [...new Set(normalizedItems.map((item) => item.productId))];
     const productsResult = await dbClient.query(
-        `SELECT id, name, price, discount_price, is_active, is_deleted
+        `SELECT id, name, price, discount_price, price_per_unit, unit, min_qty, step_qty, is_active, is_deleted
          FROM products
          WHERE id = ANY($1::int[])`,
         [productIds]
@@ -61,21 +63,32 @@ export const calculateOrderTotals = async (
             throw new Error('INVALID_PRODUCT');
         }
 
-        const unitPrice = Number(product.discount_price ?? product.price);
-        if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-            throw new Error('INVALID_PRODUCT');
+        const baseConfig = buildUnitConfig(product);
+        const discountPrice = Number(product.discount_price);
+        const pricePerUnit = Number.isFinite(discountPrice) && discountPrice >= 0
+            ? roundCurrency(discountPrice)
+            : baseConfig.pricePerUnit;
+        const normalizedQuantity = normalizeQuantityForUnit(item.quantity, baseConfig.unit);
+        const config = { ...baseConfig, pricePerUnit };
+
+        if (!isValidQuantityForConfig(normalizedQuantity, config)) {
+            throw new Error('INVALID_ITEMS');
         }
 
         return {
             product_id: item.productId,
             product_name: String(product.name || '').trim(),
-            quantity: item.quantity,
-            price: roundCurrency(unitPrice),
+            quantity: normalizedQuantity,
+            unit: config.unit,
+            price: calculateLineTotal(normalizedQuantity, config),
+            pricePerUnit: config.pricePerUnit,
+            minQty: config.minQty,
+            stepQty: config.stepQty,
         };
     });
 
     const subtotal = roundCurrency(
-        calculatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+        calculatedItems.reduce((sum, item) => sum + item.price, 0)
     );
 
     const requested = Number(requestedPointsUsed || 0);

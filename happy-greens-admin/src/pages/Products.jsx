@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/format';
 import { Search, Plus, Edit2, Trash2, Package } from 'lucide-react';
@@ -22,12 +22,12 @@ export default function Products() {
 
   const loadProducts = async () => {
     try {
-      console.log('🔄 Loading products...');
+      console.log('Loading products...');
       const response = await getProducts({ limit: 100 });
-      console.log('✅ Products loaded:', response.data);
+      console.log('Products loaded:', response.data);
       setProducts(response.data.products || []);
     } catch (error) {
-      console.error('❌ Error loading products:', error);
+      console.error('Error loading products:', error);
       alert('Failed to load products');
     } finally {
       setLoading(false);
@@ -67,7 +67,7 @@ export default function Products() {
       alert('Product deleted successfully');
       loadProducts();
     } catch (error) {
-      console.error('❌ Error deleting product:', error);
+      console.error('Error deleting product:', error);
       alert('Failed to delete product');
     }
   };
@@ -81,7 +81,7 @@ export default function Products() {
       alert('Stock updated successfully');
       loadProducts();
     } catch (error) {
-      console.error('❌ Error updating stock:', error);
+      console.error('Error updating stock:', error);
       alert('Failed to update stock');
     }
   };
@@ -92,61 +92,68 @@ export default function Products() {
     return { label: 'In Stock', color: 'bg-green-100 text-green-800' };
   };
 
+  const getUnitLabel = (unit) => {
+    switch (String(unit || '').toUpperCase()) {
+      case 'GRAM': return 'kg';
+      case 'LITRE': return 'litre';
+      case 'DOZEN': return 'dozen';
+      default: return 'piece';
+    }
+  };
+
   const toggleProductStatus = async (productId, currentStatus) => {
     try {
       await updateProductStatus(productId, !currentStatus);
       loadProducts();
     } catch (error) {
-      console.error('❌ Error toggling product status:', error);
+      console.error('Error toggling product status:', error);
       alert('Failed to update product status');
     }
   };
 
-  // Get unique categories
   const categories = [...new Map(products.map(p => [p.category_id, { id: p.category_id, name: p.category_name }])).values()];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Products & Inventory</h1>
-          <p className="text-gray-600 mt-2">Manage products and monitor stock levels</p>
+          <p className="mt-2 text-gray-600">Manage products and monitor stock levels</p>
         </div>
         <button
           onClick={handleCreateProduct}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-700 sm:w-auto"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="h-5 w-5" />
           Add Product
         </button>
       </div>
 
-      {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mb-6 rounded-lg bg-white p-4 shadow sm:p-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              className="min-h-[44px] w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 outline-none focus:border-transparent focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+            className="min-h-[44px] rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-transparent focus:ring-2 focus:ring-primary"
           >
             <option value="all">All Categories</option>
             {categories.map(cat => (
@@ -156,40 +163,27 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="overflow-hidden rounded-lg bg-white shadow">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-[960px] divide-y divide-gray-200 lg:min-w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Product</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Stock</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 bg-white">
               {filteredProducts.map((product) => {
                 const stockStatus = getStockStatus(product.stock_quantity);
                 return (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={product.id} className="transition-colors hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12 rounded overflow-hidden bg-gray-100 relative">
+                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded bg-gray-100">
                           {product.images?.length > 0 || product.image_url ? (
                             <img
                               src={product.images?.length > 0 ? product.images[0] : product.image_url}
@@ -205,7 +199,7 @@ export default function Products() {
                             className="absolute inset-0 flex items-center justify-center bg-gray-100"
                             style={{ display: product.images?.length > 0 || product.image_url ? 'none' : 'flex' }}
                           >
-                            <Package className="w-6 h-6 text-gray-400" />
+                            <Package className="h-6 w-6 text-gray-400" />
                           </div>
                         </div>
                         <div className="ml-4">
@@ -214,10 +208,10 @@ export default function Products() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-6 py-4">
                       <div className="text-sm text-gray-900">{product.category_name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-6 py-4">
                       {product.discountPrice ? (
                         <>
                           <div className="text-sm font-semibold text-gray-400 line-through">
@@ -233,47 +227,46 @@ export default function Products() {
                         </div>
                       )}
                       <div className="text-xs text-gray-500">
-                        per {product.unit || 'kg'}
+                        per {getUnitLabel(product.unit)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-6 py-4">
                       <button
                         onClick={() => handleUpdateStock(product.id, product.stock_quantity)}
-                        className="text-sm font-medium text-primary hover:text-primary-700"
+                        className="min-h-[44px] text-sm font-medium text-primary hover:text-primary-700"
                       >
-                        {product.stock_quantity} {product.unit || 'kg'}
+                        {product.stock_quantity} in stock
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-2 items-start">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${stockStatus.color}`}>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="flex flex-col items-start gap-2">
+                        <span className={`rounded-full px-2 py-1 text-xs font-semibold ${stockStatus.color}`}>
                           {stockStatus.label}
                         </span>
                         <button
                           onClick={() => toggleProductStatus(product.id, product.isActive)}
-                          className={`px-3 py-1 text-xs font-semibold rounded-full border-0 transition-colors ${product.isActive ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-red-500 text-white hover:bg-red-600'
-                            }`}
+                          className={`rounded-full border-0 px-3 py-1 text-xs font-semibold transition-colors ${product.isActive ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-red-500 text-white hover:bg-red-600'}`}
                         >
-                          {product.isActive ? "Active" : "Inactive"}
+                          {product.isActive ? 'Active' : 'Inactive'}
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => handleEditProduct(product)}
-                          className="text-primary hover:text-primary-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-primary-50 transition-colors"
+                          className="flex min-h-[44px] items-center gap-1 rounded px-2 py-1 text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
                           title="Edit Product"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="h-4 w-4" />
                           Edit
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id, product.name)}
-                          className="text-red-600 hover:text-red-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                          className="flex min-h-[44px] items-center gap-1 rounded px-2 py-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
                           title="Delete Product"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="h-4 w-4" />
                           Delete
                         </button>
                       </div>
@@ -285,14 +278,6 @@ export default function Products() {
           </table>
         </div>
       </div>
-
-      {filteredProducts.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-lg shadow mt-6">
-          <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No products found</p>
-          <p className="text-sm text-gray-400 mt-2">Create your first product to get started</p>
-        </div>
-      )}
     </div>
   );
 }

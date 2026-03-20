@@ -1,9 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, UploadCloud, X, Image as ImageIcon } from 'lucide-react';
 import { getProductById, createProduct, updateProduct, getCategories } from '../services/product.service';
 import { uploadImages } from '../services/upload.service';
 import { API_BASE_URL } from '../services/api';
+
+const UNIT_OPTIONS = [
+    { value: 'GRAM', label: 'Gram', priceLabel: 'Price per kg', minLabel: 'Minimum grams', stepLabel: 'Step grams' },
+    { value: 'LITRE', label: 'Litre', priceLabel: 'Price per litre', minLabel: 'Minimum litres', stepLabel: 'Step litres' },
+    { value: 'DOZEN', label: 'Dozen', priceLabel: 'Price per dozen', minLabel: 'Minimum dozens', stepLabel: 'Step dozens' },
+    { value: 'PIECE', label: 'Piece', priceLabel: 'Price per piece', minLabel: 'Minimum pieces', stepLabel: 'Step pieces' },
+];
+
+const validateQuantityRules = (unit, minQty, stepQty) => {
+    if (['GRAM', 'DOZEN', 'PIECE'].includes(unit) && (!Number.isInteger(minQty) || !Number.isInteger(stepQty))) {
+        return 'Minimum quantity and step must be whole numbers for Gram, Dozen, and Piece products';
+    }
+    if (minQty <= 0 || stepQty <= 0) {
+        return 'Minimum quantity and step must be greater than zero';
+    }
+    return null;
+};
 
 export default function ProductEdit() {
     const { id } = useParams();
@@ -18,15 +35,22 @@ export default function ProductEdit() {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        price: '',
+        pricePerUnit: '',
         discountPrice: '',
         category_id: '',
         stock_quantity: '',
-        unit: 'kg',
+        unit: 'PIECE',
+        minQty: '1',
+        stepQty: '1',
         isActive: true,
         images: [],
-        image_url: '' // Legacy fallback
+        image_url: ''
     });
+
+    const selectedUnit = useMemo(
+        () => UNIT_OPTIONS.find((option) => option.value === formData.unit) || UNIT_OPTIONS[3],
+        [formData.unit]
+    );
 
     useEffect(() => {
         fetchCategories();
@@ -56,11 +80,13 @@ export default function ProductEdit() {
             setFormData({
                 name: product.name || '',
                 description: product.description || '',
-                price: product.price || '',
+                pricePerUnit: String(product.pricePerUnit ?? product.price ?? ''),
                 discountPrice: product.discountPrice || '',
                 category_id: product.category_id || '',
                 stock_quantity: product.stock_quantity || '',
-                unit: product.unit || 'kg',
+                unit: product.unit || 'PIECE',
+                minQty: String(product.minQty ?? 1),
+                stepQty: String(product.stepQty ?? 1),
                 isActive: product.isActive ?? true,
                 images: product.images || (product.image_url ? [product.image_url] : []),
                 image_url: product.image_url || ''
@@ -91,7 +117,6 @@ export default function ProductEdit() {
         try {
             const data = await uploadImages(payload);
             const uploadedPaths = data.images;
-            // Provide full paths combining URL domain
             const fullPaths = uploadedPaths.map((p) => /^https?:\/\//i.test(p) ? p : `${API_BASE_URL}${p}`);
 
             setFormData(prev => ({
@@ -123,12 +148,22 @@ export default function ProductEdit() {
         setSaving(true);
 
         try {
+            const minQty = Number(formData.minQty);
+            const stepQty = Number(formData.stepQty);
+            const quantityError = validateQuantityRules(formData.unit, minQty, stepQty);
+            if (quantityError) {
+                throw new Error(quantityError);
+            }
+
             const payload = {
                 ...formData,
-                price: parseFloat(formData.price),
+                pricePerUnit: parseFloat(formData.pricePerUnit),
+                price: parseFloat(formData.pricePerUnit),
                 discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
                 stock_quantity: parseInt(formData.stock_quantity),
-                category_id: parseInt(formData.category_id)
+                category_id: parseInt(formData.category_id),
+                minQty,
+                stepQty,
             };
 
             if (isNew) {
@@ -141,7 +176,7 @@ export default function ProductEdit() {
             navigate('/products');
         } catch (error) {
             console.error('Error saving product:', error);
-            alert(error.response?.data?.message || 'Failed to save product');
+            alert(error.response?.data?.message || error.message || 'Failed to save product');
         } finally {
             setSaving(false);
         }
@@ -159,167 +194,101 @@ export default function ProductEdit() {
         <div className="max-w-4xl mx-auto pb-12">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate('/products')}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                    >
+                    <button onClick={() => navigate('/products')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <ArrowLeft className="w-6 h-6 text-gray-600" />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
-                            {isNew ? 'Create New Product' : 'Edit Product'}
-                        </h1>
+                        <h1 className="text-3xl font-bold text-gray-900">{isNew ? 'Create New Product' : 'Edit Product'}</h1>
                         <p className="text-gray-600 mt-1">Manage product details and images</p>
                     </div>
                 </div>
-                <button
-                    onClick={handleSubmit}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
-                >
+                <button onClick={handleSubmit} disabled={saving} className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50">
                     <Save className="w-5 h-5" />
                     {saving ? 'Saving...' : 'Save Product'}
                 </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Availability Section */}
                 <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-xl font-semibold text-gray-900 mb-4">Availability</h2>
                     <div className="flex items-center gap-3">
-                        <input
-                            type="checkbox"
-                            id="isActive"
-                            checked={formData.isActive}
-                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                            className="w-5 h-5 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer"
-                        />
-                        <label htmlFor="isActive" className="text-md font-medium text-gray-900 cursor-pointer">
-                            Available for Sale (Visible on Storefront)
-                        </label>
+                        <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="w-5 h-5 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer" />
+                        <label htmlFor="isActive" className="text-md font-medium text-gray-900 cursor-pointer">Available for Sale (Visible on Storefront)</label>
                     </div>
                 </div>
 
-                {/* Basic Info Section */}
                 <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
-                            <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                required
-                            />
+                            <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                            <textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                rows="4"
-                            />
+                            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" rows="4" />
                         </div>
                         {categories.length > 0 && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-                                <select
-                                    value={formData.category_id}
-                                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                    required
-                                >
+                                <select value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required>
                                     <option value="">Select a category...</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
+                                    {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
                                 </select>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Pricing & Inventory */}
                 <div className="bg-white rounded-lg shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <h2 className="text-xl font-semibold text-gray-900 mb-4">Pricing</h2>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Regular Price (₹) *</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.price}
-                                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                    required
-                                />
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Unit *</label>
+                                <select value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required>
+                                    {UNIT_OPTIONS.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Discounted Price (₹)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.discountPrice}
-                                    onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                    placeholder="Leave empty for no discount"
-                                />
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{selectedUnit.priceLabel} *</label>
+                                <input type="number" step="0.01" value={formData.pricePerUnit} onChange={(e) => setFormData({ ...formData, pricePerUnit: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Discounted Price per unit (?)</label>
+                                <input type="number" step="0.01" value={formData.discountPrice} onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Leave empty for no discount" />
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Inventory</h2>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Inventory & Quantity Rules</h2>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity *</label>
-                                <input
-                                    type="number"
-                                    value={formData.stock_quantity}
-                                    onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                    required
-                                />
+                                <input type="number" value={formData.stock_quantity} onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Unit *</label>
-                                <select
-                                    value={formData.unit}
-                                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                    required
-                                >
-                                    <option value="kg">Kilogram (kg)</option>
-                                    <option value="g">Gram (g)</option>
-                                    <option value="l">Liter (l)</option>
-                                    <option value="ml">Milliliter (ml)</option>
-                                    <option value="piece">Piece</option>
-                                    <option value="dozen">Dozen</option>
-                                </select>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{selectedUnit.minLabel} *</label>
+                                <input type="number" step={formData.unit === 'LITRE' ? '0.1' : '1'} value={formData.minQty} onChange={(e) => setFormData({ ...formData, minQty: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{selectedUnit.stepLabel} *</label>
+                                <input type="number" step={formData.unit === 'LITRE' ? '0.1' : '1'} value={formData.stepQty} onChange={(e) => setFormData({ ...formData, stepQty: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Images Gallery */}
                 <div className="bg-white rounded-lg shadow p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold text-gray-900">Product Images</h2>
                         <label className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                             <UploadCloud className="w-5 h-5" />
                             {uploading ? 'Uploading...' : 'Upload Images'}
-                            <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleImageUpload}
-                                disabled={uploading}
-                            />
+                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                         </label>
                     </div>
 
@@ -334,17 +303,8 @@ export default function ProductEdit() {
                             {formData.images.map((imgUrl, idx) => (
                                 <div key={idx} className={`relative group rounded-lg overflow-hidden border-2 ${idx === 0 ? 'border-primary' : 'border-gray-200'}`}>
                                     <img src={imgUrl} alt={`Product ${idx + 1}`} className="w-full h-32 object-cover" />
-                                    {idx === 0 && (
-                                        <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-white text-xs text-center py-1">
-                                            Main Image
-                                        </div>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={() => removeImage(idx)}
-                                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title="Remove image"
-                                    >
+                                    {idx === 0 && (<div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-white text-xs text-center py-1">Main Image</div>)}
+                                    <button type="button" onClick={() => removeImage(idx)} className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" title="Remove image">
                                         <X className="w-4 h-4" />
                                     </button>
                                 </div>
@@ -368,11 +328,7 @@ export default function ProductEdit() {
                         />
                     </div>
                 </div>
-
             </form>
         </div>
     );
 }
-
-
-
