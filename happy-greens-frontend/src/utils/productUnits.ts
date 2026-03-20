@@ -54,6 +54,11 @@ export const getQuantityRules = (product: UnitAwareProduct) => {
     return { unit, minQty, stepQty };
 };
 
+const getEffectiveStepQty = (product: UnitAwareProduct) => {
+    const { minQty, stepQty } = getQuantityRules(product);
+    return Math.max(minQty, stepQty);
+};
+
 export const normalizeQuantity = (product: UnitAwareProduct, quantity: number) => {
     const { unit } = getQuantityRules(product);
     if (!Number.isFinite(quantity)) return Number.NaN;
@@ -68,21 +73,23 @@ export const isValidQuantity = (product: UnitAwareProduct, quantity: number) => 
     if (quantity + STEP_TOLERANCE < minQty) return false;
     const delta = quantity - minQty;
     if (Math.abs(delta) <= STEP_TOLERANCE) return true;
-    const steps = delta / stepQty;
+    const steps = delta / Math.max(minQty, stepQty);
     return Math.abs(steps - Math.round(steps)) <= STEP_TOLERANCE;
 };
 
 export const getInitialQuantity = (product: UnitAwareProduct) => getQuantityRules(product).minQty;
 
 export const incrementQuantity = (product: UnitAwareProduct, currentQuantity?: number) => {
-    const { minQty, stepQty } = getQuantityRules(product);
-    const base = currentQuantity && currentQuantity > 0 ? currentQuantity : minQty - stepQty;
-    return normalizeQuantity(product, base + stepQty);
+    const { minQty } = getQuantityRules(product);
+    const effectiveStepQty = getEffectiveStepQty(product);
+    const base = currentQuantity && currentQuantity > 0 ? currentQuantity : minQty - effectiveStepQty;
+    return normalizeQuantity(product, base + effectiveStepQty);
 };
 
 export const decrementQuantity = (product: UnitAwareProduct, currentQuantity: number) => {
-    const { minQty, stepQty } = getQuantityRules(product);
-    const next = normalizeQuantity(product, currentQuantity - stepQty);
+    const { minQty } = getQuantityRules(product);
+    const effectiveStepQty = getEffectiveStepQty(product);
+    const next = normalizeQuantity(product, currentQuantity - effectiveStepQty);
     return next < minQty ? 0 : next;
 };
 
@@ -102,7 +109,13 @@ export const calculateLineTotal = (product: UnitAwareProduct, quantity: number) 
 
 export const formatQuantity = (product: UnitAwareProduct, quantity: number) => {
     const { unit } = getQuantityRules(product);
-    if (unit === 'GRAM') return `${Math.round(quantity)} g`;
+    if (unit === 'GRAM') {
+        if (quantity >= 1000) {
+            const kilograms = quantity / 1000;
+            return `${Number(kilograms).toFixed(kilograms % 1 === 0 ? 0 : 2)} kg`;
+        }
+        return `${Math.round(quantity)} g`;
+    }
     if (unit === 'LITRE') return `${Number(quantity).toFixed(quantity % 1 === 0 ? 0 : 2)} L`;
     if (unit === 'DOZEN') return `${Math.round(quantity)} dozen`;
     return `${Math.round(quantity)} pc`;

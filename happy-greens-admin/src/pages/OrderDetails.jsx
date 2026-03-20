@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, MapPin, Package, CreditCard, Clock, CheckCircle, GitCommitHorizontal, Printer } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Package, CreditCard, Clock, CheckCircle, Printer } from 'lucide-react';
 import { getOrderById, updateOrderStatus, getInvoiceUrl } from '../services/order.service';
 import toast, { Toaster } from 'react-hot-toast';
 import { getStatusColor } from '../utils/format';
 import { ORDER_STATUS_OPTIONS } from '../utils/status';
-
 
 export default function OrderDetails() {
     const { id } = useParams();
@@ -17,6 +16,43 @@ export default function OrderDetails() {
     useEffect(() => {
         fetchOrderDetails();
     }, [id]);
+
+    const formatQuantity = (quantity, unit) => {
+        const normalizedUnit = String(unit || '').toUpperCase();
+        const numericQuantity = Number(quantity);
+        if (!Number.isFinite(numericQuantity)) return `${quantity} ${unit || 'units'}`;
+
+        if (normalizedUnit === 'GRAM') {
+            if (numericQuantity >= 1000) {
+                const kilograms = numericQuantity / 1000;
+                return `${Number(kilograms).toFixed(kilograms % 1 === 0 ? 0 : 2)} kg`;
+            }
+            return `${Math.round(numericQuantity)} g`;
+        }
+
+        if (normalizedUnit === 'LITRE') {
+            return `${numericQuantity.toFixed(numericQuantity % 1 === 0 ? 0 : 2)} L`;
+        }
+
+        if (normalizedUnit === 'DOZEN') {
+            return `${Math.round(numericQuantity)} dozen`;
+        }
+
+        return `${Math.round(numericQuantity)} pc`;
+    };
+
+    const formatPriceUnitLabel = (unit) => {
+        switch (String(unit || '').toUpperCase()) {
+            case 'GRAM':
+                return 'kg';
+            case 'LITRE':
+                return 'litre';
+            case 'DOZEN':
+                return 'dozen';
+            default:
+                return 'piece';
+        }
+    };
 
     const fetchOrderDetails = async () => {
         try {
@@ -69,7 +105,7 @@ export default function OrderDetails() {
                 });
             }
         } catch (error) {
-            console.error('❌ Invoice error:', error);
+            console.error('Invoice error:', error);
             toast.error(`Invoice failed: ${error.message}`);
         }
     };
@@ -142,11 +178,11 @@ export default function OrderDetails() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <h3 className="text-sm font-bold text-gray-900 truncate">{item.product_name}</h3>
-                                        <p className="text-xs text-gray-500 mt-0.5">Quantity: {item.quantity} {item.unit || 'units'}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">Quantity: {formatQuantity(item.quantity, item.unit)}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-bold text-gray-900">₹{(Number(item.price) * item.quantity).toFixed(2)}</p>
-                                        <p className="text-xs text-gray-500 mt-0.5">₹{Number(item.price).toFixed(2)}/unit</p>
+                                        <p className="text-sm font-bold text-gray-900">?{(Number(item.price) * item.quantity).toFixed(2)}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">?{Number(item.price).toFixed(2)}/{formatPriceUnitLabel(item.unit)}</p>
                                     </div>
                                 </div>
                             ))}
@@ -162,7 +198,7 @@ export default function OrderDetails() {
                             <div className="space-y-1 text-right">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Subtotal</span>
-                                    <span className="text-gray-900 font-medium">₹{order.total_amount}</span>
+                                    <span className="text-gray-900 font-medium">?{order.total_amount}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Delivery Fee</span>
@@ -170,7 +206,7 @@ export default function OrderDetails() {
                                 </div>
                                 <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2 mt-2">
                                     <span className="text-gray-900">Total</span>
-                                    <span className="text-primary-600">₹{order.total_amount}</span>
+                                    <span className="text-primary-600">?{order.total_amount}</span>
                                 </div>
                             </div>
                         </div>

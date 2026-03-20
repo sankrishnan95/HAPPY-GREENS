@@ -39,6 +39,8 @@ export const buildUnitConfig = (product: any): UnitConfig => {
     };
 };
 
+const getEffectiveStepQty = (config: UnitConfig) => Math.max(config.minQty, config.stepQty);
+
 export const normalizeQuantityForUnit = (quantity: unknown, unit: SupportedUnit): number => {
     const parsed = Number(quantity);
     if (!Number.isFinite(parsed)) return Number.NaN;
@@ -54,7 +56,7 @@ export const isValidQuantityForConfig = (quantity: number, config: UnitConfig): 
     const delta = quantity - config.minQty;
     if (Math.abs(delta) <= STEP_TOLERANCE) return true;
 
-    const steps = delta / config.stepQty;
+    const steps = delta / getEffectiveStepQty(config);
     return Math.abs(steps - Math.round(steps)) <= STEP_TOLERANCE;
 };
 
