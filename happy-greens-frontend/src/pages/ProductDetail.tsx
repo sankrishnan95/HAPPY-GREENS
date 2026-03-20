@@ -240,16 +240,18 @@ const ProductDetail = () => {
                             </div>
                         ) : null}
 
-                        <Button
-                            variant={quantity > 0 ? 'secondary' : 'primary'}
-                            size="md"
-                            onClick={handleIncrement}
-                            className="flex-1 lg:w-auto"
-                            disabled={product.stock_quantity === 0}
-                        >
-                            <ShoppingCart className="h-4 w-4" />
-                            {quantity > 0 ? 'Add next step' : `Add ${formatQuantity(product, minQty)}`}
-                        </Button>
+                        {quantity === 0 && (
+                            <Button
+                                variant="primary"
+                                size="md"
+                                onClick={handleIncrement}
+                                className="flex-1 lg:w-auto"
+                                disabled={product.stock_quantity === 0}
+                            >
+                                <ShoppingCart className="h-4 w-4" />
+                                {`Add ${formatQuantity(product, minQty)}`}
+                            </Button>
+                        )}
 
                         <button
                             type="button"
