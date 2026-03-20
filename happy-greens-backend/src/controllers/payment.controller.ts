@@ -4,6 +4,9 @@ import crypto from 'crypto';
 import { calculateOrderTotals } from '../services/order-pricing.service';
 import { pool } from '../db';
 
+// TEMPORARY: Set to true to disable Razorpay payments
+const RAZORPAY_TEMPORARILY_DISABLED = true;
+
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
@@ -13,6 +16,9 @@ const razorpay = new Razorpay({
 });
 
 export const createRazorpayOrder = async (req: Request, res: Response) => {
+    if (RAZORPAY_TEMPORARILY_DISABLED) {
+        return res.status(503).json({ message: 'Online payment is temporarily unavailable. Please use Cash on Delivery.' });
+    }
     // @ts-ignore
     const userId = req.user?.id;
     const { items, pointsUsed } = req.body;
@@ -47,6 +53,9 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
 };
 
 export const verifyRazorpaySignature = async (req: Request, res: Response) => {
+    if (RAZORPAY_TEMPORARILY_DISABLED) {
+        return res.status(503).json({ message: 'Online payment is temporarily unavailable. Please use Cash on Delivery.' });
+    }
     if (!RAZORPAY_KEY_SECRET) {
         return res.status(500).json({ message: 'Razorpay is not configured on server' });
     }

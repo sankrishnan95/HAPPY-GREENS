@@ -229,16 +229,19 @@ const Checkout = () => {
                 <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
                     <h2 className="mb-4 text-xl font-bold">Payment Method</h2>
                     <div className="space-y-3">
-                        <label className="flex min-h-[52px] items-center rounded-lg border border-gray-200 p-4 cursor-pointer hover:bg-gray-50">
+                        {/* TEMPORARILY DISABLED - Razorpay online payments */}
+                        <label className="flex min-h-[52px] items-center rounded-lg border border-gray-200 p-4 cursor-not-allowed opacity-50 bg-gray-50">
                             <input
                                 type="radio"
                                 name="payment"
                                 value="razorpay"
-                                checked={formData.paymentMethod === 'razorpay'}
-                                onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                                className="text-primary focus:ring-primary"
+                                disabled
+                                className="text-gray-400"
                             />
-                            <span className="ml-3 font-medium">Razorpay (UPI, Cards, Netbanking)</span>
+                            <div className="ml-3">
+                                <span className="font-medium text-gray-400">Razorpay (UPI, Cards, Netbanking)</span>
+                                <p className="text-xs text-orange-500 mt-0.5">⚠️ Online payment is temporarily unavailable. Please use Cash on Delivery.</p>
+                            </div>
                         </label>
                         <label className="flex min-h-[52px] items-center rounded-lg border border-gray-200 p-4 cursor-pointer hover:bg-gray-50">
                             <input
