@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useRef, useState } from 'react';
 import { Bot, MessageCircle, Send, Sparkles, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { sendChatMessage, type ChatProduct } from '../services/chat.service';
 
@@ -136,7 +137,12 @@ export default function ChatbotWidget() {
                                     {message.products?.length ? (
                                         <div className="mt-3 space-y-2">
                                             {message.products.map((product) => (
-                                                <div key={product.id} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-2">
+                                                <Link
+                                                    key={product.id}
+                                                    to={`/product/${product.id}`}
+                                                    onClick={() => setIsOpen(false)}
+                                                    className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-2 transition hover:border-green-200 hover:bg-green-50"
+                                                >
                                                     <div className="h-11 w-11 overflow-hidden rounded-xl bg-white">
                                                         {product.image_url ? (
                                                             <img src={product.image_url} alt={product.name} loading="lazy" className="h-full w-full object-cover" />
@@ -149,8 +155,9 @@ export default function ChatbotWidget() {
                                                     <div className="min-w-0 flex-1">
                                                         <p className="truncate text-sm font-semibold text-slate-900">{product.name}</p>
                                                         <p className="text-xs text-green-700">Rs.{Number(product.price).toFixed(2)}</p>
+                                                        <p className="text-[11px] text-slate-500">View product</p>
                                                     </div>
-                                                </div>
+                                                </Link>
                                             ))}
                                         </div>
                                     ) : null}
