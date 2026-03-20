@@ -1,5 +1,6 @@
 ﻿import { Request, Response } from 'express';
 import { pool } from '../db';
+import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 
 /**
  * Update Order Status
@@ -233,6 +234,7 @@ export const getOrdersByStatus = async (req: Request, res: Response) => {
 export const getOrderById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const baseUrl = getPublicBaseUrl(req);
 
         // 1. Fetch Order & Customer Details
         const orderResult = await pool.query(
@@ -257,7 +259,8 @@ export const getOrderById = async (req: Request, res: Response) => {
         const itemsResult = await pool.query(
             `SELECT 
                 oi.*,
-                p.image_url
+                p.image_url,
+                p.images
              FROM order_items oi
              LEFT JOIN products p ON oi.product_id = p.id
              WHERE oi.order_id = $1`,
@@ -297,6 +300,10 @@ export const getOrderById = async (req: Request, res: Response) => {
             total_amount: parseFloat(order.total_amount) || 0,
             items: itemsResult.rows.map(item => ({
                 ...item,
+                image_url: normalizeMediaUrl(
+                    Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : item.image_url,
+                    baseUrl
+                ),
                 price: parseFloat(item.price_at_purchase) || 0,
                 price_at_purchase: parseFloat(item.price_at_purchase) || 0
             })),
