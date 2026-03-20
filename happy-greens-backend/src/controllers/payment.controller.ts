@@ -11,21 +11,43 @@ const razorpay = new Razorpay({
 });
 
 export const createRazorpayOrder = async (req: Request, res: Response) => {
-    const { amount } = req.body; // amount in smallest currency unit (paise)
+    const { amount } = req.body;
+
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        return res.status(500).json({ message: 'Razorpay is not configured on server' });
+    }
+
+    const normalizedAmount = Number(amount);
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+        return res.status(400).json({ message: 'Valid amount is required' });
+    }
+
     try {
         const options = {
-            amount: amount * 100, // convert to paise
+            amount: Math.round(normalizedAmount * 100),
             currency: 'INR',
-            receipt: `receipt_${Date.now()}`
+            receipt: `receipt_${Date.now()}`,
+            payment_capture: 1,
         };
         const order = await razorpay.orders.create(options);
-        res.json(order);
+        res.json({
+            key: RAZORPAY_KEY_ID,
+            orderId: order.id,
+            amount: order.amount,
+            currency: order.currency,
+            receipt: order.receipt,
+        });
     } catch (error) {
+        console.error('Razorpay order creation failed:', error);
         res.status(500).json({ message: 'Razorpay error' });
     }
 };
 
-export const verifyRazorpaySignature = (req: Request, res: Response) => {
+export const verifyRazorpaySignature = async (req: Request, res: Response) => {
+    if (!RAZORPAY_KEY_SECRET) {
+        return res.status(500).json({ message: 'Razorpay is not configured on server' });
+    }
+
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
     const body = razorpay_order_id + '|' + razorpay_payment_id;
@@ -34,9 +56,27 @@ export const verifyRazorpaySignature = (req: Request, res: Response) => {
         .update(body.toString())
         .digest('hex');
 
-    if (expectedSignature === razorpay_signature) {
-        res.json({ status: 'success' });
-    } else {
-        res.status(400).json({ status: 'failure' });
+    if (expectedSignature !== razorpay_signature) {
+        return res.status(400).json({ status: 'failure', message: 'Invalid payment signature' });
+    }
+
+    try {
+        const payment = await razorpay.payments.fetch(razorpay_payment_id);
+        return res.json({
+            status: 'success',
+            payment: {
+                id: payment.id,
+                order_id: payment.order_id,
+                method: payment.method,
+                status: payment.status,
+                amount: payment.amount,
+                currency: payment.currency,
+                email: payment.email,
+                contact: payment.contact,
+            },
+        });
+    } catch (error) {
+        console.error('Razorpay payment fetch failed:', error);
+        return res.status(500).json({ status: 'failure', message: 'Failed to fetch payment details' });
     }
 };

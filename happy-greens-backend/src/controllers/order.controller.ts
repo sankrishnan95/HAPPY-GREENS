@@ -19,6 +19,7 @@ export const createOrder = async (req: Request, res: Response) => {
         shippingAddress,
         paymentIntentId,
         paymentMethod,
+        paymentDetails,
         pointsUsed = 0,
         clientOrderToken,
     } = req.body;
@@ -73,6 +74,31 @@ export const createOrder = async (req: Request, res: Response) => {
             [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify(shippingAddress), validatedPointsUsed, sanitizedClientOrderToken]
         );
         const orderId = orderRes.rows[0].id;
+
+        if (paymentMethod === 'razorpay' && paymentIntentId) {
+            const gatewayOrderId = typeof paymentDetails?.orderId === 'string' ? paymentDetails.orderId : null;
+            const paymentMethodType = typeof paymentDetails?.method === 'string' ? paymentDetails.method : 'unknown';
+            const paymentStatus = typeof paymentDetails?.status === 'string' ? paymentDetails.status : 'succeeded';
+            const paymentCurrency = typeof paymentDetails?.currency === 'string' ? paymentDetails.currency : 'INR';
+
+            await client.query(
+                `INSERT INTO payments
+                   (order_id, user_id, amount, currency, payment_gateway, payment_status, gateway_payment_id, gateway_order_id, payment_method_type, metadata)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                [
+                    orderId,
+                    userId,
+                    finalTotal,
+                    paymentCurrency,
+                    'razorpay',
+                    paymentStatus,
+                    paymentIntentId,
+                    gatewayOrderId,
+                    paymentMethodType,
+                    JSON.stringify(paymentDetails || {}),
+                ]
+            );
+        }
 
         for (const item of items) {
             await client.query(
