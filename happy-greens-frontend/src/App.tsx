@@ -1,6 +1,7 @@
 import { ReactNode, Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import ChatbotWidget from './components/ChatbotWidget';
 import { Toaster } from 'react-hot-toast';
 import { trackEvent } from './services/analytics.service';
 import { checkBackendHealth } from './services/api';
@@ -140,6 +141,7 @@ function App() {
                     <footer className="bg-gray-800 px-4 py-5 text-center text-white sm:px-6 sm:py-6">
                         <p className="text-sm sm:text-base">&copy; 2026 Happy Greens. All rights reserved.</p>
                     </footer>
+                    <ChatbotWidget />
                 </div>
             </BackendReadinessGate>
         </Router>

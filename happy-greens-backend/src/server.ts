@@ -16,6 +16,7 @@ import uploadRoutes from './routes/upload.routes';
 import bannerRoutes from './routes/banner.routes';
 import loyaltyRoutes from './routes/loyalty.routes';
 import wishlistRoutes from './routes/wishlist.routes';
+import chatRoutes from './routes/chat.routes';
 import path from 'path';
 import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
@@ -122,6 +123,7 @@ app.use('/api/coupons', couponsRoutes); // Public coupon validation
 app.use('/api/banners', bannerRoutes); // Banners management & storefront usage
 app.use('/api/loyalty', loyaltyRoutes); // Loyalty points
 app.use('/api/wishlist', authenticate, wishlistRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 // Generic admin routes (MUST be after specific admin routes)

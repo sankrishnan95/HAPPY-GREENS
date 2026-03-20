@@ -34,3 +34,4 @@ export const authRateLimiter = createRateLimiter(15 * 60_000, 25);
 export const paymentRateLimiter = createRateLimiter(60_000, 20);
 export const analyticsRateLimiter = createRateLimiter(60_000, 240);
 export const uploadRateLimiter = createRateLimiter(60_000, 20);
+export const chatRateLimiter = createRateLimiter(60_000, 40);
