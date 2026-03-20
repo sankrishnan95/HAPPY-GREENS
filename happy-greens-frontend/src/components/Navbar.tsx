@@ -15,7 +15,7 @@ const Navbar = () => {
     const token = useStore((state) => state.token);
     const wishlistIds = useStore((state) => state.wishlistIds);
     const setWishlist = useStore((state) => state.setWishlist);
-    const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+    const cartCount = cart.length;
 
     const [location, setLocation] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
