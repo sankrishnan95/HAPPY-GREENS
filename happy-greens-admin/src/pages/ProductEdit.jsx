@@ -6,19 +6,19 @@ import { uploadImages } from '../services/upload.service';
 import { API_BASE_URL } from '../services/api';
 
 const UNIT_OPTIONS = [
-    { value: 'KG', label: 'Kilogram', priceLabel: 'Price per kg', minLabel: 'Minimum grams', stepLabel: 'Step grams' },
-    { value: 'GRAM', label: 'Gram', priceLabel: 'Price per kg', minLabel: 'Minimum grams', stepLabel: 'Step grams' },
-    { value: 'LITRE', label: 'Litre', priceLabel: 'Price per litre', minLabel: 'Minimum litres', stepLabel: 'Step litres' },
-    { value: 'DOZEN', label: 'Dozen', priceLabel: 'Price per dozen', minLabel: 'Minimum dozens', stepLabel: 'Step dozens' },
-    { value: 'PIECE', label: 'Piece', priceLabel: 'Price per piece', minLabel: 'Minimum pieces', stepLabel: 'Step pieces' },
+    { value: 'KG', label: 'Kilogram', priceLabel: 'Price per kg', minLabel: 'Minimum grams' },
+    { value: 'GRAM', label: 'Gram', priceLabel: 'Price per kg', minLabel: 'Minimum grams' },
+    { value: 'LITRE', label: 'Litre', priceLabel: 'Price per litre', minLabel: 'Minimum litres' },
+    { value: 'DOZEN', label: 'Dozen', priceLabel: 'Price per dozen', minLabel: 'Minimum dozens' },
+    { value: 'PIECE', label: 'Piece', priceLabel: 'Price per piece', minLabel: 'Minimum pieces' },
 ];
 
-const validateQuantityRules = (unit, minQty, stepQty) => {
-    if (['KG', 'GRAM', 'DOZEN', 'PIECE'].includes(unit) && (!Number.isInteger(minQty) || !Number.isInteger(stepQty))) {
-        return 'Minimum quantity and step must be whole numbers for Gram, Dozen, and Piece products';
+const validateQuantityRules = (unit, minQty) => {
+    if (['KG', 'GRAM', 'DOZEN', 'PIECE'].includes(unit) && !Number.isInteger(minQty)) {
+        return 'Minimum quantity must be a whole number for Gram, Dozen, and Piece products';
     }
-    if (minQty <= 0 || stepQty <= 0) {
-        return 'Minimum quantity and step must be greater than zero';
+    if (minQty <= 0) {
+        return 'Minimum quantity must be greater than zero';
     }
     return null;
 };
@@ -42,7 +42,6 @@ export default function ProductEdit() {
         stock_quantity: '',
         unit: 'PIECE',
         minQty: '1',
-        stepQty: '1',
         isActive: true,
         images: [],
         image_url: ''
@@ -87,7 +86,6 @@ export default function ProductEdit() {
                 stock_quantity: product.stock_quantity || '',
                 unit: product.unit || 'PIECE',
                 minQty: String(product.minQty ?? 1),
-                stepQty: String(product.stepQty ?? 1),
                 isActive: product.isActive ?? true,
                 images: product.images || (product.image_url ? [product.image_url] : []),
                 image_url: product.image_url || ''
@@ -150,8 +148,7 @@ export default function ProductEdit() {
 
         try {
             const minQty = Number(formData.minQty);
-            const stepQty = Number(formData.stepQty);
-            const quantityError = validateQuantityRules(formData.unit, minQty, stepQty);
+            const quantityError = validateQuantityRules(formData.unit, minQty);
             if (quantityError) {
                 throw new Error(quantityError);
             }
@@ -164,7 +161,7 @@ export default function ProductEdit() {
                 stock_quantity: parseInt(formData.stock_quantity),
                 category_id: parseInt(formData.category_id),
                 minQty,
-                stepQty,
+                stepQty: minQty,
             };
 
             if (isNew) {
@@ -274,10 +271,6 @@ export default function ProductEdit() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">{selectedUnit.minLabel} *</label>
                                 <input type="number" step={formData.unit === 'LITRE' ? '0.1' : '1'} value={formData.minQty} onChange={(e) => setFormData({ ...formData, minQty: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">{selectedUnit.stepLabel} *</label>
-                                <input type="number" step={formData.unit === 'LITRE' ? '0.1' : '1'} value={formData.stepQty} onChange={(e) => setFormData({ ...formData, stepQty: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required />
                             </div>
                         </div>
                     </div>

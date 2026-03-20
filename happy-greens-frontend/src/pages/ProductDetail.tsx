@@ -124,7 +124,7 @@ const ProductDetail = () => {
 
     const categoryName = product.category_name || 'Uncategorized';
     const unitLabel = getUnitLabel(product.unit);
-    const { minQty, stepQty } = getQuantityRules(product);
+    const { minQty } = getQuantityRules(product);
     const productImages = (
         Array.isArray(product.images) && product.images.length > 0
             ? product.images
@@ -207,8 +207,6 @@ const ProductDetail = () => {
 
                     <div className="rounded-[1.15rem] bg-gray-50 px-4 py-3 text-xs text-gray-600 sm:text-sm">
                         Minimum quantity: <strong>{formatQuantity(product, minQty)}</strong>
-                        <span className="mx-2">•</span>
-                        Step size: <strong>{formatQuantity(product, stepQty)}</strong>
                     </div>
 
                     <div>
@@ -302,3 +300,6 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+
+
+
