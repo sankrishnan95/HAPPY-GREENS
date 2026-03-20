@@ -27,15 +27,26 @@ import { applySecurityHeaders, enforceHttps } from './middleware/security';
 const app = express();
 const port = process.env.PORT || 3000;
 const debugHealthChecks = process.env.DEBUG_HEALTHCHECKS === 'true';
+
+const normalizeOrigin = (origin: string) => origin.trim().replace(/\/+$/, '');
+
 const configuredOrigins = [
-  ...(process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) || []),
-  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.trim()] : []),
-  ...(process.env.ADMIN_URL ? [process.env.ADMIN_URL.trim()] : []),
+  ...(process.env.CORS_ORIGINS?.split(',').map((o) => normalizeOrigin(o)).filter(Boolean) || []),
+  ...(process.env.FRONTEND_URL ? [normalizeOrigin(process.env.FRONTEND_URL)] : []),
+  ...(process.env.ADMIN_URL ? [normalizeOrigin(process.env.ADMIN_URL)] : []),
 ];
+
+const productionFallbackOrigins = [
+  'https://happy-greens.vercel.app',
+  'https://happy-greens-store.vercel.app',
+  'https://happy-greens-admin.vercel.app',
+  'https://happygreensadmin.vercel.app',
+].map(normalizeOrigin);
+
 const allowedOrigins = new Set(
   process.env.NODE_ENV === 'production'
-    ? configuredOrigins
-    : [...configuredOrigins, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175']
+    ? [...productionFallbackOrigins, ...configuredOrigins]
+    : [...productionFallbackOrigins, ...configuredOrigins, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'].map(normalizeOrigin)
 );
 
 const corsOptions: cors.CorsOptions = {
@@ -44,11 +55,13 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
-    if (allowedOrigins.has(origin)) {
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    if (allowedOrigins.has(normalizedOrigin)) {
       return callback(null, true);
     }
 
-    return callback(new Error(`Not allowed by CORS: ${origin}`));
+    return callback(new Error(`Not allowed by CORS: ${normalizedOrigin}`));
   },
   credentials: true,
 };
