@@ -23,7 +23,9 @@ api.interceptors.response.use(
   (error: any) => {
     if (error.response?.status === 401) {
       removeToken();
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('admin:auth-expired'));
+      }
     }
     return Promise.reject(error);
   }

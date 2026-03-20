@@ -1,7 +1,7 @@
 import api from './api';
 
-export const createRazorpayOrder = async (amount: number) => {
-    const { data } = await api.post('/payments/razorpay/order', { amount });
+export const createRazorpayOrder = async (payload: { items: Array<{ product_id: number; quantity: number }>; pointsUsed: number }) => {
+    const { data } = await api.post('/payments/razorpay/order', payload);
     return data;
 };
 

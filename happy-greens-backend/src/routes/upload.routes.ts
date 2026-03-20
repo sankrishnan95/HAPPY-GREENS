@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { promises as fsPromises } from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
+import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
@@ -80,7 +81,7 @@ const saveLocalFile = async (file: Express.Multer.File): Promise<string> => {
     return `/uploads/${filename}`;
 };
 
-router.post('/', upload.array('images', 10), async (req: Request, res: Response) => {
+router.post('/', authenticate, requireAdmin, upload.array('images', 10), async (req: Request, res: Response) => {
     try {
         const files = req.files as Express.Multer.File[];
         if (!files || files.length === 0) {

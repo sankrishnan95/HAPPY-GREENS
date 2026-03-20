@@ -69,7 +69,12 @@ const validateLatestOtp = async (phone: string, otp: string) => {
 };
 
 export const register = async (req: Request, res: Response) => {
-    const { email, password, full_name } = req.body;
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    const full_name = typeof req.body?.full_name === 'string' ? req.body.full_name.trim().slice(0, 150) : '';
+    if (!email || !email.includes('@') || password.length < 8 || !full_name) {
+        return res.status(400).json({ message: 'Invalid registration details' });
+    }
     try {
         const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (userCheck.rows.length > 0) {
@@ -94,7 +99,11 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
     try {
         const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (userResult.rows.length === 0) {
@@ -120,11 +129,14 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const forgotPassword = async (req: Request, res: Response) => {
-    const { email } = req.body;
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    if (!email || !email.includes('@')) {
+        return res.status(400).json({ message: 'Valid email is required' });
+    }
     try {
         const userResult = await pool.query('SELECT id, full_name FROM users WHERE email = $1', [email]);
         if (userResult.rows.length === 0) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.json({ message: 'If the account exists, a password reset link has been sent' });
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
@@ -140,7 +152,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
         await sendEmail(email, 'Password Reset - Happy Greens', message);
 
-        res.json({ message: 'Password reset link sent to your email' });
+        res.json({ message: 'If the account exists, a password reset link has been sent' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
@@ -148,7 +160,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
 };
 
 export const resetPassword = async (req: Request, res: Response) => {
-    const { token, password } = req.body;
+    const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    if (!token || password.length < 8) {
+        return res.status(400).json({ message: 'Invalid password reset request' });
+    }
     try {
         const userResult = await pool.query(
             'SELECT id FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()',

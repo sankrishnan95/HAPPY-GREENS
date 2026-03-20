@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -20,9 +21,28 @@ import OrderAnalytics from './pages/analytics/OrderAnalytics';
 import InventoryInsights from './pages/analytics/InventoryInsights';
 import TrafficAnalytics from './pages/analytics/TrafficAnalytics';
 
+function AdminAuthRedirectHandler() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleExpired = () => {
+      if (location.pathname !== '/login') {
+        navigate('/login', { replace: true });
+      }
+    };
+
+    window.addEventListener('admin:auth-expired', handleExpired);
+    return () => window.removeEventListener('admin:auth-expired', handleExpired);
+  }, [location.pathname, navigate]);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <AdminAuthRedirectHandler />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route

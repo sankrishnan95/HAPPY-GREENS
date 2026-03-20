@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
+import { calculateOrderTotals } from '../services/order-pricing.service';
 
 const getExistingOrderByToken = async (userId: number, clientOrderToken: string) => {
     const existing = await pool.query(
@@ -15,7 +16,6 @@ export const createOrder = async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const {
         items,
-        totalAmount,
         shippingAddress,
         paymentIntentId,
         paymentMethod,
@@ -45,24 +45,24 @@ export const createOrder = async (req: Request, res: Response) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
-        let finalTotal = Number(totalAmount);
-        let validatedPointsUsed = 0;
-
-        if (pointsUsed > 0) {
-            const userRes = await client.query(
-                'SELECT loyalty_points FROM users WHERE id = $1',
-                [userId]
-            );
-            const availablePoints = userRes.rows[0]?.loyalty_points || 0;
-
-            const maxRedeemable = Math.floor(finalTotal * 0.5);
-            validatedPointsUsed = Math.min(pointsUsed, availablePoints, maxRedeemable);
-
-            if (validatedPointsUsed > 0) {
-                finalTotal = Math.max(0, finalTotal - validatedPointsUsed);
-            }
+        const shippingAddressPayload = shippingAddress && typeof shippingAddress === 'object' ? shippingAddress : {};
+        const address = typeof shippingAddressPayload.address === 'string' ? shippingAddressPayload.address.trim().slice(0, 255) : '';
+        const city = typeof shippingAddressPayload.city === 'string' ? shippingAddressPayload.city.trim().slice(0, 100) : '';
+        const zip = typeof shippingAddressPayload.zip === 'string' ? shippingAddressPayload.zip.trim().slice(0, 20) : '';
+        if (!address || !city || !zip) {
+            throw new Error('INVALID_SHIPPING');
         }
+
+        if (paymentMethod !== 'cod' && paymentMethod !== 'razorpay') {
+            throw new Error('INVALID_PAYMENT_METHOD');
+        }
+
+        const { items: pricedItems, validatedPointsUsed, finalTotal } = await calculateOrderTotals(
+            client,
+            items,
+            pointsUsed,
+            userId
+        );
 
         const orderStatus = paymentMethod === 'cod' ? 'placed' : 'paid';
 
@@ -71,7 +71,7 @@ export const createOrder = async (req: Request, res: Response) => {
                (user_id, total_amount, status, payment_method, payment_intent_id, shipping_address, points_used, client_order_token)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING id`,
-            [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify(shippingAddress), validatedPointsUsed, sanitizedClientOrderToken]
+            [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify({ address, city, zip }), validatedPointsUsed, sanitizedClientOrderToken]
         );
         const orderId = orderRes.rows[0].id;
 
@@ -100,7 +100,7 @@ export const createOrder = async (req: Request, res: Response) => {
             );
         }
 
-        for (const item of items) {
+        for (const item of pricedItems) {
             await client.query(
                 'INSERT INTO order_items (order_id, product_id, product_name, quantity, price_at_purchase) VALUES ($1, $2, $3, $4, $5)',
                 [orderId, item.product_id, item.product_name, item.quantity, item.price]
@@ -140,6 +140,16 @@ export const createOrder = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         await client.query('ROLLBACK');
+
+        if (error?.message === 'INVALID_SHIPPING') {
+            return res.status(400).json({ message: 'Valid shipping address is required' });
+        }
+        if (error?.message === 'INVALID_PAYMENT_METHOD') {
+            return res.status(400).json({ message: 'Invalid payment method' });
+        }
+        if (error?.message === 'INVALID_ITEMS' || error?.message === 'INVALID_PRODUCT') {
+            return res.status(400).json({ message: 'Invalid order items' });
+        }
 
         if (error?.code === '23505' && sanitizedClientOrderToken) {
             const existingOrder = await getExistingOrderByToken(userId, sanitizedClientOrderToken);

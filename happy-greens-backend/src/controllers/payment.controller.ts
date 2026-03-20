@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { calculateOrderTotals } from '../services/order-pricing.service';
+import { pool } from '../db';
 
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
@@ -11,20 +13,18 @@ const razorpay = new Razorpay({
 });
 
 export const createRazorpayOrder = async (req: Request, res: Response) => {
-    const { amount } = req.body;
+    // @ts-ignore
+    const userId = req.user?.id;
+    const { items, pointsUsed } = req.body;
 
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
         return res.status(500).json({ message: 'Razorpay is not configured on server' });
     }
 
-    const normalizedAmount = Number(amount);
-    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
-        return res.status(400).json({ message: 'Valid amount is required' });
-    }
-
     try {
+        const { finalTotal } = await calculateOrderTotals(pool, items, pointsUsed, userId);
         const options = {
-            amount: Math.round(normalizedAmount * 100),
+            amount: Math.round(finalTotal * 100),
             currency: 'INR',
             receipt: `receipt_${Date.now()}`,
             payment_capture: 1,
@@ -38,6 +38,9 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
             receipt: order.receipt,
         });
     } catch (error) {
+        if (error instanceof Error && (error.message === 'INVALID_ITEMS' || error.message === 'INVALID_PRODUCT')) {
+            return res.status(400).json({ message: 'Invalid payment items' });
+        }
         console.error('Razorpay order creation failed:', error);
         res.status(500).json({ message: 'Razorpay error' });
     }

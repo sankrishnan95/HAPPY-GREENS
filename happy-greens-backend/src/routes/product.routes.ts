@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authenticate, requireAdmin } from '../middleware/auth';
 import { getProducts, getCategories, getProductById, createProduct, updateProduct, deleteProduct, updateProductStatus } from '../controllers/product.controller';
 
 const router = Router();
@@ -6,11 +7,10 @@ const router = Router();
 router.get('/', getProducts);
 router.get('/categories', getCategories);
 router.get('/:id', getProductById);
-// Add auth middleware for admin routes later
-router.post('/', createProduct);
-router.put('/:id', updateProduct);
-router.patch('/:id/status', updateProductStatus);
-router.delete('/:id', deleteProduct);
+router.post('/', authenticate, requireAdmin, createProduct);
+router.put('/:id', authenticate, requireAdmin, updateProduct);
+router.patch('/:id/status', authenticate, requireAdmin, updateProductStatus);
+router.delete('/:id', authenticate, requireAdmin, deleteProduct);
 
 export default router;
 

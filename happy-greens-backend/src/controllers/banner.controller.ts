@@ -7,6 +7,12 @@ const parseDisplayOrder = (value: any): number => {
     return Number.isNaN(parsed) ? 0 : parsed;
 };
 
+const sanitizeBannerText = (value: unknown, maxLength: number): string | null => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed ? trimmed.slice(0, maxLength) : null;
+};
+
 
 const mapBannerMedia = (banner: any, baseUrl: string) => ({
     ...banner,
@@ -66,6 +72,11 @@ export const getBannerById = async (req: Request, res: Response): Promise<void> 
 export const createBanner = async (req: Request, res: Response): Promise<void> => {
     try {
         const { title, subheading, description, image_url, link, is_active, display_order } = req.body;
+        const safeTitle = sanitizeBannerText(title, 150);
+        if (!safeTitle || typeof image_url !== 'string' || !image_url.trim()) {
+            res.status(400).json({ success: false, message: 'Banner title and image are required' });
+            return;
+        }
 
         const parsedDisplayOrder = parseDisplayOrder(display_order);
 
@@ -74,11 +85,11 @@ export const createBanner = async (req: Request, res: Response): Promise<void> =
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *`,
             [
-                title,
-                subheading || null,
-                description || null,
-                image_url,
-                link || null,
+                safeTitle,
+                sanitizeBannerText(subheading, 255) || null,
+                typeof description === 'string' ? description.trim().slice(0, 5000) || null : null,
+                image_url.trim(),
+                typeof link === 'string' ? link.trim().slice(0, 500) || null : null,
                 is_active !== undefined ? is_active : true,
                 parsedDisplayOrder
             ]
@@ -110,28 +121,33 @@ export const updateBanner = async (req: Request, res: Response): Promise<void> =
         let paramCount = 1;
 
         if (title !== undefined) {
+            const safeTitle = sanitizeBannerText(title, 150);
+            if (!safeTitle) {
+                res.status(400).json({ success: false, message: 'Invalid title' });
+                return;
+            }
             updates.push(`title = $${paramCount}`);
-            values.push(title);
+            values.push(safeTitle);
             paramCount++;
         }
         if (subheading !== undefined) {
             updates.push(`subheading = $${paramCount}`);
-            values.push(subheading || null);
+            values.push(sanitizeBannerText(subheading, 255) || null);
             paramCount++;
         }
         if (description !== undefined) {
             updates.push(`description = $${paramCount}`);
-            values.push(description || null);
+            values.push(typeof description === 'string' ? description.trim().slice(0, 5000) || null : null);
             paramCount++;
         }
         if (image_url) {
             updates.push(`image_url = $${paramCount}`);
-            values.push(image_url);
+            values.push(String(image_url).trim().slice(0, 500));
             paramCount++;
         }
         if (link !== undefined) {
             updates.push(`link = $${paramCount}`);
-            values.push(link || null);
+            values.push(typeof link === 'string' ? link.trim().slice(0, 500) || null : null);
             paramCount++;
         }
         if (is_active !== undefined) {

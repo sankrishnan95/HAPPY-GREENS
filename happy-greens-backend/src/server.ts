@@ -21,13 +21,22 @@ import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
 import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill, ensureAnalyticsSchema } from './bootstrap/schema';
 import analyticsRoutes from './routes/analytics.routes';
+import { analyticsRateLimiter, authRateLimiter, globalRateLimiter, paymentRateLimiter, uploadRateLimiter } from './middleware/rateLimit';
+import { applySecurityHeaders, enforceHttps } from './middleware/security';
 
 const app = express();
 const port = process.env.PORT || 3000;
 const debugHealthChecks = process.env.DEBUG_HEALTHCHECKS === 'true';
-
-const configuredOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) || [];
-const vercelPreviewPattern = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
+const configuredOrigins = [
+  ...(process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) || []),
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.trim()] : []),
+  ...(process.env.ADMIN_URL ? [process.env.ADMIN_URL.trim()] : []),
+];
+const allowedOrigins = new Set(
+  process.env.NODE_ENV === 'production'
+    ? configuredOrigins
+    : [...configuredOrigins, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175']
+);
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
@@ -35,11 +44,7 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
-    if (configuredOrigins.length === 0) {
-      return callback(null, true);
-    }
-
-    if (configuredOrigins.includes(origin) || vercelPreviewPattern.test(origin)) {
+    if (allowedOrigins.has(origin)) {
       return callback(null, true);
     }
 
@@ -48,15 +53,23 @@ const corsOptions: cors.CorsOptions = {
   credentials: true,
 };
 
+app.disable('x-powered-by');
+app.use(applySecurityHeaders);
+app.use(enforceHttps);
+app.use(globalRateLimiter);
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+app.use('/api/auth', authRateLimiter);
+app.use('/api/payments', paymentRateLimiter);
+app.use('/api/upload', uploadRateLimiter);
+app.use('/api/analytics', analyticsRateLimiter);
 
 // IMPORTANT: Webhook routes must be registered BEFORE express.json()
 // Razorpay requires raw body for signature verification
 app.use('/api/webhooks', express.raw({ type: 'application/json' }), webhookRoutes);
 
 // Regular JSON parsing for all other routes
-app.use(express.json());
+app.use(express.json({ limit: '200kb' }));
 
 // Expose the static uploads folder broadly
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

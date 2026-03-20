@@ -89,7 +89,13 @@ const Checkout = () => {
                     throw new Error('Failed to load Razorpay SDK');
                 }
 
-                const razorpayOrder = await createRazorpayOrder(total);
+                const razorpayOrder = await createRazorpayOrder({
+                    items: cart.map((item) => ({
+                        product_id: item.id,
+                        quantity: item.quantity,
+                    })),
+                    pointsUsed: discount,
+                });
 
                 const paymentResult = await new Promise<any>((resolve, reject) => {
                     const razorpay = new window.Razorpay({
@@ -147,11 +153,8 @@ const Checkout = () => {
             const orderData = {
                 items: cart.map(item => ({
                     product_id: item.id,
-                    product_name: item.name,
                     quantity: item.quantity,
-                    price: item.discountPrice || item.price
                 })),
-                totalAmount: subtotal,
                 shippingAddress: {
                     address: formData.address,
                     city: formData.city,
