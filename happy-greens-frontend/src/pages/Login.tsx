@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { login, googleLogin, sendOtp, verifyOtp } from '../services/auth.service';
+import { login, googleLogin, firebasePhoneLogin } from '../services/auth.service';
 import { GoogleLogin } from '@react-oauth/google';
 import Button from '../components/Button';
 import { Mail, ArrowRight, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isFirebasePhoneAuthConfigured, requestPhoneOtp } from '../services/firebase.service';
+import type { ConfirmationResult } from 'firebase/auth';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -17,6 +19,7 @@ const Login = () => {
     const [otpSent, setOtpSent] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
     useEffect(() => {
@@ -51,11 +54,21 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await sendOtp(phone);
+            if (!isFirebasePhoneAuthConfigured()) {
+                throw new Error('Firebase phone auth is not configured');
+            }
+
+            const normalizedPhone = phone.replace(/\D/g, '');
+            if (normalizedPhone.length !== 10) {
+                throw new Error('Enter a valid 10-digit phone number');
+            }
+
+            const confirmation = await requestPhoneOtp(`+91${normalizedPhone}`);
+            setConfirmationResult(confirmation);
             setOtpSent(true);
-            toast.success('OTP sent to ' + phone);
+            toast.success('OTP sent to ' + normalizedPhone);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to send OTP');
+            setError(err?.response?.data?.message || err?.message || 'Failed to send OTP');
         } finally {
             setLoading(false);
         }
@@ -66,12 +79,18 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            const data = await verifyOtp(phone, otp);
+            if (!confirmationResult) {
+                throw new Error('OTP session expired. Please request a new code.');
+            }
+
+            const credential = await confirmationResult.confirm(otp);
+            const idToken = await credential.user.getIdToken();
+            const data = await firebasePhoneLogin(idToken);
             setUser(data.user, data.token);
             toast.success('Successfully logged in!');
             navigate('/');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Invalid OTP');
+            setError(err?.response?.data?.message || err?.message || 'Invalid OTP');
         } finally {
             setLoading(false);
         }
@@ -191,7 +210,10 @@ const Login = () => {
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => setOtpSent(false)}
+                                    onClick={() => {
+                                        setOtpSent(false);
+                                        setConfirmationResult(null);
+                                    }}
                                     className="text-xs text-primary-600 font-bold mt-3 hover:underline"
                                 >
                                     Change phone number
@@ -215,6 +237,7 @@ const Login = () => {
                 <p className="text-center mt-8 text-gray-600">
                     Don't have an account? <Link to="/register" className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">Sign up</Link>
                 </p>
+                <div id="firebase-recaptcha-container"></div>
             </div>
         </div>
     );

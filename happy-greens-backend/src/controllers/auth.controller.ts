@@ -6,6 +6,7 @@ import { pool } from '../db';
 import { sendEmail } from '../services/email.service';
 import { sendSms } from '../services/sms.service';
 import { OAuth2Client } from 'google-auth-library';
+import { isFirebaseAdminConfigured, verifyFirebaseIdToken } from '../services/firebase-admin.service';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
@@ -288,6 +289,66 @@ export const sendOtp = async (req: Request, res: Response) => {
         }
         console.error('Error sending OTP:', error);
         res.status(500).json({ message: 'Failed to send OTP' });
+    }
+};
+
+export const firebasePhoneLogin = async (req: Request, res: Response) => {
+    const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken.trim() : '';
+
+    if (!idToken) {
+        return res.status(400).json({ message: 'Firebase ID token is required' });
+    }
+
+    if (!isFirebaseAdminConfigured()) {
+        return res.status(500).json({ message: 'Firebase phone auth is not configured on server' });
+    }
+
+    try {
+        const decodedToken = await verifyFirebaseIdToken(idToken);
+        const phone = normalizePhone(decodedToken.phone_number);
+
+        if (!phone) {
+            return res.status(400).json({ message: 'Verified Firebase token does not include a valid phone number' });
+        }
+
+        let userResult = await pool.query(
+            'SELECT id, email, full_name, role, phone, phone_verified FROM users WHERE phone = $1 LIMIT 1',
+            [phone]
+        );
+
+        if (userResult.rows.length === 0) {
+            const dummyEmail = `${phone}@happygreens.app`;
+            const randomPassword = crypto.randomBytes(16).toString('hex');
+            const salt = await bcrypt.genSalt(10);
+            const dummyPasswordHash = await bcrypt.hash(randomPassword, salt);
+            const displayName = typeof decodedToken.name === 'string' && decodedToken.name.trim()
+                ? decodedToken.name.trim().slice(0, 150)
+                : `User ${phone.slice(-4)}`;
+
+            userResult = await pool.query(
+                `INSERT INTO users(email, password_hash, full_name, phone, phone_verified)
+                 VALUES($1, $2, $3, $4, $5)
+                 RETURNING id, email, full_name, role, phone, phone_verified`,
+                [dummyEmail, dummyPasswordHash, displayName, phone, true]
+            );
+        } else if (!userResult.rows[0].phone_verified) {
+            await pool.query(
+                'UPDATE users SET phone_verified = true WHERE id = $1',
+                [userResult.rows[0].id]
+            );
+            userResult.rows[0].phone_verified = true;
+        }
+
+        const user = userResult.rows[0];
+        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+
+        return res.json({
+            user,
+            token,
+        });
+    } catch (error: any) {
+        console.error('Firebase phone auth error:', error?.message || error);
+        return res.status(401).json({ message: 'Invalid Firebase phone authentication token' });
     }
 };
 

@@ -15,6 +15,11 @@ export const googleLogin = async (token: string) => {
     return data;
 };
 
+export const firebasePhoneLogin = async (idToken: string) => {
+    const { data } = await api.post('/auth/firebase', { idToken });
+    return data;
+};
+
 export const getProfile = async () => {
     const { data } = await api.get('/auth/profile');
     return data;
