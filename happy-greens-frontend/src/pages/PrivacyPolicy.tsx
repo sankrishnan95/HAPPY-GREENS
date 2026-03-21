@@ -81,7 +81,7 @@ const PrivacyPolicy = () => {
 
             <h2>10. Contact</h2>
             <p>
-                For privacy-related questions, please contact <strong>support@happygreens.com</strong>.
+                For privacy-related questions, please contact <strong>happygreens80@gmail.com</strong>.
             </p>
         </LegalPageLayout>
     );
