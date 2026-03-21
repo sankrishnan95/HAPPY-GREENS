@@ -23,6 +23,7 @@ const Rewards = lazy(() => import('./pages/Rewards'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
+const RefundCancellationPolicy = lazy(() => import('./pages/RefundCancellationPolicy'));
 
 const PageFallback = () => (
     <div className="page-shell flex min-h-[40vh] items-center justify-center">
@@ -139,6 +140,7 @@ function App() {
                                 <Route path="/wishlist" element={<Wishlist />} />
                                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                                 <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+                                <Route path="/refund-cancellation-policy" element={<RefundCancellationPolicy />} />
                             </Routes>
                         </Suspense>
                     </main>
@@ -147,6 +149,7 @@ function App() {
                             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/80">
                                 <Link to="/privacy-policy" className="transition-colors hover:text-white">Privacy Policy</Link>
                                 <Link to="/terms-and-conditions" className="transition-colors hover:text-white">Terms &amp; Conditions</Link>
+                                <Link to="/refund-cancellation-policy" className="transition-colors hover:text-white">Refund Policy</Link>
                             </div>
                             <p className="text-sm sm:text-base">&copy; 2026 Happy Greens. All rights reserved.</p>
                         </div>
