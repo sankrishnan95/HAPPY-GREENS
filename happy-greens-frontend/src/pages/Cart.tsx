@@ -25,7 +25,7 @@ const Cart = () => {
 
     return (
         <div className="mx-auto max-w-7xl">
-            <h1 className="mb-6 text-3xl font-display font-bold text-gray-900 sm:mb-8 sm:text-4xl">Shopping Cart</h1>
+            <h1 className="mb-6 text-2xl font-display font-bold text-gray-900 sm:mb-8">Shopping Cart</h1>
 
             <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
                 <div className="space-y-4 lg:col-span-2">
@@ -115,7 +115,7 @@ const Cart = () => {
 
                 <div className="lg:col-span-1">
                     <div className="sticky top-24 rounded-3xl border border-gray-100 bg-gradient-soft p-5 shadow-soft sm:p-6">
-                        <h3 className="mb-6 text-2xl font-display font-bold text-gray-900">Order Summary</h3>
+                        <h3 className="mb-6 text-lg font-display font-bold text-gray-900">Order Summary</h3>
                         <div className="mb-6 space-y-3">
                             <div className="flex justify-between text-gray-700">
                                 <span>Subtotal ({cart.length} items)</span>
@@ -130,7 +130,7 @@ const Cart = () => {
                                 <span className="font-semibold">Rs. 0</span>
                             </div>
                         </div>
-                        <div className="mb-6 flex justify-between border-t-2 border-gray-200 pt-4 text-2xl font-display font-bold text-gray-900">
+                        <div className="mb-6 flex justify-between border-t-2 border-gray-200 pt-4 text-xl font-display font-bold text-gray-900">
                             <span>Total</span>
                             <span>Rs. {total.toFixed(2)}</span>
                         </div>
