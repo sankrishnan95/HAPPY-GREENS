@@ -23,6 +23,7 @@ export interface CalculatedOrderTotals {
     items: CalculatedOrderItem[];
     subtotal: number;
     validatedPointsUsed: number;
+    deliveryFee: number;
     finalTotal: number;
 }
 
@@ -102,10 +103,16 @@ export const calculateOrderTotals = async (
     const maxRedeemable = Math.floor(subtotal * 0.5);
     const validatedPointsUsed = Math.max(0, Math.min(safeRequested, availablePoints, maxRedeemable));
 
+    // Delivery fee: free for orders with subtotal >= 500, otherwise 30
+    const FREE_DELIVERY_THRESHOLD = 500;
+    const DELIVERY_FEE = 30;
+    const deliveryFee = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+
     return {
         items: calculatedItems,
         subtotal,
         validatedPointsUsed,
-        finalTotal: roundCurrency(Math.max(0, subtotal - validatedPointsUsed)),
+        deliveryFee,
+        finalTotal: roundCurrency(Math.max(0, subtotal - validatedPointsUsed + deliveryFee)),
     };
 };
