@@ -62,7 +62,7 @@ export default function OrderDetail() {
                 </button>
                 <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-3">
-                        <h1 className="text-2xl font-bold text-gray-900">Order #{order.id}</h1>
+                        <h1 className="text-xl font-bold text-gray-900">Order #{order.id}</h1>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${STATUS_STYLES[order.status] || 'bg-gray-100 text-gray-800'}`}>
                             {order.status}
                         </span>
@@ -73,7 +73,7 @@ export default function OrderDetail() {
 
             {/* Order Information */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <h2 className="font-semibold text-sm text-gray-900 mb-4 flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-gray-400" />
                     Order Information
                 </h2>
@@ -100,7 +100,7 @@ export default function OrderDetail() {
             {/* Delivery Address */}
             {order.shipping_address && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <h2 className="font-semibold text-sm text-gray-900 mb-4 flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-400" />
                         Delivery Address
                     </h2>
@@ -118,7 +118,7 @@ export default function OrderDetail() {
             {/* Ordered Products */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-gray-100">
-                    <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                    <h2 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
                         <Package className="w-4 h-4 text-gray-400" />
                         Ordered Products
                     </h2>
@@ -184,7 +184,7 @@ export default function OrderDetail() {
             {/* Order Timeline */}
             {order.timeline?.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h2 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <h2 className="font-semibold text-sm text-gray-900 mb-6 flex items-center gap-2">
                         <Clock className="w-4 h-4 text-gray-400" />
                         Order Timeline
                     </h2>
