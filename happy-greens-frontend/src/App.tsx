@@ -1,5 +1,5 @@
 import { ReactNode, Suspense, lazy, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ChatbotWidget from './components/ChatbotWidget';
 import { Toaster } from 'react-hot-toast';
@@ -21,6 +21,8 @@ const OrdersList = lazy(() => import('./pages/OrdersList'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail'));
 const Rewards = lazy(() => import('./pages/Rewards'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
 
 const PageFallback = () => (
     <div className="page-shell flex min-h-[40vh] items-center justify-center">
@@ -135,11 +137,19 @@ function App() {
                                 <Route path="/orders/:id" element={<OrderDetail />} />
                                 <Route path="/rewards" element={<Rewards />} />
                                 <Route path="/wishlist" element={<Wishlist />} />
+                                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                                <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                             </Routes>
                         </Suspense>
                     </main>
                     <footer className="bg-gray-800 px-4 py-5 text-center text-white sm:px-6 sm:py-6">
-                        <p className="text-sm sm:text-base">&copy; 2026 Happy Greens. All rights reserved.</p>
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/80">
+                                <Link to="/privacy-policy" className="transition-colors hover:text-white">Privacy Policy</Link>
+                                <Link to="/terms-and-conditions" className="transition-colors hover:text-white">Terms &amp; Conditions</Link>
+                            </div>
+                            <p className="text-sm sm:text-base">&copy; 2026 Happy Greens. All rights reserved.</p>
+                        </div>
                     </footer>
                     <ChatbotWidget />
                 </div>
