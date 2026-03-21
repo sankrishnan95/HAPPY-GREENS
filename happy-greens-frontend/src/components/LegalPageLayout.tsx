@@ -20,7 +20,7 @@ const LegalPageLayout = ({ title, effectiveDate, lastUpdated, children }: LegalP
                     </div>
                 </div>
 
-                <div className="prose prose-sm mt-6 max-w-none text-gray-700 sm:prose-base prose-headings:font-display prose-headings:text-gray-900 prose-h2:mt-8 prose-h2:text-[1.15rem] prose-h2:font-semibold sm:prose-h2:text-[1.25rem] prose-p:leading-7 prose-li:leading-7">
+                <div className="prose prose-sm mt-6 max-w-none text-gray-700 sm:prose-base prose-headings:font-display prose-headings:text-gray-900 prose-h2:mt-8 prose-h2:text-[1rem] prose-h2:font-semibold sm:prose-h2:text-[1.08rem] prose-p:leading-7 prose-li:leading-7">
                     {children}
                 </div>
             </div>
