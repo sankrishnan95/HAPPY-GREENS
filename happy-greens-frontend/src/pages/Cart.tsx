@@ -122,8 +122,17 @@ const Cart = () => {
                                 <span className="font-semibold">Rs. {total.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-gray-700">
-                                <span>Delivery</span>
-                                <span className="font-semibold text-green-600">Free</span>
+                                <div>
+                                    <span>Delivery</span>
+                                    {total >= 500 && (
+                                        <p className="text-xs text-green-600">Free delivery on orders above Rs. 500</p>
+                                    )}
+                                </div>
+                                {total >= 500 ? (
+                                    <span className="font-semibold text-green-600">Free</span>
+                                ) : (
+                                    <span className="font-semibold">Rs. 30</span>
+                                )}
                             </div>
                             <div className="flex justify-between text-gray-700">
                                 <span>Tax</span>
@@ -132,14 +141,21 @@ const Cart = () => {
                         </div>
                         <div className="mb-6 flex justify-between border-t-2 border-gray-200 pt-4 text-xl font-display font-bold text-gray-900">
                             <span>Total</span>
-                            <span>Rs. {total.toFixed(2)}</span>
+                            <span>Rs. {(total + (total >= 500 ? 0 : 30)).toFixed(2)}</span>
                         </div>
                         <Link to="/checkout">
                             <button className="min-h-[44px] w-full rounded-full bg-gradient-primary py-4 text-base font-bold text-white transition-all hover:shadow-glow sm:text-lg">
                                 Proceed to Checkout
                             </button>
                         </Link>
-                        <p className="mt-4 text-center text-sm text-gray-500">Free delivery on all orders above Rs. 500</p>
+                        {total < 500 && (
+                            <p className="mt-4 text-center text-sm text-green-600 font-medium">
+                                🎉 Add Rs. {(500 - total).toFixed(0)} more for free delivery!
+                            </p>
+                        )}
+                        {total >= 500 && (
+                            <p className="mt-4 text-center text-sm text-gray-500">Free delivery on all orders above Rs. 500</p>
+                        )}
                     </div>
                 </div>
             </div>
