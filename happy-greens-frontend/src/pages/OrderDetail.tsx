@@ -50,7 +50,7 @@ export default function OrderDetail() {
     }
 
     const subtotal = order.items?.reduce(
-        (sum: number, item: any) => sum + parseFloat(item.price_at_purchase) * item.quantity, 0
+        (sum: number, item: any) => sum + parseFloat(item.price_at_purchase), 0
     ) || parseFloat(order.total_amount);
 
     return (
@@ -130,7 +130,7 @@ export default function OrderDetail() {
                                 <th className="px-6 py-3">Product</th>
                                 <th className="px-6 py-3">Price</th>
                                 <th className="px-6 py-3">Qty</th>
-                                <th className="px-6 py-3 text-right">Subtotal</th>
+                                <th className="px-6 py-3 text-right">Total</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -152,10 +152,22 @@ export default function OrderDetail() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">₹{parseFloat(item.price_at_purchase).toFixed(2)}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">× {item.quantity}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">
+                                        {item.unit && (item.unit.toUpperCase() === 'GRAM' || item.unit.toUpperCase() === 'G' || item.unit.toUpperCase() === 'KG')
+                                            ? `₹${(parseFloat(item.price_at_purchase) / (item.quantity / 1000)).toFixed(2)}/kg`
+                                            : `₹${(parseFloat(item.price_at_purchase) / item.quantity).toFixed(2)}/pc`
+                                        }
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">
+                                        {item.unit && (item.unit.toUpperCase() === 'GRAM' || item.unit.toUpperCase() === 'G' || item.unit.toUpperCase() === 'KG')
+                                            ? (item.quantity >= 1000 ? `${(item.quantity / 1000).toFixed(item.quantity % 1000 === 0 ? 0 : 2)} kg` : `${Math.round(item.quantity)} g`)
+                                            : item.unit && (item.unit.toUpperCase() === 'LITRE' || item.unit.toUpperCase() === 'L')
+                                                ? `${Number(item.quantity).toFixed(item.quantity % 1 === 0 ? 0 : 2)} L`
+                                                : `× ${Math.round(item.quantity)}`
+                                        }
+                                    </td>
                                     <td className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
-                                        ₹{(parseFloat(item.price_at_purchase) * item.quantity).toFixed(2)}
+                                        ₹{parseFloat(item.price_at_purchase).toFixed(2)}
                                     </td>
                                 </tr>
                             ))}
