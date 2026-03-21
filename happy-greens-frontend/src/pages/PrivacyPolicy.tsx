@@ -8,87 +8,80 @@ const PrivacyPolicy = () => {
             lastUpdated="March 21, 2026"
         >
             <p>
-                Happy Greens (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) values your privacy. This Privacy Policy explains how we collect,
-                use, store, share, and protect your information when you use our website, storefront, admin systems,
-                and related services.
+                This Privacy Policy explains how Happy Greens collects, uses, stores, and protects personal information
+                when you use our website, storefront, checkout, support channels, and related services.
             </p>
 
             <h2>1. Information We Collect</h2>
-            <p>We may collect the following categories of information:</p>
+            <p>We may collect information that you provide directly or that is generated through your use of the platform.</p>
             <ul>
-                <li>Account information such as name, email, phone number, and login details</li>
-                <li>Order and transaction data such as delivery address, order history, and payment references</li>
-                <li>Wishlist, cart, loyalty, and profile preferences</li>
-                <li>Device, browser, and usage information including product views and checkout activity</li>
-                <li>Communication records such as OTP requests, support messages, and order notifications</li>
+                <li>Account details such as name, email address, and phone number</li>
+                <li>Authentication details such as login method and verification status</li>
+                <li>Order information such as delivery address, order history, and payment references</li>
+                <li>Preference data such as cart, wishlist, and loyalty activity</li>
+                <li>Technical and usage data such as device type, browser, product views, and checkout events</li>
             </ul>
 
             <h2>2. How We Use Information</h2>
             <ul>
-                <li>To create and manage your account</li>
-                <li>To authenticate users and secure platform access</li>
-                <li>To process orders, payments, and deliveries</li>
-                <li>To send OTPs, invoices, and service-related notifications</li>
+                <li>To create and manage user accounts</li>
+                <li>To authenticate users and secure access to services</li>
+                <li>To process orders, payments, refunds, and deliveries</li>
+                <li>To send OTPs, invoices, service notifications, and support responses</li>
                 <li>To improve platform performance, analytics, and customer experience</li>
-                <li>To prevent fraud, abuse, and unauthorized access</li>
+                <li>To detect and prevent fraud, abuse, and unauthorized access</li>
             </ul>
 
             <h2>3. Sharing of Information</h2>
-            <p>We do not sell your personal information. We may share limited data with service providers such as:</p>
+            <p>We do not sell personal information. We may share limited data with service providers only where necessary.</p>
             <ul>
                 <li>Payment providers</li>
                 <li>Authentication providers such as Google and Firebase</li>
-                <li>SMS, email, hosting, analytics, and infrastructure providers</li>
+                <li>SMS, email, analytics, hosting, and infrastructure providers</li>
                 <li>Delivery and logistics partners</li>
-                <li>Legal or regulatory authorities where required by law</li>
+                <li>Authorities or regulators where disclosure is legally required</li>
             </ul>
 
-            <h2>4. Payments</h2>
+            <h2>4. Payments and Security</h2>
             <p>
-                Payment processing is handled through third-party providers. We do not store full card details on our
-                own servers.
+                Payments are processed through third-party payment providers. Happy Greens does not store full card
+                details on its own servers. We use reasonable security measures such as authentication controls, input
+                validation, password hashing, and secure communication where applicable.
             </p>
 
             <h2>5. Cookies and Local Storage</h2>
             <p>
-                We use cookies and local storage to keep users logged in, remember cart and wishlist data, store
-                preferences, and improve security and usability.
+                We use cookies and browser storage to keep users signed in, retain cart and wishlist data, remember
+                preferences, and support platform functionality.
             </p>
 
             <h2>6. Data Retention</h2>
             <p>
-                We retain data only for as long as necessary to provide services, comply with legal obligations, resolve
-                disputes, prevent fraud, and maintain business records.
+                We retain information only for as long as needed to provide services, maintain records, resolve
+                disputes, meet legal obligations, and protect the platform from misuse.
             </p>
 
-            <h2>7. Security</h2>
+            <h2>7. Your Choices and Rights</h2>
             <p>
-                We use reasonable technical and organizational safeguards including authentication controls, password
-                hashing, input validation, and HTTPS-based communication where applicable. No system can guarantee
-                absolute security.
+                Subject to applicable law, you may request access to, correction of, or deletion of your personal
+                information. You may also contact us to update your profile details or raise privacy questions.
             </p>
 
-            <h2>8. Your Rights</h2>
+            <h2>8. Children&apos;s Privacy</h2>
             <p>
-                Depending on applicable law, you may have the right to access, correct, update, or request deletion of
-                your information. You may contact us to make such requests.
+                Happy Greens is not intended for children under the minimum legal age required to use online purchasing
+                services in the applicable jurisdiction.
             </p>
 
-            <h2>9. Children&apos;s Privacy</h2>
+            <h2>9. Policy Updates</h2>
             <p>
-                Happy Greens is not intended for children under the age of 18 or the minimum legal age required in your
-                jurisdiction to enter into online transactions.
+                We may update this Privacy Policy from time to time. The revised version will be posted on this page
+                with an updated effective date.
             </p>
 
-            <h2>10. Changes to This Policy</h2>
+            <h2>10. Contact</h2>
             <p>
-                We may update this Privacy Policy from time to time. Continued use of the platform after updates means
-                you accept the revised policy.
-            </p>
-
-            <h2>11. Contact</h2>
-            <p>
-                For privacy questions, support, or legal requests, contact us at <strong>support@happygreens.com</strong>.
+                For privacy-related questions, please contact <strong>support@happygreens.com</strong>.
             </p>
         </LegalPageLayout>
     );
