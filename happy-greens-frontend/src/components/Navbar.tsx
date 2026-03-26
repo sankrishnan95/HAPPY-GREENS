@@ -3,7 +3,6 @@ import { ShoppingCart, User, Search, MapPin, Star, Heart, Menu, X, ChevronRight 
 import { useStore } from '../store/useStore';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getWishlist } from '../services/wishlist.service';
 import { API_BASE_URL } from '../config/api';
 import OptimizedImage from './OptimizedImage';
 
@@ -14,7 +13,8 @@ const Navbar = () => {
     const user = useStore((state) => state.user);
     const token = useStore((state) => state.token);
     const wishlistIds = useStore((state) => state.wishlistIds);
-    const setWishlist = useStore((state) => state.setWishlist);
+    const syncWishlistWithBackend = useStore((state) => state.syncWishlistWithBackend);
+    const syncCartWithBackend = useStore((state) => state.syncCartWithBackend);
     const cartCount = cart.length;
 
     const [location, setLocation] = useState<string>('');
@@ -28,15 +28,11 @@ const Navbar = () => {
     }, [searchParams]);
 
     useEffect(() => {
-        if (!user || !token) {
-            setWishlist([]);
-            return;
+        if (user && token) {
+            syncWishlistWithBackend();
+            syncCartWithBackend();
         }
-
-        getWishlist()
-            .then((data) => setWishlist((data.items || []).map((item: any) => item.id)))
-            .catch(() => setWishlist([]));
-    }, [user, token, setWishlist]);
+    }, [user, token, syncWishlistWithBackend, syncCartWithBackend]);
 
     useEffect(() => {
         if (!searchQuery || searchQuery.trim().length === 0) {

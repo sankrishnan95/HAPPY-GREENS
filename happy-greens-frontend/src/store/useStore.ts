@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getInitialQuantity, incrementQuantity, normalizeUnit } from '../utils/productUnits';
+import { getCart, addToCart as apiAddToCart, updateCartItem as apiUpdateCartItem, removeFromCart as apiRemoveFromCart, clearCart as apiClearCart } from '../services/cart.service';
+import { getWishlist } from '../services/wishlist.service';
 
 interface Product {
     id: number;
@@ -42,6 +44,8 @@ interface AppState {
     addWishlistItem: (productId: number) => void;
     removeWishlistItem: (productId: number) => void;
     logout: () => void;
+    syncCartWithBackend: () => Promise<void>;
+    syncWishlistWithBackend: () => Promise<void>;
 }
 
 const normalizeCartItem = (item: any): CartItem => {
@@ -66,14 +70,16 @@ const normalizeCartItem = (item: any): CartItem => {
 
 export const useStore = create<AppState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             cart: [],
             user: null,
             token: null,
             wishlistIds: [],
-            addToCart: (product) =>
+            addToCart: (product) => {
+                const normalizedProduct = normalizeCartItem(product);
+                const quantityToAdd = getInitialQuantity(normalizedProduct);
+                
                 set((state) => {
-                    const normalizedProduct = normalizeCartItem(product);
                     const existing = state.cart.find((item) => item.id === product.id);
                     if (existing) {
                         return {
@@ -82,21 +88,44 @@ export const useStore = create<AppState>()(
                             ),
                         };
                     }
-                    return { cart: [...state.cart, { ...normalizedProduct, quantity: getInitialQuantity(normalizedProduct) }] };
-                }),
-            removeFromCart: (productId) =>
+                    return { cart: [...state.cart, { ...normalizedProduct, quantity: quantityToAdd }] };
+                });
+
+                if (get().user && get().token) {
+                    apiAddToCart(product.id, quantityToAdd).catch(console.error);
+                }
+            },
+            removeFromCart: (productId) => {
                 set((state) => ({
                     cart: state.cart.filter((item) => item.id !== productId),
-                })),
-            updateQuantity: (productId, quantity) =>
+                }));
+                if (get().user && get().token) {
+                    apiRemoveFromCart(productId).catch(console.error);
+                }
+            },
+            updateQuantity: (productId, quantity) => {
                 set((state) => ({
                     cart: state.cart.flatMap((item) => {
                         if (item.id !== productId) return [item];
                         const nextQuantity = Number(quantity);
                         return nextQuantity <= 0 ? [] : [{ ...item, quantity: nextQuantity }];
                     }),
-                })),
-            clearCart: () => set({ cart: [] }),
+                }));
+                if (get().user && get().token) {
+                    const nextQuantity = Number(quantity);
+                    if (nextQuantity <= 0) {
+                        apiRemoveFromCart(productId).catch(console.error);
+                    } else {
+                        apiUpdateCartItem(productId, nextQuantity).catch(console.error);
+                    }
+                }
+            },
+            clearCart: () => {
+                set({ cart: [] });
+                if (get().user && get().token) {
+                    apiClearCart().catch(console.error);
+                }
+            },
             setUser: (user, token) => set({ user, token }),
             setWishlist: (productIds) => set({ wishlistIds: [...new Set(productIds)] }),
             addWishlistItem: (productId) =>
@@ -109,7 +138,33 @@ export const useStore = create<AppState>()(
                 set((state) => ({
                     wishlistIds: state.wishlistIds.filter((id) => id !== productId),
                 })),
-            logout: () => set({ user: null, token: null, cart: [], wishlistIds: [] }),
+            logout: () => set({ user: null, token: null }),
+            syncCartWithBackend: async () => {
+                try {
+                    const localCart = get().cart || [];
+                    const backendCart = await getCart();
+                    
+                    for (const item of localCart) {
+                        const existingInBackend = backendCart.find((b: any) => b.product_id === item.id);
+                        if (!existingInBackend && item.id) {
+                            await apiAddToCart(item.id, item.quantity).catch(console.error);
+                        }
+                    }
+                    
+                    const finalCart = await getCart();
+                    set({ cart: finalCart.map((item: any) => ({ ...normalizeCartItem(item), id: item.product_id })) });
+                } catch (error) {
+                    console.error('Failed to sync cart', error);
+                }
+            },
+            syncWishlistWithBackend: async () => {
+                try {
+                    const data = await getWishlist();
+                    set({ wishlistIds: (data.items || []).map((item: any) => item.id) });
+                } catch (error) {
+                    console.error('Failed to sync wishlist', error);
+                }
+            }
         }),
         {
             name: 'happy-greens-storage',
