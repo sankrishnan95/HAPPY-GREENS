@@ -144,18 +144,37 @@ function App() {
                             </Routes>
                         </Suspense>
                     </main>
-                    <footer className="bg-gray-800 px-4 py-5 text-center text-white sm:px-6 sm:py-6">
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="flex flex-col items-center justify-center text-sm text-white/80 space-y-1">
-                                <p>Contact: happygreens80@gmail.com</p>
-                                <p>Address: No 89, Point Care St , Nellithoppe, Puducherry, 605005.</p>
+                    <footer className="bg-gray-800 px-4 py-8 text-white sm:px-6 sm:py-10">
+                        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 md:flex-row md:items-start text-center md:text-left">
+                            <div className="flex flex-col items-center md:items-start gap-4 max-w-sm">
+                                <Link to="/" className="flex items-center gap-3">
+                                    <div className="rounded-full bg-white p-1">
+                                        <img
+                                            src="/logo.png"
+                                            alt="Happy Greens"
+                                            className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                        <p className="text-xl font-display font-bold leading-none text-white tracking-wide">Happy Greens</p>
+                                        <p className="text-xs font-medium text-white/70 mt-1">Groceries in minutes</p>
+                                    </div>
+                                </Link>
+                                <div className="text-sm text-white/80 space-y-1 mt-2">
+                                    <p>Contact: <a href="mailto:happygreens80@gmail.com" className="hover:text-white transition-colors">happygreens80@gmail.com</a></p>
+                                    <p className="leading-relaxed">Address: No 89, Point Care St, Nellithoppe, Puducherry, 605005.</p>
+                                </div>
                             </div>
-                            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/80">
-                                <Link to="/privacy-policy" className="transition-colors hover:text-white">Privacy Policy</Link>
-                                <Link to="/terms-and-conditions" className="transition-colors hover:text-white">Terms &amp; Conditions</Link>
-                                <Link to="/refund-cancellation-policy" className="transition-colors hover:text-white">Refund Policy</Link>
+                            
+                            <div className="flex flex-col items-center gap-4 md:items-end">
+                                <div className="flex flex-col items-center gap-3 text-sm text-white/80 md:items-end sm:flex-row sm:gap-6">
+                                    <Link to="/privacy-policy" className="transition-colors hover:text-white">Privacy Policy</Link>
+                                    <Link to="/terms-and-conditions" className="transition-colors hover:text-white">Terms &amp; Conditions</Link>
+                                    <Link to="/refund-cancellation-policy" className="transition-colors hover:text-white">Refund Policy</Link>
+                                </div>
+                                <p className="text-sm text-white/60 mt-2 sm:mt-4">&copy; 2026 Happy Greens. All rights reserved.</p>
                             </div>
-                            <p className="text-sm sm:text-base">&copy; 2026 Happy Greens. All rights reserved.</p>
                         </div>
                     </footer>
                     <ChatbotWidget />
