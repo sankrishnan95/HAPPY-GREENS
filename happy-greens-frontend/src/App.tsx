@@ -145,7 +145,11 @@ function App() {
                         </Suspense>
                     </main>
                     <footer className="bg-gray-800 px-4 py-5 text-center text-white sm:px-6 sm:py-6">
-                        <div className="flex flex-col items-center gap-2">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="flex flex-col items-center justify-center text-sm text-white/80 space-y-1">
+                                <p>Contact: happygreens80@gmail.com</p>
+                                <p>Address: No 89, Point Care St , Nellithoppe, Puducherry, 605005.</p>
+                            </div>
                             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/80">
                                 <Link to="/privacy-policy" className="transition-colors hover:text-white">Privacy Policy</Link>
                                 <Link to="/terms-and-conditions" className="transition-colors hover:text-white">Terms &amp; Conditions</Link>
