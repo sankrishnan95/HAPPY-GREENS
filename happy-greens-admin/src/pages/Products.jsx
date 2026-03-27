@@ -2,30 +2,37 @@
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/format';
 import { Search, Plus, Edit2, Trash2, Package } from 'lucide-react';
-import { getProducts, deleteProduct, updateProductStatus, updateProduct } from '../services/product.service';
+import { getProducts, deleteProduct, updateProductStatus, updateProduct, getCategories } from '../services/product.service';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadProducts();
+    loadProductsAndCategories();
   }, []);
 
   useEffect(() => {
     filterProducts();
   }, [searchTerm, categoryFilter, products]);
 
-  const loadProducts = async () => {
+  const loadProductsAndCategories = async () => {
     try {
-      console.log('Loading products...');
-      const response = await getProducts({ limit: 100 });
-      console.log('Products loaded:', response.data);
-      setProducts(response.data.products || []);
+      const [productsResponse, categoriesResponse] = await Promise.all([
+        getProducts({ limit: 100 }),
+        getCategories()
+      ]);
+
+      setProducts(productsResponse.data.products || []);
+      setCategories((categoriesResponse.data || []).map((category) => ({
+        id: category.id,
+        name: category.name
+      })));
     } catch (error) {
       console.error('Error loading products:', error);
       alert('Failed to load products');
@@ -65,7 +72,7 @@ export default function Products() {
     try {
       await deleteProduct(id);
       alert('Product deleted successfully');
-      loadProducts();
+      loadProductsAndCategories();
     } catch (error) {
       console.error('Error deleting product:', error);
       alert('Failed to delete product');
@@ -79,7 +86,7 @@ export default function Products() {
     try {
       await updateProduct(id, { stock_quantity: parseInt(newStock) });
       alert('Stock updated successfully');
-      loadProducts();
+      loadProductsAndCategories();
     } catch (error) {
       console.error('Error updating stock:', error);
       alert('Failed to update stock');
@@ -104,14 +111,12 @@ export default function Products() {
   const toggleProductStatus = async (productId, currentStatus) => {
     try {
       await updateProductStatus(productId, !currentStatus);
-      loadProducts();
+      loadProductsAndCategories();
     } catch (error) {
       console.error('Error toggling product status:', error);
       alert('Failed to update product status');
     }
   };
-
-  const categories = [...new Map(products.map(p => [p.category_id, { id: p.category_id, name: p.category_name }])).values()];
 
   if (loading) {
     return (
