@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, Shield, Clock, Leaf } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import OptimizedImage from '../components/OptimizedImage';
@@ -22,6 +23,16 @@ const features = [
     { icon: Shield, title: 'Quality checked', description: 'Packed and inspected before dispatch', tone: 'bg-sky-50 text-sky-700' },
     { icon: Clock, title: 'Open all day', description: 'Quick reorder at any hour you need', tone: 'bg-amber-50 text-amber-700' },
 ];
+
+const fadeInUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
+};
+
+const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
 
 const Home = () => {
     const [banners, setBanners] = useState<any[]>([]);
@@ -54,7 +65,10 @@ const Home = () => {
 
     return (
         <div className="space-y-4 pb-4 md:space-y-6 lg:space-y-8">
-            <section className="mobile-app-card hero-banner overflow-hidden rounded-[1.8rem]">
+            <motion.section 
+                initial="hidden" animate="visible" variants={fadeInUp}
+                className="mobile-app-card hero-banner overflow-hidden rounded-[1.8rem]"
+            >
                 {loadingBanners ? (
                     <div className="min-h-[240px] md:min-h-[320px] lg:min-h-[380px] animate-pulse bg-slate-200" />
                 ) : (
@@ -81,41 +95,52 @@ const Home = () => {
                         </div>
                     </div>
                 )}
-            </section>
+            </motion.section>
 
-            <section className="space-y-3">
+            <motion.section 
+                initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
+                className="space-y-3"
+            >
                 <div className="flex items-end justify-between gap-3">
                     <div><p className="section-kicker">Browse faster</p><h2 className="section-title mt-1">Shop by category</h2></div>
                     <Link to="/shop" className="text-sm font-semibold text-green-700">View all</Link>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 md:grid-cols-6">
+                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid grid-cols-3 gap-3 sm:grid-cols-3 md:grid-cols-6">
                     {categories.map((cat) => (
-                        <Link key={cat.name} to={`/shop?category=${cat.name.toLowerCase()}`} className="mobile-app-card overflow-hidden rounded-[1.4rem]">
-                            <div className={`bg-gradient-to-br ${cat.tone} p-3`}>
-                                <div className="mb-2 inline-flex rounded-full bg-white/70 px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-slate-700">{cat.emoji}</div>
-                                <OptimizedImage src={cat.image} alt={cat.name} className="mx-auto h-16 w-full object-contain md:h-20" width={160} height={160} aspectRatio="1 / 1" sizes="(max-width: 767px) 30vw, 16vw" />
-                            </div>
-                            <div className="px-2 pb-3 pt-2 text-center"><h3 className="text-[0.82rem] font-semibold text-slate-900 md:text-sm">{cat.name}</h3></div>
-                        </Link>
+                        <motion.div key={cat.name} variants={fadeInUp} className="h-full">
+                            <Link to={`/shop?category=${cat.name.toLowerCase()}`} className="mobile-app-card block h-full overflow-hidden rounded-[1.4rem]">
+                                <div className={`bg-gradient-to-br ${cat.tone} p-3`}>
+                                    <div className="mb-2 inline-flex rounded-full bg-white/70 px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-slate-700">{cat.emoji}</div>
+                                    <OptimizedImage src={cat.image} alt={cat.name} className="mx-auto h-16 w-full object-contain md:h-20" width={160} height={160} aspectRatio="1 / 1" sizes="(max-width: 767px) 30vw, 16vw" />
+                                </div>
+                                <div className="px-2 pb-3 pt-2 text-center"><h3 className="text-[0.82rem] font-semibold text-slate-900 md:text-sm">{cat.name}</h3></div>
+                            </Link>
+                        </motion.div>
                     ))}
-                </div>
-            </section>
+                </motion.div>
+            </motion.section>
 
-            <section className="mobile-app-card overflow-hidden rounded-[1.8rem] p-4 md:p-5 lg:p-6">
+            <motion.section 
+                initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
+                className="mobile-app-card overflow-hidden rounded-[1.8rem] p-4 md:p-5 lg:p-6"
+            >
                 <div className="mb-4 flex items-end justify-between gap-3"><div><p className="section-kicker">Why people stay</p><h2 className="section-title mt-1">Built for daily groceries</h2></div></div>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid grid-cols-2 gap-3 md:grid-cols-4">
                     {features.map((feature) => (
-                        <div key={feature.title} className="rounded-[1.4rem] bg-[#f8faf5] p-3 md:p-4">
+                        <motion.div key={feature.title} variants={fadeInUp} className="rounded-[1.4rem] bg-[#f8faf5] p-3 md:p-4">
                             <div className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl ${feature.tone}`}><feature.icon className="h-5 w-5" strokeWidth={1.8} /></div>
                             <h3 className="text-sm font-bold text-slate-900">{feature.title}</h3>
                             <p className="mt-1 text-[0.82rem] leading-5 text-slate-600">{feature.description}</p>
-                        </div>
+                        </motion.div>
                     ))}
-                </div>
-            </section>
+                </motion.div>
+            </motion.section>
 
-            <section className="mobile-app-card overflow-hidden rounded-[1.8rem] bg-gradient-to-br from-green-700 via-green-600 to-lime-500 text-white">
+            <motion.section 
+                initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
+                className="mobile-app-card overflow-hidden rounded-[1.8rem] bg-gradient-to-br from-green-700 via-green-600 to-lime-500 text-white"
+            >
                 {loadingBanners ? (
                     <div className="min-h-[180px] md:min-h-[220px] animate-pulse bg-green-800/20" />
                 ) : (
@@ -136,7 +161,7 @@ const Home = () => {
                         </div>
                     </div>
                 )}
-            </section>
+            </motion.section>
         </div>
     );
 };
