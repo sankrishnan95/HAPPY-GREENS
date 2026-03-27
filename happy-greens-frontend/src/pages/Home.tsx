@@ -9,15 +9,15 @@ import { getActiveBanners } from '../services/banner.service';
 import { normalizeImageUrl } from '../utils/image';
 
 const categories = [
-    { name: 'Fruits', image: 'https://www.freepnglogos.com/uploads/apple/apple-fruit-png-2.png' },
-    { name: 'Vegetables', image: 'https://www.freepnglogos.com/uploads/broccoli-png/broccoli-vegetables-png-images-12.png' },
-    { name: 'Dairy', image: 'https://www.freepnglogos.com/uploads/milk-png/milk-png-cow-milk-transparent-png-pictures-34.png' },
-    { name: 'Staples', image: 'https://www.freepnglogos.com/uploads/rice-png/bowl-of-rice-png-2.png' },
-    { name: 'Snacks', image: 'https://www.freepnglogos.com/uploads/chips-png/chips-lays-classic-15.png' },
-    { name: 'Beverages', image: 'https://www.freepnglogos.com/uploads/drinks-png/drinks-juice-transparent-picture-17.png' },
-    { name: 'Flowers', image: 'https://www.freepnglogos.com/uploads/rose/red-rose-png-transparent-image-pngpix-28.png' },
-    { name: 'Laundromate', image: 'https://www.freepnglogos.com/uploads/washing-machine-png/washing-machine-buy-appliancess-and-electronics-home-14.png' },
-    { name: 'Personal Care', image: 'https://www.freepnglogos.com/uploads/shampoo-png/shampoo-lotion-bottle-png-transparent-image-purepng-34.png' },
+    { name: 'Fruits', image: '/categories/apple.png' },
+    { name: 'Vegetables', image: '/categories/broccoli.png' },
+    { name: 'Dairy', image: '/categories/milk.png' },
+    { name: 'Staples', image: '/categories/rice.png' },
+    { name: 'Snacks', image: '/categories/chips.png' },
+    { name: 'Beverages', image: '/categories/juice.png' },
+    { name: 'Flowers', image: '/categories/rose.png' },
+    { name: 'Laundromate', image: '/categories/detergent.png' },
+    { name: 'Personal Care', image: '/categories/shampoo.png' },
 ];
 
 const features = [
@@ -117,7 +117,7 @@ const Home = () => {
                                     <OptimizedImage 
                                         src={cat.image} 
                                         alt={cat.name} 
-                                        className="h-full w-full object-contain filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.15)] md:drop-shadow-[0_12px_20px_rgba(0,0,0,0.12)]" 
+                                        className="h-full w-full object-contain mix-blend-multiply filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.15)] md:drop-shadow-[0_12px_20px_rgba(0,0,0,0.12)]" 
                                         width={120} height={120} aspectRatio="1 / 1" sizes="(max-width: 767px) 25vw, 15vw" 
                                     />
                                 </div>
