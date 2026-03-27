@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Truck, Shield, Clock, Leaf } from 'lucide-react';
+import { Truck, Shield, Clock, Leaf } from 'lucide-react';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import OptimizedImage from '../components/OptimizedImage';
@@ -53,12 +53,12 @@ const Home = () => {
     const dealBanner = banners.length > 1 ? banners[1] : null;
 
     return (
-        <div className="space-y-4 pb-4 md:space-y-6 lg:space-y-8">
-            <section className="mobile-app-card hero-banner overflow-hidden rounded-[1.8rem]">
+        <div className="space-y-16 pb-12 md:space-y-24 lg:space-y-32 max-w-7xl mx-auto">
+            <section className="mobile-app-card hero-banner overflow-hidden rounded-[32px] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)]">
                 {loadingBanners ? (
-                    <div className="min-h-[240px] md:min-h-[320px] lg:min-h-[380px] animate-pulse bg-slate-200" />
+                    <div className="min-h-[280px] md:min-h-[400px] lg:min-h-[480px] animate-pulse bg-gray-100" />
                 ) : (
-                    <div className="relative min-h-[240px] md:min-h-[320px] lg:min-h-[380px]">
+                    <div className="relative min-h-[280px] md:min-h-[400px] lg:min-h-[480px]">
                         <div className="absolute inset-0">
                             {isVideo(heroBanner?.image_url) ? (
                                 <video src={normalizeImageUrl(heroBanner.image_url)} className="hero-banner-media" autoPlay loop muted playsInline preload="metadata" />
@@ -66,72 +66,100 @@ const Home = () => {
                                 <OptimizedImage src={heroBanner?.image_url} alt="Storefront Hero" className="hero-banner-media" width={1280} height={720} aspectRatio="16 / 9" loading="eager" fetchPriority="high" sizes="100vw" />
                             )}
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/70 via-slate-900/35 to-lime-500/20" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                        <div className="relative z-10 flex h-full flex-col justify-end px-4 py-5 sm:px-5 sm:py-6 md:max-w-[70%] md:px-7 md:py-7 lg:px-10 lg:py-9">
-                            <Badge variant="accent" size="sm" className="mb-3 w-fit border-white/20 bg-white/15 text-white backdrop-blur-sm">
+                        <div className="relative z-10 flex h-full flex-col justify-end px-6 py-8 text-center sm:px-8 sm:py-10 md:px-12 md:py-16 items-center">
+                            <Badge variant="accent" size="sm" className="mb-5 w-fit rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-white uppercase backdrop-blur-md">
                                 {heroBanner?.subheading || 'Express slots available today'}
                             </Badge>
-                            <h1 className="max-w-[14ch] text-[1.7rem] font-display font-bold text-white sm:text-[2rem] md:text-[2.7rem] lg:text-[3.5rem]">{heroBanner?.title || 'Fresh groceries delivered like an app, not a store.'}</h1>
-                            <p className="mt-3 max-w-[34ch] text-sm leading-6 text-white/90 sm:text-[0.95rem] md:text-base">{heroBanner?.description || 'Daily essentials, fruits, vegetables and dairy packed for fast doorstep delivery.'}</p>
-                            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                                <Link to={heroBanner?.link || '/shop'} className="w-full sm:w-auto"><Button variant="accent" size="lg" className="w-full sm:w-auto">Shop fresh<ArrowRight className="h-4 w-4" /></Button></Link>
-                                <Link to="/shop?category=vegetables" className="w-full sm:w-auto"><Button variant="outline" size="lg" className="w-full border-white/30 bg-white/10 text-white hover:bg-white/20 sm:w-auto">Explore veggies</Button></Link>
+                            <h1 className="max-w-[20ch] text-[2rem] font-semibold tracking-tight text-white leading-tight sm:text-[2.75rem] md:text-[3.5rem] lg:text-[4.5rem]">
+                                {heroBanner?.title || 'Fresh groceries delivered like an app, not a store.'}
+                            </h1>
+                            <p className="mt-4 max-w-[42ch] text-[0.95rem] font-medium leading-relaxed text-white/80 sm:text-base md:text-lg">
+                                {heroBanner?.description || 'Daily essentials, fruits, vegetables and dairy packed for fast doorstep delivery.'}
+                            </p>
+                            <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center w-full sm:w-auto">
+                                <Link to={heroBanner?.link || '/shop'} className="w-full sm:w-[200px]">
+                                    <Button variant="accent" size="lg" className="w-full rounded-[24px] bg-white text-black hover:bg-gray-100 border-none font-semibold text-[1.05rem] py-3.5 transition-transform hover:scale-105">Shop fresh</Button>
+                                </Link>
+                                <Link to="/shop?category=vegetables" className="w-full sm:w-[200px]">
+                                    <Button variant="outline" size="lg" className="w-full rounded-[24px] border border-white/30 bg-white/10 text-white hover:bg-white/20 font-semibold text-[1.05rem] py-3.5 backdrop-blur-sm transition-transform hover:scale-105">Explore veggies</Button>
+                                </Link>
                             </div>
                         </div>
                     </div>
                 )}
             </section>
 
-            <section className="space-y-3">
-                <div className="flex items-end justify-between gap-3">
-                    <div><p className="section-kicker">Browse faster</p><h2 className="section-title mt-1">Shop by category</h2></div>
-                    <Link to="/shop" className="text-sm font-semibold text-green-700">View all</Link>
+            <section className="space-y-6 px-2">
+                <div className="flex items-end justify-between gap-4">
+                    <div>
+                        <h2 className="text-[1.75rem] font-semibold tracking-tight text-black sm:text-[2rem]">Shop by category</h2>
+                        <p className="mt-1 text-sm font-medium text-gray-500">Find exactly what you need quickly.</p>
+                    </div>
+                    <Link to="/shop" className="hidden sm:block text-[0.9rem] font-semibold text-black hover:underline underline-offset-4">View all</Link>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-3 md:grid-cols-6">
+                <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-6 lg:gap-8">
                     {categories.map((cat) => (
-                        <Link key={cat.name} to={`/shop?category=${cat.name.toLowerCase()}`} className="mobile-app-card overflow-hidden rounded-[1.4rem]">
-                            <div className={`bg-gradient-to-br ${cat.tone} p-3`}>
-                                <div className="mb-2 inline-flex rounded-full bg-white/70 px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-slate-700">{cat.emoji}</div>
-                                <OptimizedImage src={cat.image} alt={cat.name} className="mx-auto h-16 w-full object-contain md:h-20" width={160} height={160} aspectRatio="1 / 1" sizes="(max-width: 767px) 30vw, 16vw" />
+                        <Link key={cat.name} to={`/shop?category=${cat.name.toLowerCase()}`} className="group relative overflow-hidden rounded-[24px] bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.08)]">
+                            <div className="relative z-10 flex flex-col items-center gap-3">
+                                <div className="h-16 w-16 overflow-hidden rounded-full bg-gray-50 p-2 sm:h-20 sm:w-20 transition-transform duration-300 group-hover:scale-110">
+                                    <OptimizedImage src={cat.image} alt={cat.name} className="h-full w-full rounded-full object-cover" width={160} height={160} aspectRatio="1 / 1" sizes="(max-width: 767px) 30vw, 16vw" />
+                                </div>
+                                <h3 className="text-center text-[0.9rem] font-semibold tracking-tight text-black">{cat.name}</h3>
                             </div>
-                            <div className="px-2 pb-3 pt-2 text-center"><h3 className="text-[0.82rem] font-semibold text-slate-900 md:text-sm">{cat.name}</h3></div>
                         </Link>
                     ))}
                 </div>
+                <div className="sm:hidden flex justify-center mt-2">
+                    <Link to="/shop" className="text-[0.9rem] font-semibold text-black hover:underline underline-offset-4">View all categories</Link>
+                </div>
             </section>
 
-            <section className="mobile-app-card overflow-hidden rounded-[1.8rem] p-4 md:p-5 lg:p-6">
-                <div className="mb-4 flex items-end justify-between gap-3"><div><p className="section-kicker">Why people stay</p><h2 className="section-title mt-1">Built for daily groceries</h2></div></div>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <section className="overflow-hidden rounded-[32px] bg-gray-50 px-6 py-10 md:px-12 md:py-16 lg:px-16 lg:py-20 text-center">
+                <div className="mx-auto max-w-2xl mb-10 md:mb-14">
+                    <h2 className="text-[2rem] font-semibold tracking-tight text-black sm:text-[2.5rem]">Built for daily groceries</h2>
+                    <p className="mt-3 text-base text-gray-500 sm:text-lg">Experience the fastest delivery with no compromises on quality.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-12">
                     {features.map((feature) => (
-                        <div key={feature.title} className="rounded-[1.4rem] bg-[#f8faf5] p-3 md:p-4">
-                            <div className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl ${feature.tone}`}><feature.icon className="h-5 w-5" strokeWidth={1.8} /></div>
-                            <h3 className="text-sm font-bold text-slate-900">{feature.title}</h3>
-                            <p className="mt-1 text-[0.82rem] leading-5 text-slate-600">{feature.description}</p>
+                        <div key={feature.title} className="flex flex-col items-center">
+                            <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)] text-black">
+                                <feature.icon className="h-6 w-6" strokeWidth={1.5} />
+                            </div>
+                            <h3 className="text-[1.05rem] font-semibold tracking-tight text-black">{feature.title}</h3>
+                            <p className="mt-2 text-[0.85rem] leading-relaxed text-gray-500 max-w-[20ch]">{feature.description}</p>
                         </div>
                     ))}
                 </div>
             </section>
 
-            <section className="mobile-app-card overflow-hidden rounded-[1.8rem] bg-gradient-to-br from-green-700 via-green-600 to-lime-500 text-white">
+            <section className="overflow-hidden rounded-[32px] bg-black text-white shadow-[0_8px_40px_-12px_rgba(0,0,0,0.2)]">
                 {loadingBanners ? (
-                    <div className="min-h-[180px] md:min-h-[220px] animate-pulse bg-green-800/20" />
+                    <div className="min-h-[220px] md:min-h-[280px] animate-pulse bg-gray-800" />
                 ) : (
-                    <div className="grid gap-4 p-4 md:grid-cols-[1.15fr_0.85fr] md:items-center md:p-5 lg:p-6">
-                        <div>
-                            <p className="section-kicker !text-white/70">Smart basket deal</p>
-                            <h2 className="mt-1 text-[1.45rem] font-display font-bold md:text-[2rem]">{dealBanner?.title || 'Save more on fresh baskets this week'}</h2>
-                            <p className="mt-2 max-w-[34ch] text-sm leading-6 text-white/85 md:text-base">{dealBanner?.description || 'A rotating set of fruits, vegetables and staples at a better bundle price.'}</p>
-                            <div className="mt-4"><Link to={dealBanner?.link || '/shop'} className="w-full sm:w-auto"><Button variant="accent" size="lg" className="w-full sm:w-auto">View offers</Button></Link></div>
+                    <div className="grid gap-8 p-8 md:grid-cols-[1fr_1fr] md:items-center md:gap-12 md:p-12 lg:p-16">
+                        <div className="order-2 md:order-1 flex flex-col items-center text-center md:items-start md:text-left">
+                            <p className="mb-3 text-[0.75rem] font-bold uppercase tracking-widest text-gray-400">Smart basket deal</p>
+                            <h2 className="text-[2rem] font-semibold tracking-tight leading-tight sm:text-[2.5rem] md:text-[3rem]">
+                                {dealBanner?.title || 'Save more on fresh baskets this week'}
+                            </h2>
+                            <p className="mt-4 max-w-[40ch] text-[1rem] leading-relaxed text-gray-400 md:text-[1.1rem]">
+                                {dealBanner?.description || 'A rotating set of fruits, vegetables and staples at a better bundle price.'}
+                            </p>
+                            <div className="mt-8 w-full sm:w-auto">
+                                <Link to={dealBanner?.link || '/shop'}>
+                                    <Button variant="accent" size="lg" className="w-full sm:w-auto rounded-[24px] bg-white text-black hover:bg-gray-200 border-none font-semibold px-8 py-3.5 transition-transform hover:scale-105">View offers</Button>
+                                </Link>
+                            </div>
                         </div>
 
-                        <div className="overflow-hidden rounded-[1.5rem] bg-white/10 p-1 backdrop-blur-sm">
+                        <div className="order-1 md:order-2 overflow-hidden rounded-[24px] bg-gray-900 shadow-2xl">
                             {isVideo(dealBanner?.image_url) ? (
-                                <video src={normalizeImageUrl(dealBanner.image_url)} className="hero-banner-media max-h-[230px] rounded-[1.3rem]" autoPlay loop muted playsInline preload="metadata" />
+                                <video src={normalizeImageUrl(dealBanner.image_url)} className="h-full w-full object-cover transition-transform duration-700 hover:scale-105" autoPlay loop muted playsInline preload="metadata" />
                             ) : (
-                                <OptimizedImage src={dealBanner?.image_url} alt="Deals Graphic" className="hero-banner-media max-h-[230px] rounded-[1.3rem]" width={960} height={720} aspectRatio="4 / 3" sizes="(max-width: 767px) 100vw, 40vw" />
+                                <OptimizedImage src={dealBanner?.image_url} alt="Deals Graphic" className="h-full w-full object-cover transition-transform duration-700 hover:scale-105" width={960} height={720} aspectRatio="4 / 3" sizes="(max-width: 767px) 100vw, 50vw" />
                             )}
                         </div>
                     </div>
