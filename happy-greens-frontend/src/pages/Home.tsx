@@ -114,11 +114,11 @@ const Home = () => {
                         <motion.div key={cat.name} variants={fadeInUp} className="flex-none snap-start">
                             <Link to={`/shop?category=${cat.name.toLowerCase()}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
                                 <div className="relative flex h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:scale-110">
-                                    <OptimizedImage 
-                                        src={cat.image} 
-                                        alt={cat.name} 
-                                        className="h-full w-full object-contain mix-blend-multiply filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.15)] md:drop-shadow-[0_12px_20px_rgba(0,0,0,0.12)]" 
-                                        width={120} height={120} aspectRatio="1 / 1" sizes="(max-width: 767px) 25vw, 15vw" 
+                                    <img
+                                        src={cat.image}
+                                        alt={cat.name}
+                                        loading="lazy"
+                                        className="h-full w-full object-contain mix-blend-multiply filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.15)] md:drop-shadow-[0_12px_20px_rgba(0,0,0,0.12)]"
                                     />
                                 </div>
                                 <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
