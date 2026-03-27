@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { getOrders } from '../services/order.service';
+import { getOrders, cancelOrder as cancelOrderRequest } from '../services/order.service';
 import { Package, ChevronRight } from 'lucide-react';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -19,6 +19,9 @@ export default function OrdersList() {
     const { user } = useStore((s) => ({ user: s.user }));
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [cancellingId, setCancellingId] = useState<number | null>(null);
+
+    const canCancelOrder = (status?: string) => ['pending', 'placed', 'accepted', 'paid'].includes(String(status || '').toLowerCase());
 
     useEffect(() => {
         if (!user) { navigate('/login'); return; }
@@ -27,6 +30,28 @@ export default function OrdersList() {
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
     }, [user]);
+
+    const handleCancelOrder = async (event: React.MouseEvent, orderId: number) => {
+        event.stopPropagation();
+        if (cancellingId === orderId) return;
+        if (!window.confirm(`Cancel order #${orderId}?`)) return;
+
+        try {
+            setCancellingId(orderId);
+            await cancelOrderRequest(orderId);
+            setOrders((prev) =>
+                prev.map((order) =>
+                    order.id === orderId
+                        ? { ...order, status: 'cancelled', updated_at: new Date().toISOString() }
+                        : order
+                )
+            );
+        } catch (err: any) {
+            alert(err?.response?.data?.message || 'Failed to cancel order');
+        } finally {
+            setCancellingId(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -75,6 +100,16 @@ export default function OrdersList() {
                                     <p className="text-xl font-bold text-green-700">₹{parseFloat(order.total_amount).toFixed(2)}</p>
                                     <p className="text-xs text-gray-400 uppercase">{order.payment_method}</p>
                                 </div>
+                                {canCancelOrder(order.status) && (
+                                    <button
+                                        type="button"
+                                        onClick={(event) => handleCancelOrder(event, order.id)}
+                                        disabled={cancellingId === order.id}
+                                        className="min-h-[40px] rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {cancellingId === order.id ? 'Cancelling...' : 'Cancel'}
+                                    </button>
+                                )}
                                 <ChevronRight className="w-5 h-5 text-gray-400" />
                             </div>
                         </div>

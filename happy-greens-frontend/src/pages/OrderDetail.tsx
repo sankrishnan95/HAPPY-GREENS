@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { getOrderById } from '../services/order.service';
+import { getOrderById, cancelOrder as cancelOrderRequest } from '../services/order.service';
 import { ArrowLeft, MapPin, Package, CreditCard, Clock } from 'lucide-react';
 import { normalizeImageUrl } from '../utils/image';
 
@@ -21,7 +21,10 @@ export default function OrderDetail() {
     const { user } = useStore((s) => ({ user: s.user }));
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [cancelling, setCancelling] = useState(false);
     const [error, setError] = useState('');
+
+    const canCancelOrder = (status?: string) => ['pending', 'placed', 'accepted', 'paid'].includes(String(status || '').toLowerCase());
 
     useEffect(() => {
         if (!user) { navigate('/login'); return; }
@@ -53,6 +56,34 @@ export default function OrderDetail() {
         (sum: number, item: any) => sum + parseFloat(item.price_at_purchase), 0
     ) || parseFloat(order.total_amount);
 
+    const handleCancelOrder = async () => {
+        if (!order || !canCancelOrder(order.status) || cancelling) return;
+        if (!window.confirm(`Cancel order #${order.id}?`)) return;
+
+        try {
+            setCancelling(true);
+            const response = await cancelOrderRequest(order.id);
+            setOrder((prev: any) => prev ? {
+                ...prev,
+                ...response.order,
+                timeline: [
+                    {
+                        id: `cancelled-${response.order.id}`,
+                        old_status: prev.status,
+                        new_status: 'cancelled',
+                        notes: 'Cancelled by customer',
+                        changed_at: response.order.updated_at || new Date().toISOString(),
+                    },
+                    ...(prev.timeline || []),
+                ],
+            } : prev);
+        } catch (err: any) {
+            alert(err?.response?.data?.message || 'Failed to cancel order');
+        } finally {
+            setCancelling(false);
+        }
+    };
+
     return (
         <div className="max-w-3xl mx-auto space-y-6 pb-12">
             {/* Header */}
@@ -69,6 +100,16 @@ export default function OrderDetail() {
                     </div>
                     <p className="text-sm text-gray-500 mt-1">Placed on {new Date(order.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
                 </div>
+                {canCancelOrder(order.status) && (
+                    <button
+                        type="button"
+                        onClick={handleCancelOrder}
+                        disabled={cancelling}
+                        className="min-h-[44px] rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {cancelling ? 'Cancelling...' : 'Cancel Order'}
+                    </button>
+                )}
             </div>
 
             {/* Order Information */}

@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { pool } from '../db';
 import { calculateOrderTotals } from '../services/order-pricing.service';
 
+const CUSTOMER_CANCELLABLE_STATUSES = new Set(['pending', 'placed', 'accepted', 'paid']);
+
 const getExistingOrderByToken = async (userId: number, clientOrderToken: string) => {
     const existing = await pool.query(
         'SELECT id, total_amount, points_used FROM orders WHERE user_id = $1 AND client_order_token = $2 LIMIT 1',
@@ -235,5 +237,107 @@ export const getOrderById = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error fetching order by id:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const cancelOrder = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const orderResult = await client.query(
+            `SELECT id, user_id, status, points_earned, points_used
+             FROM orders
+             WHERE id = $1 AND user_id = $2
+             FOR UPDATE`,
+            [id, userId]
+        );
+
+        if (orderResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        const order = orderResult.rows[0];
+        const currentStatus = String(order.status || '').toLowerCase();
+
+        if (currentStatus === 'cancelled') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'Order is already cancelled' });
+        }
+
+        if (!CUSTOMER_CANCELLABLE_STATUSES.has(currentStatus)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'This order can no longer be cancelled' });
+        }
+
+        const updatedOrderResult = await client.query(
+            `UPDATE orders
+             SET status = 'cancelled', updated_at = NOW()
+             WHERE id = $1
+             RETURNING *`,
+            [id]
+        );
+
+        await client.query(
+            `INSERT INTO order_status_history (order_id, old_status, new_status, notes)
+             VALUES ($1, $2, $3, $4)`,
+            [id, currentStatus, 'cancelled', 'Cancelled by customer']
+        );
+
+        const pointsEarned = Number(order.points_earned || 0);
+        const pointsUsed = Number(order.points_used || 0);
+
+        if (pointsEarned > 0) {
+            await client.query(
+                `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
+                 VALUES ($1, $2, 'reversed', $3, $4)`,
+                [userId, id, -pointsEarned, `Points reversed - Order #${id} cancelled by customer`]
+            );
+
+            await client.query(
+                `UPDATE users
+                 SET loyalty_points = GREATEST(0, loyalty_points - $1),
+                     total_points_earned = GREATEST(0, total_points_earned - $1)
+                 WHERE id = $2`,
+                [pointsEarned, userId]
+            );
+
+            await client.query(`UPDATE orders SET points_earned = 0 WHERE id = $1`, [id]);
+        }
+
+        if (pointsUsed > 0) {
+            await client.query(
+                `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
+                 VALUES ($1, $2, 'earned', $3, $4)`,
+                [userId, id, pointsUsed, `Points refunded - Order #${id} cancelled by customer`]
+            );
+
+            await client.query(
+                `UPDATE users
+                 SET loyalty_points = loyalty_points + $1,
+                     total_points_redeemed = GREATEST(0, total_points_redeemed - $1)
+                 WHERE id = $2`,
+                [pointsUsed, userId]
+            );
+        }
+
+        await client.query('COMMIT');
+
+        return res.json({
+            success: true,
+            order: updatedOrderResult.rows[0],
+            message: 'Order cancelled successfully',
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error cancelling order:', error);
+        return res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
     }
 };
