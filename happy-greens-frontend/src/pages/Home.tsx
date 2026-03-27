@@ -15,7 +15,7 @@ const categories = [
     { name: 'Staples', image: '/categories/rice.png' },
     { name: 'Snacks', image: '/categories/chips.png' },
     { name: 'Beverages', image: '/categories/juice.png' },
-    { name: 'Flowers', image: '/categories/picotee.png' },
+    { name: 'Flowers', image: '/categories/flowers-dahlia.webp' },
     { name: 'Laundromate', image: '/categories/detergent.png' },
     { name: 'Personal Care', image: '/categories/shampoo.png' },
 ];
