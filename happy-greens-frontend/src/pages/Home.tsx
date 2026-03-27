@@ -102,29 +102,31 @@ const Home = () => {
 
             <motion.section 
                 initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
-                className="space-y-4 overflow-hidden"
+                className="space-y-4"
             >
                 <div className="flex items-end justify-between gap-3 px-2">
                     <div><h2 className="text-[1.35rem] font-display font-bold text-slate-900 md:text-[1.6rem]">Categories</h2></div>
                     <Link to="/shop" className="text-[0.85rem] font-bold text-green-700 hover:text-green-800 transition">View all</Link>
                 </div>
 
-                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="flex max-w-full overflow-x-auto gap-4 md:gap-8 pb-8 pt-4 hide-scrollbar snap-x snap-mandatory px-2">
+                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="-mx-1 overflow-x-auto px-1 pb-6 pt-4 hide-scrollbar overscroll-x-contain">
+                    <div className="flex min-w-max gap-4 px-3 md:gap-8">
                     {categories.map((cat) => (
                         <motion.div key={cat.name} variants={fadeInUp} className="flex-none snap-start">
                             <Link to={`/shop?category=${cat.name.toLowerCase()}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
-                                <div className="relative flex h-20 w-20 rounded-[1.75rem] bg-[#f4f7ef]/70 sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:scale-110">
+                                <div className="relative flex h-20 w-20 rounded-[1.75rem] bg-[radial-gradient(circle_at_50%_45%,rgba(250,252,245,0.96),rgba(241,246,236,0.72)_68%,rgba(236,243,232,0.28)_100%)] ring-1 ring-white/45 shadow-[0_10px_25px_rgba(103,132,76,0.08)] sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:scale-105">
                                     <img
                                         src={cat.image}
                                         alt={cat.name}
                                         loading="lazy"
-                                        className="h-full w-full object-contain p-2 mix-blend-multiply filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.12)] md:drop-shadow-[0_12px_20px_rgba(0,0,0,0.1)]"
+                                        className="h-full w-full object-contain p-1.5 filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.08)] md:drop-shadow-[0_12px_20px_rgba(0,0,0,0.08)]"
                                     />
                                 </div>
                                 <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
                             </Link>
                         </motion.div>
                     ))}
+                    </div>
                 </motion.div>
             </motion.section>
 
