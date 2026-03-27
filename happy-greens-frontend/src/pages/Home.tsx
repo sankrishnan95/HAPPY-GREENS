@@ -15,7 +15,7 @@ const categories = [
     { name: 'Staples', image: '/categories/rice.png' },
     { name: 'Snacks', image: '/categories/chips.png' },
     { name: 'Beverages', image: '/categories/juice.png' },
-    { name: 'Flowers', image: '/categories/flowers-dahlia.webp', imageClassName: 'mix-blend-multiply saturate-110' },
+    { name: 'Flowers', image: '/categories/flowers-dahlia.png' },
     { name: 'Laundromate', image: '/categories/detergent.png' },
     { name: 'Personal Care', image: '/categories/shampoo.png' },
 ];
@@ -119,7 +119,7 @@ const Home = () => {
                                         src={cat.image}
                                         alt={cat.name}
                                         loading="lazy"
-                                        className={`h-full w-full object-contain p-0.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.05)] md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.05)] ${cat.imageClassName || ''}`}
+                                        className="h-full w-full object-contain p-0.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.05)] md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.05)]"
                                     />
                                 </div>
                                 <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
