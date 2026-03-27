@@ -53,12 +53,12 @@ const Home = () => {
     const dealBanner = banners.length > 1 ? banners[1] : null;
 
     return (
-        <div className="space-y-16 pb-12 md:space-y-24 lg:space-y-32 max-w-7xl mx-auto">
+        <div className="space-y-8 pb-8 md:space-y-12 lg:space-y-16 max-w-7xl mx-auto px-3 sm:px-4 md:px-5 pt-4">
             <section className="mobile-app-card hero-banner overflow-hidden rounded-[32px] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)]">
                 {loadingBanners ? (
-                    <div className="min-h-[280px] md:min-h-[400px] lg:min-h-[480px] animate-pulse bg-gray-100" />
+                    <div className="min-h-[240px] md:min-h-[360px] lg:min-h-[420px] animate-pulse bg-gray-100" />
                 ) : (
-                    <div className="relative min-h-[280px] md:min-h-[400px] lg:min-h-[480px]">
+                    <div className="relative min-h-[240px] md:min-h-[360px] lg:min-h-[420px]">
                         <div className="absolute inset-0">
                             {isVideo(heroBanner?.image_url) ? (
                                 <video src={normalizeImageUrl(heroBanner.image_url)} className="hero-banner-media" autoPlay loop muted playsInline preload="metadata" />
@@ -100,11 +100,11 @@ const Home = () => {
                     <Link to="/shop" className="hidden sm:block text-[0.9rem] font-semibold text-black hover:underline underline-offset-4">View all</Link>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-6 lg:gap-8">
+                <div className="grid grid-cols-3 gap-4 md:grid-cols-6 lg:gap-6">
                     {categories.map((cat) => (
-                        <Link key={cat.name} to={`/shop?category=${cat.name.toLowerCase()}`} className="group relative overflow-hidden rounded-[24px] bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.08)]">
+                        <Link key={cat.name} to={`/shop?category=${cat.name.toLowerCase()}`} className="group relative overflow-hidden rounded-[24px] bg-white p-3 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.08)]">
                             <div className="relative z-10 flex flex-col items-center gap-3">
-                                <div className="h-16 w-16 overflow-hidden rounded-full bg-gray-50 p-2 sm:h-20 sm:w-20 transition-transform duration-300 group-hover:scale-110">
+                                <div className={`h-16 w-16 overflow-hidden rounded-full bg-gradient-to-br ${cat.tone} p-2 sm:h-20 sm:w-20 transition-transform duration-300 group-hover:scale-110`}>
                                     <OptimizedImage src={cat.image} alt={cat.name} className="h-full w-full rounded-full object-cover" width={160} height={160} aspectRatio="1 / 1" sizes="(max-width: 767px) 30vw, 16vw" />
                                 </div>
                                 <h3 className="text-center text-[0.9rem] font-semibold tracking-tight text-black">{cat.name}</h3>
@@ -117,8 +117,8 @@ const Home = () => {
                 </div>
             </section>
 
-            <section className="overflow-hidden rounded-[32px] bg-gray-50 px-6 py-10 md:px-12 md:py-16 lg:px-16 lg:py-20 text-center">
-                <div className="mx-auto max-w-2xl mb-10 md:mb-14">
+            <section className="overflow-hidden rounded-[32px] bg-gray-50 px-6 py-8 md:px-10 md:py-12 lg:px-12 lg:py-16 text-center">
+                <div className="mx-auto max-w-2xl mb-8 md:mb-10">
                     <h2 className="text-[2rem] font-semibold tracking-tight text-black sm:text-[2.5rem]">Built for daily groceries</h2>
                     <p className="mt-3 text-base text-gray-500 sm:text-lg">Experience the fastest delivery with no compromises on quality.</p>
                 </div>
@@ -135,27 +135,27 @@ const Home = () => {
                 </div>
             </section>
 
-            <section className="overflow-hidden rounded-[32px] bg-black text-white shadow-[0_8px_40px_-12px_rgba(0,0,0,0.2)]">
+            <section className="overflow-hidden rounded-[32px] bg-gradient-to-br from-[#f2f8f2] to-[#e6f2e6] text-black shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)]">
                 {loadingBanners ? (
-                    <div className="min-h-[220px] md:min-h-[280px] animate-pulse bg-gray-800" />
+                    <div className="min-h-[180px] md:min-h-[240px] animate-pulse bg-green-900/5" />
                 ) : (
-                    <div className="grid gap-8 p-8 md:grid-cols-[1fr_1fr] md:items-center md:gap-12 md:p-12 lg:p-16">
+                    <div className="grid gap-6 p-6 md:grid-cols-[1fr_1fr] md:items-center md:gap-10 md:p-10 lg:p-12">
                         <div className="order-2 md:order-1 flex flex-col items-center text-center md:items-start md:text-left">
-                            <p className="mb-3 text-[0.75rem] font-bold uppercase tracking-widest text-gray-400">Smart basket deal</p>
+                            <p className="mb-3 text-[0.75rem] font-bold uppercase tracking-widest text-green-700">Smart basket deal</p>
                             <h2 className="text-[2rem] font-semibold tracking-tight leading-tight sm:text-[2.5rem] md:text-[3rem]">
                                 {dealBanner?.title || 'Save more on fresh baskets this week'}
                             </h2>
-                            <p className="mt-4 max-w-[40ch] text-[1rem] leading-relaxed text-gray-400 md:text-[1.1rem]">
+                            <p className="mt-4 max-w-[40ch] text-[1rem] leading-relaxed text-gray-600 md:text-[1.1rem]">
                                 {dealBanner?.description || 'A rotating set of fruits, vegetables and staples at a better bundle price.'}
                             </p>
                             <div className="mt-8 w-full sm:w-auto">
                                 <Link to={dealBanner?.link || '/shop'}>
-                                    <Button variant="accent" size="lg" className="w-full sm:w-auto rounded-[24px] bg-white text-black hover:bg-gray-200 border-none font-semibold px-8 py-3.5 transition-transform hover:scale-105">View offers</Button>
+                                    <Button variant="accent" size="lg" className="w-full sm:w-auto rounded-[24px] bg-green-600 text-white hover:bg-green-700 border-none font-semibold px-8 py-3.5 shadow-lg shadow-green-600/20 transition-transform hover:scale-105">View offers</Button>
                                 </Link>
                             </div>
                         </div>
 
-                        <div className="order-1 md:order-2 overflow-hidden rounded-[24px] bg-gray-900 shadow-2xl">
+                        <div className="order-1 md:order-2 overflow-hidden rounded-[24px] bg-white shadow-2xl">
                             {isVideo(dealBanner?.image_url) ? (
                                 <video src={normalizeImageUrl(dealBanner.image_url)} className="h-full w-full object-cover transition-transform duration-700 hover:scale-105" autoPlay loop muted playsInline preload="metadata" />
                             ) : (

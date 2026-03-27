@@ -122,7 +122,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                 </div>
             </Link>
 
-            <div className="flex flex-1 flex-col gap-3 p-5">
+            <div className="flex flex-1 flex-col gap-2.5 p-4">
                 <div className="min-w-0">
                     {product.category_name && (
                         <span className="mb-2 inline-block text-[0.7rem] font-bold uppercase tracking-widest text-gray-400">
@@ -148,13 +148,13 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                     </div>
 
                     {quantity > 0 ? (
-                        <div className="flex h-10 items-center justify-between gap-3 rounded-full bg-gray-100 px-1.5 min-w-[96px]">
-                            <button type="button" onClick={handleDecrement} className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-black shadow-[0_2px_4px_rgba(0,0,0,0.05)] transition hover:bg-gray-50"><Minus className="h-3.5 w-3.5" /></button>
-                            <span className="text-sm font-semibold text-black">{formatQuantity(product, quantity)}</span>
-                            <button type="button" onClick={handleIncrement} className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-black shadow-[0_2px_4px_rgba(0,0,0,0.05)] transition hover:bg-gray-50"><Plus className="h-3.5 w-3.5" /></button>
+                        <div className="flex h-10 items-center justify-between gap-3 rounded-full bg-green-50 px-1.5 min-w-[96px] border border-green-100">
+                            <button type="button" onClick={handleDecrement} className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-green-700 shadow-[0_2px_4px_rgba(0,0,0,0.05)] transition hover:bg-green-600 hover:text-white"><Minus className="h-3.5 w-3.5" /></button>
+                            <span className="text-sm font-semibold text-green-800">{formatQuantity(product, quantity)}</span>
+                            <button type="button" onClick={handleIncrement} className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-green-700 shadow-[0_2px_4px_rgba(0,0,0,0.05)] transition hover:bg-green-600 hover:text-white"><Plus className="h-3.5 w-3.5" /></button>
                         </div>
                     ) : (
-                        <button type="button" onClick={handleIncrement} className="flex h-10 items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-medium tracking-wide text-white shadow-md transition-all duration-300 hover:scale-105 hover:bg-gray-900 focus:scale-95" title="Add to cart">
+                        <button type="button" onClick={handleIncrement} className="flex h-10 items-center justify-center gap-2 rounded-full bg-green-600 px-5 text-sm font-medium tracking-wide text-white shadow-md shadow-green-600/20 transition-all duration-300 hover:scale-105 hover:bg-green-700 focus:scale-95" title="Add to cart">
                             Add
                         </button>
                     )}
