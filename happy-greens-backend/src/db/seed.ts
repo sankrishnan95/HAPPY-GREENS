@@ -7,7 +7,10 @@ const categories = [
     { name: 'Dairy', slug: 'dairy', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=500&q=60' },
     { name: 'Staples', slug: 'staples', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=60' },
     { name: 'Snacks', slug: 'snacks', image: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=500&q=60' },
-    { name: 'Beverages', slug: 'beverages', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=500&q=60' }
+    { name: 'Beverages', slug: 'beverages', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=500&q=60' },
+    { name: 'Flowers', slug: 'flowers', image: 'https://images.unsplash.com/photo-1468327768560-75b778cbb551?auto=format&fit=crop&w=500&q=60' },
+    { name: 'Laundromat', slug: 'laundromat', image: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=500&q=60' },
+    { name: 'Personal Care', slug: 'personal-care', image: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=500&q=60' }
 ];
 
 const products = [
@@ -51,7 +54,19 @@ const products = [
     { name: 'Green Tea', category: 'Beverages', price: 250, stock: 50, image: 'https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?auto=format&fit=crop&w=500&q=60' },
     { name: 'Coffee Powder', category: 'Beverages', price: 300, stock: 40, image: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=500&q=60' },
     { name: 'Soda Can', category: 'Beverages', price: 40, stock: 100, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=500&q=60' },
-    { name: 'Mineral Water', category: 'Beverages', price: 20, stock: 200, image: 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=500&q=60' }
+    { name: 'Mineral Water', category: 'Beverages', price: 20, stock: 200, image: 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=500&q=60' },
+
+    // Flowers
+    { name: 'Pink Dahlia', category: 'Flowers', price: 180, stock: 40, image: 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=500&q=60' },
+    { name: 'Rose Bouquet', category: 'Flowers', price: 320, stock: 25, image: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=500&q=60' },
+
+    // Laundromat
+    { name: 'Laundry Detergent', category: 'Laundromat', price: 240, stock: 60, image: 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?auto=format&fit=crop&w=500&q=60' },
+    { name: 'Fabric Softener', category: 'Laundromat', price: 190, stock: 50, image: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=500&q=60' },
+
+    // Personal Care
+    { name: 'Herbal Shampoo', category: 'Personal Care', price: 210, stock: 70, image: 'https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&w=500&q=60' },
+    { name: 'Body Wash', category: 'Personal Care', price: 165, stock: 75, image: 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=500&q=60' }
 ];
 
 const seed = async () => {

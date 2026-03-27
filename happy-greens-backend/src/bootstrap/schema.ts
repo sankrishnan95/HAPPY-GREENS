@@ -235,7 +235,10 @@ export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void
                 ('Dairy', 'dairy', 'Milk, cheese and dairy products'),
                 ('Staples', 'staples', 'Daily staple foods'),
                 ('Snacks', 'snacks', 'Ready-to-eat snacks'),
-                ('Beverages', 'beverages', 'Juices and drinks')
+                ('Beverages', 'beverages', 'Juices and drinks'),
+                ('Flowers', 'flowers', 'Fresh flowers and floral bundles'),
+                ('Laundromat', 'laundromat', 'Laundry essentials and fabric care'),
+                ('Personal Care', 'personal-care', 'Bath, body and personal care products')
         ) AS seed(name, slug, description)
         ON CONFLICT (slug) DO NOTHING
     `);
@@ -251,7 +254,10 @@ export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void
         dairy: ['milk', 'cheese', 'paneer', 'butter', 'yogurt', 'curd'],
         staples: ['rice', 'flour', 'dal', 'sugar', 'salt', 'wheat'],
         snacks: ['chips', 'biscuit', 'chocolate', 'popcorn', 'nuts'],
-        beverages: ['juice', 'tea', 'coffee', 'soda', 'water']
+        beverages: ['juice', 'tea', 'coffee', 'soda', 'water'],
+        flowers: ['flower', 'rose', 'bouquet', 'dahlia', 'lily', 'jasmine', 'marigold'],
+        laundromat: ['detergent', 'softener', 'laundry', 'fabric wash', 'washing powder', 'stain remover'],
+        'personal-care': ['shampoo', 'soap', 'face wash', 'body wash', 'toothpaste', 'lotion', 'conditioner', 'sanitizer']
     };
 
     for (const [slug, keywords] of Object.entries(keywordMap)) {

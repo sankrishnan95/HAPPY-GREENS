@@ -4,7 +4,7 @@ import { getProducts } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 
-const categories = ['Fruits', 'Vegetables', 'Dairy', 'Staples', 'Snacks', 'Beverages'];
+const categories = ['Fruits', 'Vegetables', 'Dairy', 'Staples', 'Snacks', 'Beverages', 'Flowers', 'Laundromat', 'Personal Care'];
 
 const Shop = () => {
     const [products, setProducts] = useState([]);

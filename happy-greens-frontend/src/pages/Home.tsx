@@ -16,7 +16,7 @@ const categories = [
     { name: 'Snacks', image: '/categories/chips.png' },
     { name: 'Beverages', image: '/categories/juice.png' },
     { name: 'Flowers', image: '/categories/flowers-dahlia.png' },
-    { name: 'Laundromate', image: '/categories/detergent.png' },
+    { name: 'Laundromat', image: '/categories/detergent.png' },
     { name: 'Personal Care', image: '/categories/shampoo.png' },
 ];
 
