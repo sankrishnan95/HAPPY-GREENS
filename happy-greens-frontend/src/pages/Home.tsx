@@ -114,12 +114,12 @@ const Home = () => {
                     {categories.map((cat) => (
                         <motion.div key={cat.name} variants={fadeInUp} className="flex-none snap-start">
                             <Link to={`/shop?category=${cat.name.toLowerCase()}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
-                                <div className="relative flex h-20 w-20 rounded-[1.75rem] bg-[radial-gradient(circle_at_50%_45%,rgba(250,252,245,0.96),rgba(241,246,236,0.72)_68%,rgba(236,243,232,0.28)_100%)] ring-1 ring-white/45 shadow-[0_10px_25px_rgba(103,132,76,0.08)] sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:scale-105">
+                                <div className="relative flex h-20 w-20 rounded-[1.75rem] sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03]">
                                     <img
                                         src={cat.image}
                                         alt={cat.name}
                                         loading="lazy"
-                                        className="h-full w-full object-contain p-1.5 filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.08)] md:drop-shadow-[0_12px_20px_rgba(0,0,0,0.08)]"
+                                        className="h-full w-full object-contain p-0.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.05)] md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.05)]"
                                     />
                                 </div>
                                 <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
