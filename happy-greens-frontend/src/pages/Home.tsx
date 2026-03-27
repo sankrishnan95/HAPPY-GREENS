@@ -9,12 +9,15 @@ import { getActiveBanners } from '../services/banner.service';
 import { normalizeImageUrl } from '../utils/image';
 
 const categories = [
-    { name: 'Fruits', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=500&q=60', tone: 'from-orange-100 to-orange-50', emoji: 'Apple' },
-    { name: 'Vegetables', image: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?auto=format&fit=crop&w=500&q=60', tone: 'from-green-100 to-lime-50', emoji: 'Greens' },
-    { name: 'Dairy', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=500&q=60', tone: 'from-sky-100 to-cyan-50', emoji: 'Milk' },
-    { name: 'Staples', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=60', tone: 'from-yellow-100 to-amber-50', emoji: 'Daily' },
-    { name: 'Snacks', image: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=500&q=60', tone: 'from-rose-100 to-pink-50', emoji: 'Snacks' },
-    { name: 'Beverages', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=500&q=60', tone: 'from-violet-100 to-fuchsia-50', emoji: 'Drinks' },
+    { name: 'Fruits', image: 'https://img.icons8.com/3d-fluency/256/apple.png' },
+    { name: 'Vegetables', image: 'https://img.icons8.com/3d-fluency/256/broccoli.png' },
+    { name: 'Dairy', image: 'https://img.icons8.com/3d-fluency/256/milk-bottle.png' },
+    { name: 'Staples', image: 'https://img.icons8.com/3d-fluency/256/sack-of-flour.png' },
+    { name: 'Snacks', image: 'https://img.icons8.com/3d-fluency/256/popcorn.png' },
+    { name: 'Beverages', image: 'https://img.icons8.com/3d-fluency/256/soda-cup.png' },
+    { name: 'Flowers', image: 'https://img.icons8.com/3d-fluency/256/rose.png' },
+    { name: 'Laundromate', image: 'https://img.icons8.com/3d-fluency/256/washing-machine.png' },
+    { name: 'Personal Care', image: 'https://img.icons8.com/3d-fluency/256/cleanser.png' },
 ];
 
 const features = [
@@ -99,22 +102,26 @@ const Home = () => {
 
             <motion.section 
                 initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
-                className="space-y-3"
+                className="space-y-4"
             >
-                <div className="flex items-end justify-between gap-3">
-                    <div><p className="section-kicker">Browse faster</p><h2 className="section-title mt-1">Shop by category</h2></div>
-                    <Link to="/shop" className="text-sm font-semibold text-green-700">View all</Link>
+                <div className="flex items-end justify-between gap-3 px-2">
+                    <div><h2 className="text-[1.35rem] font-display font-bold text-slate-900 md:text-[1.6rem]">Categories</h2></div>
+                    <Link to="/shop" className="text-[0.85rem] font-bold text-green-700 hover:text-green-800 transition">View all</Link>
                 </div>
 
-                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid grid-cols-3 gap-3 sm:grid-cols-3 md:grid-cols-6">
+                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="flex overflow-x-auto gap-4 md:gap-8 pb-8 pt-4 hide-scrollbar snap-x snap-mandatory px-2">
                     {categories.map((cat) => (
-                        <motion.div key={cat.name} variants={fadeInUp} className="h-full">
-                            <Link to={`/shop?category=${cat.name.toLowerCase()}`} className="mobile-app-card block h-full overflow-hidden rounded-[1.4rem]">
-                                <div className={`bg-gradient-to-br ${cat.tone} p-3`}>
-                                    <div className="mb-2 inline-flex rounded-full bg-white/70 px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-slate-700">{cat.emoji}</div>
-                                    <OptimizedImage src={cat.image} alt={cat.name} className="mx-auto h-16 w-full object-contain md:h-20" width={160} height={160} aspectRatio="1 / 1" sizes="(max-width: 767px) 30vw, 16vw" />
+                        <motion.div key={cat.name} variants={fadeInUp} className="flex-none snap-start">
+                            <Link to={`/shop?category=${cat.name.toLowerCase()}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
+                                <div className="relative flex h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:scale-110">
+                                    <OptimizedImage 
+                                        src={cat.image} 
+                                        alt={cat.name} 
+                                        className="h-full w-full object-contain filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.15)] md:drop-shadow-[0_12px_20px_rgba(0,0,0,0.12)]" 
+                                        width={120} height={120} aspectRatio="1 / 1" sizes="(max-width: 767px) 25vw, 15vw" 
+                                    />
                                 </div>
-                                <div className="px-2 pb-3 pt-2 text-center"><h3 className="text-[0.82rem] font-semibold text-slate-900 md:text-sm">{cat.name}</h3></div>
+                                <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
                             </Link>
                         </motion.div>
                     ))}
