@@ -67,7 +67,7 @@ export default function Orders() {
       alert(`Order #${orderId} status updated to ${newStatus}`);
     } catch (error) {
       console.error('❌ Error updating order status:', error);
-      alert('Failed to update order status');
+      alert(error?.response?.data?.message || 'Failed to update order status');
     }
   };
 

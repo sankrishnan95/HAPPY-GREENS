@@ -15,7 +15,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         const userId = (req as any).user?.id; // Admin user ID from auth middleware
 
         // Validate status
-        const validStatuses = ['pending', 'accepted', 'shipped', 'delivered', 'cancelled'];
+        const validStatuses = ['pending', 'placed', 'paid', 'accepted', 'processing', 'shipped', 'delivered', 'cancelled'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
                 message: 'Invalid status',
@@ -34,6 +34,24 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         }
 
         const currentOrder = orderResult.rows[0];
+
+        if (currentOrder.status === 'cancelled' && status !== 'cancelled') {
+            const latestCancellationResult = await pool.query(
+                `SELECT notes
+                 FROM order_status_history
+                 WHERE order_id = $1 AND new_status = 'cancelled'
+                 ORDER BY changed_at DESC
+                 LIMIT 1`,
+                [id]
+            );
+
+            const latestCancellationNote = String(latestCancellationResult.rows[0]?.notes || '').toLowerCase();
+            if (latestCancellationNote === 'cancelled by customer') {
+                return res.status(400).json({
+                    message: 'A customer-cancelled order cannot be reopened by admin'
+                });
+            }
+        }
 
         // Update order status
         const updateResult = await pool.query(
