@@ -9,15 +9,15 @@ import { getActiveBanners } from '../services/banner.service';
 import { normalizeImageUrl } from '../utils/image';
 
 const categories = [
-    { name: 'Fruits', image: 'https://img.icons8.com/3d-fluency/256/apple.png' },
-    { name: 'Vegetables', image: 'https://img.icons8.com/3d-fluency/256/broccoli.png' },
-    { name: 'Dairy', image: 'https://img.icons8.com/3d-fluency/256/milk-bottle.png' },
-    { name: 'Staples', image: 'https://img.icons8.com/3d-fluency/256/sack-of-flour.png' },
-    { name: 'Snacks', image: 'https://img.icons8.com/3d-fluency/256/popcorn.png' },
-    { name: 'Beverages', image: 'https://img.icons8.com/3d-fluency/256/soda-cup.png' },
-    { name: 'Flowers', image: 'https://img.icons8.com/3d-fluency/256/rose.png' },
-    { name: 'Laundromate', image: 'https://img.icons8.com/3d-fluency/256/washing-machine.png' },
-    { name: 'Personal Care', image: 'https://img.icons8.com/3d-fluency/256/cleanser.png' },
+    { name: 'Fruits', image: 'https://www.freepnglogos.com/uploads/apple/apple-fruit-png-2.png' },
+    { name: 'Vegetables', image: 'https://www.freepnglogos.com/uploads/broccoli-png/broccoli-vegetables-png-images-12.png' },
+    { name: 'Dairy', image: 'https://www.freepnglogos.com/uploads/milk-png/milk-png-cow-milk-transparent-png-pictures-34.png' },
+    { name: 'Staples', image: 'https://www.freepnglogos.com/uploads/rice-png/bowl-of-rice-png-2.png' },
+    { name: 'Snacks', image: 'https://www.freepnglogos.com/uploads/chips-png/chips-lays-classic-15.png' },
+    { name: 'Beverages', image: 'https://www.freepnglogos.com/uploads/drinks-png/drinks-juice-transparent-picture-17.png' },
+    { name: 'Flowers', image: 'https://www.freepnglogos.com/uploads/rose/red-rose-png-transparent-image-pngpix-28.png' },
+    { name: 'Laundromate', image: 'https://www.freepnglogos.com/uploads/washing-machine-png/washing-machine-buy-appliancess-and-electronics-home-14.png' },
+    { name: 'Personal Care', image: 'https://www.freepnglogos.com/uploads/shampoo-png/shampoo-lotion-bottle-png-transparent-image-purepng-34.png' },
 ];
 
 const features = [
