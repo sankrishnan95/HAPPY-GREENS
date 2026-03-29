@@ -1,6 +1,22 @@
 import { Trophy, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const fireflyStyles = `
+@keyframes firefly-drift {
+  0%, 100% { transform: translate(0, 0); opacity: 0.4; }
+  25% { transform: translate(15px, -20px); opacity: 1; }
+  50% { transform: translate(-10px, 10px); opacity: 0.5; }
+  75% { transform: translate(-20px, -10px); opacity: 0.9; }
+}
+@keyframes firefly-drift-alt {
+  0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+  33% { transform: translate(-15px, 20px); opacity: 1; }
+  66% { transform: translate(20px, -15px); opacity: 0.6; }
+}
+.animate-firefly { animation: firefly-drift 6s infinite ease-in-out; }
+.animate-firefly-alt { animation: firefly-drift-alt 8s infinite ease-in-out; }
+`;
+
 const RewardBanner = () => {
     return (
         <div className="relative overflow-hidden rounded-[1.5rem] bg-gradient-to-r from-rose-500 to-orange-500 p-6 md:p-8 flex items-center justify-between shadow-lg shadow-orange-500/20">
@@ -9,14 +25,15 @@ const RewardBanner = () => {
             <div className="absolute bottom-0 right-[20%] w-48 h-48 bg-rose-300/30 rounded-full blur-2xl translate-y-1/2"></div>
             
             {/* Golden Fireflies / Sparkles */}
+            <style>{fireflyStyles}</style>
             <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-screen">
-                <div className="absolute top-[20%] left-[10%] w-1.5 h-1.5 bg-yellow-200 rounded-full shadow-[0_0_8px_2px_rgba(253,224,71,0.8)] animate-pulse" style={{ animationDuration: '2s' }}></div>
-                <div className="absolute top-[60%] left-[30%] w-2 h-2 bg-yellow-300 rounded-full shadow-[0_0_12px_3px_rgba(253,224,71,0.9)] animate-bounce" style={{ animationDuration: '3s' }}></div>
-                <div className="absolute top-[30%] left-[55%] w-1 h-1 bg-yellow-400 rounded-full shadow-[0_0_6px_2px_rgba(250,204,21,0.8)] animate-ping" style={{ animationDuration: '2.5s' }}></div>
-                <div className="absolute top-[80%] left-[50%] w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_rgba(255,255,255,0.8)] animate-pulse" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }}></div>
-                <div className="absolute top-[25%] left-[85%] w-1.5 h-1.5 bg-yellow-300 rounded-full shadow-[0_0_10px_3px_rgba(253,224,71,0.8)] animate-pulse" style={{ animationDuration: '2.8s' }}></div>
-                <div className="absolute top-[70%] left-[80%] w-1 h-1 bg-yellow-400 rounded-full shadow-[0_0_6px_2px_rgba(250,204,21,0.8)] animate-bounce" style={{ animationDuration: '2.2s' }}></div>
-                <div className="absolute top-[40%] left-[20%] w-1 h-1 bg-yellow-200 rounded-full shadow-[0_0_8px_2px_rgba(253,224,71,0.8)] animate-ping" style={{ animationDuration: '3.5s' }}></div>
+                <div className="absolute top-[20%] left-[10%] w-1.5 h-1.5 bg-yellow-200 rounded-full shadow-[0_0_8px_2px_rgba(253,224,71,0.8)] animate-firefly" style={{ animationDelay: '0s' }}></div>
+                <div className="absolute top-[60%] left-[30%] w-2 h-2 bg-yellow-300 rounded-full shadow-[0_0_12px_3px_rgba(253,224,71,0.9)] animate-firefly-alt" style={{ animationDelay: '1s', animationDuration: '7s' }}></div>
+                <div className="absolute top-[30%] left-[55%] w-1 h-1 bg-yellow-400 rounded-full shadow-[0_0_6px_2px_rgba(250,204,21,0.8)] animate-firefly" style={{ animationDelay: '2s', animationDuration: '5s' }}></div>
+                <div className="absolute top-[80%] left-[50%] w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_rgba(255,255,255,0.8)] animate-firefly-alt" style={{ animationDelay: '3s' }}></div>
+                <div className="absolute top-[25%] left-[85%] w-1.5 h-1.5 bg-yellow-300 rounded-full shadow-[0_0_10px_3px_rgba(253,224,71,0.8)] animate-firefly" style={{ animationDelay: '0.5s', animationDuration: '9s' }}></div>
+                <div className="absolute top-[70%] left-[80%] w-1 h-1 bg-yellow-400 rounded-full shadow-[0_0_6px_2px_rgba(250,204,21,0.8)] animate-firefly-alt" style={{ animationDelay: '1.5s', animationDuration: '6s' }}></div>
+                <div className="absolute top-[40%] left-[20%] w-1 h-1 bg-yellow-200 rounded-full shadow-[0_0_8px_2px_rgba(253,224,71,0.8)] animate-firefly" style={{ animationDelay: '2.5s', animationDuration: '5.5s' }}></div>
             </div>
             
             {/* Left Content */}
