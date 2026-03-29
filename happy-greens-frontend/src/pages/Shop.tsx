@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { getProducts } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
 import { Filter, SlidersHorizontal } from 'lucide-react';
+import RewardBanner from '../components/RewardBanner';
 
 const categories = ['Fruits', 'Vegetables', 'Dairy', 'Staples', 'Snacks', 'Beverages', 'Flowers', 'Laundromat', 'Personal Care'];
 
@@ -92,6 +93,7 @@ const Shop = () => {
 
     return (
         <div className="space-y-4">
+            <RewardBanner />
             <section className="mobile-app-card rounded-[1.8rem] p-4 md:p-5">
                 <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>
