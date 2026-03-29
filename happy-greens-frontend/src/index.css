@@ -108,7 +108,7 @@
   }
 
   .mobile-search-shell {
-    @apply relative overflow-hidden rounded-full border border-[#d9e7cf] bg-[#f7fbf3] shadow-inner;
+    @apply relative rounded-full border border-[#d9e7cf] bg-[#f7fbf3] shadow-inner;
   }
 
   .safe-touch {
