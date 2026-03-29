@@ -157,7 +157,7 @@ const Home = () => {
                         <div>
                             <p className="section-kicker !text-white/70">Smart basket deal</p>
                             <h2 className="mt-1 text-[1.45rem] font-display font-bold md:text-[2rem]">{dealBanner?.title || 'Save more on fresh baskets this week'}</h2>
-                            <p className="mt-2 max-w-[34ch] text-sm leading-6 text-white/85 md:text-base">{dealBanner?.description || 'A rotating set of fruits, vegetables and staples at a better bundle price.'}</p>
+                            <p className="mt-2 max-w-xl text-sm leading-6 text-white/85 md:text-base">{dealBanner?.description || 'A rotating set of fruits, vegetables and staples at a better bundle price.'}</p>
                             <div className="mt-4"><Link to={dealBanner?.link || '/shop'} className="w-full sm:w-auto"><Button variant="accent" size="lg" className="w-full sm:w-auto">View offers</Button></Link></div>
                         </div>
 
