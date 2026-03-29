@@ -73,9 +73,9 @@ const Home = () => {
                 className="mobile-app-card hero-banner overflow-hidden rounded-[1.8rem]"
             >
                 {loadingBanners ? (
-                    <div className="min-h-[240px] md:min-h-[320px] lg:min-h-[380px] animate-pulse bg-slate-200" />
+                    <div className="min-h-[280px] md:min-h-[380px] lg:min-h-[440px] animate-pulse bg-slate-200" />
                 ) : (
-                    <div className="relative min-h-[240px] md:min-h-[320px] lg:min-h-[380px]">
+                    <div className="relative min-h-[280px] md:min-h-[380px] lg:min-h-[440px]">
                         <div className="absolute inset-0">
                             {isVideo(heroBanner?.image_url) ? (
                                 <video src={normalizeImageUrl(heroBanner.image_url)} className="hero-banner-media" autoPlay loop muted playsInline preload="metadata" />
@@ -151,7 +151,7 @@ const Home = () => {
                 className="mobile-app-card overflow-hidden rounded-[1.8rem] bg-gradient-to-br from-green-700 via-green-600 to-lime-500 text-white"
             >
                 {loadingBanners ? (
-                    <div className="min-h-[180px] md:min-h-[220px] animate-pulse bg-green-800/20" />
+                    <div className="min-h-[220px] md:min-h-[280px] animate-pulse bg-green-800/20" />
                 ) : (
                     <div className="grid gap-4 p-4 md:grid-cols-[1.15fr_0.85fr] md:items-center md:p-5 lg:p-6">
                         <div>
@@ -163,9 +163,9 @@ const Home = () => {
 
                         <div className="overflow-hidden rounded-[1.5rem] bg-white/10 p-1 backdrop-blur-sm">
                             {isVideo(dealBanner?.image_url) ? (
-                                <video src={normalizeImageUrl(dealBanner.image_url)} className="hero-banner-media max-h-[230px] rounded-[1.3rem]" autoPlay loop muted playsInline preload="metadata" />
+                                <video src={normalizeImageUrl(dealBanner.image_url)} className="hero-banner-media max-h-[280px] rounded-[1.3rem]" autoPlay loop muted playsInline preload="metadata" />
                             ) : (
-                                <OptimizedImage src={dealBanner?.image_url} alt="Deals Graphic" className="hero-banner-media max-h-[230px] rounded-[1.3rem]" width={960} height={720} aspectRatio="4 / 3" sizes="(max-width: 767px) 100vw, 40vw" />
+                                <OptimizedImage src={dealBanner?.image_url} alt="Deals Graphic" className="hero-banner-media max-h-[280px] rounded-[1.3rem]" width={960} height={720} aspectRatio="4 / 3" sizes="(max-width: 767px) 100vw, 40vw" />
                             )}
                         </div>
                     </div>
