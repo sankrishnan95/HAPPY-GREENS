@@ -1,4 +1,5 @@
 import { Trophy, ArrowRight, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const RewardBanner = () => {
     return (
@@ -6,6 +7,17 @@ const RewardBanner = () => {
             {/* Background decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             <div className="absolute bottom-0 right-[20%] w-48 h-48 bg-rose-300/30 rounded-full blur-2xl translate-y-1/2"></div>
+            
+            {/* Golden Fireflies / Sparkles */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-screen">
+                <div className="absolute top-[20%] left-[10%] w-1.5 h-1.5 bg-yellow-200 rounded-full shadow-[0_0_8px_2px_rgba(253,224,71,0.8)] animate-pulse" style={{ animationDuration: '2s' }}></div>
+                <div className="absolute top-[60%] left-[30%] w-2 h-2 bg-yellow-300 rounded-full shadow-[0_0_12px_3px_rgba(253,224,71,0.9)] animate-bounce" style={{ animationDuration: '3s' }}></div>
+                <div className="absolute top-[30%] left-[55%] w-1 h-1 bg-yellow-400 rounded-full shadow-[0_0_6px_2px_rgba(250,204,21,0.8)] animate-ping" style={{ animationDuration: '2.5s' }}></div>
+                <div className="absolute top-[80%] left-[50%] w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_rgba(255,255,255,0.8)] animate-pulse" style={{ animationDuration: '1.5s', animationDelay: '0.5s' }}></div>
+                <div className="absolute top-[25%] left-[85%] w-1.5 h-1.5 bg-yellow-300 rounded-full shadow-[0_0_10px_3px_rgba(253,224,71,0.8)] animate-pulse" style={{ animationDuration: '2.8s' }}></div>
+                <div className="absolute top-[70%] left-[80%] w-1 h-1 bg-yellow-400 rounded-full shadow-[0_0_6px_2px_rgba(250,204,21,0.8)] animate-bounce" style={{ animationDuration: '2.2s' }}></div>
+                <div className="absolute top-[40%] left-[20%] w-1 h-1 bg-yellow-200 rounded-full shadow-[0_0_8px_2px_rgba(253,224,71,0.8)] animate-ping" style={{ animationDuration: '3.5s' }}></div>
+            </div>
             
             {/* Left Content */}
             <div className="relative z-10 max-w-lg">
@@ -19,14 +31,13 @@ const RewardBanner = () => {
                 <p className="text-rose-50 text-sm md:text-base mb-6 leading-relaxed">
                     Shop now and earn points on every purchase. Redeem your points for exciting discounts and exclusive offers on farm-fresh groceries.
                 </p>
-                <button 
-                    type="button"
-                    onClick={() => console.log('View rewards clicked')}
+                <Link 
+                    to="/rewards"
                     className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 transition-colors px-6 py-2.5 text-sm font-semibold text-white backdrop-blur-sm group"
                 >
                     View Rewards
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </Link>
             </div>
 
             {/* Right Graphic Area - Hidden on small mobile to save space md:flex */}
