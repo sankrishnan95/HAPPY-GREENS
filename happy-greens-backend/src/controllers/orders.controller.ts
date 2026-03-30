@@ -112,23 +112,8 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             }
 
             if (status === 'cancelled') {
-                // Reverse previously earned points (if order was already delivered)
-                if (loyaltyOrder.points_earned > 0) {
-                    await pool.query(
-                        `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
-                         VALUES ($1, $2, 'reversed', $3, $4)`,
-                        [loyaltyOrder.user_id, id, -loyaltyOrder.points_earned, `Points reversed â€” Order #${id} cancelled`]
-                    );
-                    await pool.query(
-                        `UPDATE users
-                         SET loyalty_points = GREATEST(0, loyalty_points - $1),
-                             total_points_earned = GREATEST(0, total_points_earned - $1)
-                         WHERE id = $2`,
-                        [loyaltyOrder.points_earned, loyaltyOrder.user_id]
-                    );
-                    await pool.query(`UPDATE orders SET points_earned = 0 WHERE id = $1`, [id]);
-                }
-                // Refund redeemed points (if customer used points on this order)
+                // Refund redeemed points (if customer used points on this order).
+                // Earned reward points are not reversed on cancellation because they are awarded only on delivery.
                 if (loyaltyOrder.points_used > 0) {
                     await pool.query(
                         `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)

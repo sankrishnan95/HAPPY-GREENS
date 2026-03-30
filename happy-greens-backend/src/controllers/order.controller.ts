@@ -289,26 +289,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
             [id, currentStatus, 'cancelled', 'Cancelled by customer']
         );
 
-        const pointsEarned = Number(order.points_earned || 0);
         const pointsUsed = Number(order.points_used || 0);
-
-        if (pointsEarned > 0) {
-            await client.query(
-                `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
-                 VALUES ($1, $2, 'reversed', $3, $4)`,
-                [userId, id, -pointsEarned, `Points reversed - Order #${id} cancelled by customer`]
-            );
-
-            await client.query(
-                `UPDATE users
-                 SET loyalty_points = GREATEST(0, loyalty_points - $1),
-                     total_points_earned = GREATEST(0, total_points_earned - $1)
-                 WHERE id = $2`,
-                [pointsEarned, userId]
-            );
-
-            await client.query(`UPDATE orders SET points_earned = 0 WHERE id = $1`, [id]);
-        }
 
         if (pointsUsed > 0) {
             await client.query(
