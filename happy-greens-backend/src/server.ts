@@ -38,6 +38,8 @@ const configuredOrigins = [
 ];
 
 const productionFallbackOrigins = [
+  'https://www.happygreensonline.com',
+  'https://happygreensonline.com',
   'https://happy-greens.vercel.app',
   'https://happy-greens-store.vercel.app',
   'https://happy-greens-admin.vercel.app',
