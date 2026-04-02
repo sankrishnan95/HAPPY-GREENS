@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS order_status_history (
   changed_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_order_status_history_order ON order_status_history(order_id);
-CREATE INDEX idx_order_status_history_date ON order_status_history(changed_at);
+CREATE INDEX IF NOT EXISTS idx_order_status_history_order ON order_status_history(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_status_history_date ON order_status_history(changed_at);
 
 -- ============================================
 -- 2. DELIVERY TRACKING SYSTEM
@@ -43,9 +43,9 @@ CREATE TABLE IF NOT EXISTS deliveries (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_deliveries_order_id ON deliveries(order_id);
-CREATE INDEX idx_deliveries_tracking ON deliveries(tracking_number);
-CREATE INDEX idx_deliveries_status ON deliveries(delivery_status);
+CREATE INDEX IF NOT EXISTS idx_deliveries_order_id ON deliveries(order_id);
+CREATE INDEX IF NOT EXISTS idx_deliveries_tracking ON deliveries(tracking_number);
+CREATE INDEX IF NOT EXISTS idx_deliveries_status ON deliveries(delivery_status);
 
 -- Delivery status history for audit trail
 CREATE TABLE IF NOT EXISTS delivery_status_history (
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS delivery_status_history (
   changed_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_delivery_status_history_delivery ON delivery_status_history(delivery_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_status_history_delivery ON delivery_status_history(delivery_id);
 
 -- ============================================
 -- 3. DISCOUNT COUPONS SYSTEM
@@ -83,9 +83,9 @@ CREATE TABLE IF NOT EXISTS coupons (
   CONSTRAINT valid_dates CHECK (valid_until > valid_from)
 );
 
-CREATE INDEX idx_coupons_code ON coupons(code);
-CREATE INDEX idx_coupons_active ON coupons(is_active);
-CREATE INDEX idx_coupons_valid_dates ON coupons(valid_from, valid_until);
+CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);
+CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(is_active);
+CREATE INDEX IF NOT EXISTS idx_coupons_valid_dates ON coupons(valid_from, valid_until);
 
 -- Coupon usage tracking
 CREATE TABLE IF NOT EXISTS coupon_usage (
@@ -97,9 +97,9 @@ CREATE TABLE IF NOT EXISTS coupon_usage (
   used_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_coupon_usage_coupon ON coupon_usage(coupon_id);
-CREATE INDEX idx_coupon_usage_user ON coupon_usage(user_id);
-CREATE INDEX idx_coupon_usage_order ON coupon_usage(order_id);
+CREATE INDEX IF NOT EXISTS idx_coupon_usage_coupon ON coupon_usage(coupon_id);
+CREATE INDEX IF NOT EXISTS idx_coupon_usage_user ON coupon_usage(user_id);
+CREATE INDEX IF NOT EXISTS idx_coupon_usage_order ON coupon_usage(order_id);
 
 -- ============================================
 -- 4. ADD DISCOUNT FIELDS TO ORDERS
@@ -140,6 +140,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS before_insert_delivery_tracking ON deliveries;
+
 CREATE TRIGGER before_insert_delivery_tracking
   BEFORE INSERT ON deliveries
   FOR EACH ROW
@@ -153,6 +155,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS before_update_delivery ON deliveries;
 
 CREATE TRIGGER before_update_delivery
   BEFORE UPDATE ON deliveries
@@ -171,6 +175,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS after_update_order_status ON orders;
+
 CREATE TRIGGER after_update_order_status
   AFTER UPDATE ON orders
   FOR EACH ROW
@@ -187,6 +193,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS after_update_delivery_status ON deliveries;
 
 CREATE TRIGGER after_update_delivery_status
   AFTER UPDATE ON deliveries

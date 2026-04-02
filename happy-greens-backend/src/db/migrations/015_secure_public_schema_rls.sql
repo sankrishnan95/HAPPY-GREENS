@@ -41,6 +41,10 @@ BEGIN
     WHERE schemaname = 'public'
       AND tablename = 'analytics_events'
       AND policyname = 'Allow authenticated insert'
+  ) AND EXISTS (
+    SELECT 1
+    FROM pg_roles
+    WHERE rolname = 'authenticated'
   ) THEN
     EXECUTE $policy$
       CREATE POLICY "Allow authenticated insert"
