@@ -34,6 +34,12 @@ const RefundCancellationPolicy = () => {
                 Because Happy Greens mainly supplies grocery and perishable products, returns may be restricted after
                 delivery unless the issue relates to quality, damage, or fulfillment error.
             </p>
+            <p>
+                Customers are advised to check grocery, fresh, and edible products as soon as they are received. Since
+                these items are time-sensitive, next-day refund or replacement requests may not be appropriate unless
+                there is a clear issue such as damage, spoilage, wrong delivery, or a product quality problem that can
+                reasonably be linked to the original delivery.
+            </p>
 
             <h2>4. Resolution Options</h2>
             <p>Depending on the nature of the issue, we may offer:</p>
