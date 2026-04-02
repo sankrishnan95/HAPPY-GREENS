@@ -19,21 +19,22 @@ export const sendSms = async (to: string, message: string, otp?: string) => {
         try {
             console.log(`[SMS Service] Dispatching MSG91 OTP to ${formattedPhone}...`);
 
-            const response = await fetch('https://api.msg91.com/api/v5/flow/', {
+            const query = new URLSearchParams({
+                template_id: msg91FlowId,
+                mobile: `91${formattedPhone}`,
+                authkey: msg91AuthKey,
+                otp,
+            });
+
+            const response = await fetch(`https://control.msg91.com/api/v5/otp?${query.toString()}`, {
                 method: 'POST',
                 headers: {
-                    authkey: msg91AuthKey,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    flow_id: msg91FlowId,
                     sender: msg91SenderId,
-                    recipients: [
-                        {
-                            mobiles: `91${formattedPhone}`,
-                            [msg91OtpVariable]: otp,
-                        }
-                    ]
+                    otp,
+                    [msg91OtpVariable]: otp,
                 })
             });
 
