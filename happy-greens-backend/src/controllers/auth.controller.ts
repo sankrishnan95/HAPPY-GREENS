@@ -20,6 +20,44 @@ const normalizePhone = (phone: unknown): string | null => {
     return null;
 };
 
+const normalizeAddressInput = (payload: any) => {
+    const label = typeof payload?.label === 'string' ? payload.label.trim().slice(0, 80) : 'Address';
+    const full_name = typeof payload?.full_name === 'string' ? payload.full_name.trim().slice(0, 150) : '';
+    const phone = normalizePhone(payload?.phone);
+    const address_line = typeof payload?.address_line === 'string' ? payload.address_line.trim().slice(0, 255) : '';
+    const locality = typeof payload?.locality === 'string' ? payload.locality.trim().slice(0, 150) : '';
+    const landmark = typeof payload?.landmark === 'string' ? payload.landmark.trim().slice(0, 150) : '';
+    const city = typeof payload?.city === 'string' ? payload.city.trim().slice(0, 100) : '';
+    const state = typeof payload?.state === 'string' ? payload.state.trim().slice(0, 100) : '';
+    const zip = typeof payload?.zip === 'string' ? payload.zip.replace(/\D/g, '').slice(0, 6) : '';
+    const is_default = Boolean(payload?.is_default);
+
+    return {
+        label: label || 'Address',
+        full_name,
+        phone,
+        address_line,
+        locality,
+        landmark,
+        city,
+        state,
+        zip,
+        is_default,
+    };
+};
+
+const listUserAddresses = async (userId: number) => {
+    const result = await pool.query(
+        `SELECT id, label, full_name, phone, address_line, locality, landmark, city, state, zip, is_default, created_at, updated_at
+         FROM user_addresses
+         WHERE user_id = $1
+         ORDER BY is_default DESC, updated_at DESC, id DESC`,
+        [userId]
+    );
+
+    return result.rows;
+};
+
 const createAndStoreOtp = async (phone: string) => {
     const rateLimitCheck = await pool.query(
         `SELECT COUNT(*) FROM phone_otps WHERE phone = $1 AND created_at > NOW() - INTERVAL '1 hour'`,
@@ -374,6 +412,252 @@ export const updateProfile = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error updating profile:', error);
         return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const getProfileAddresses = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    try {
+        const addresses = await listUserAddresses(userId);
+        return res.json({ addresses });
+    } catch (error) {
+        console.error('Error fetching addresses:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const createProfileAddress = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const address = normalizeAddressInput(req.body);
+    if (!address.full_name || !address.phone || !address.address_line || !address.city || !/^\d{6}$/.test(address.zip)) {
+        return res.status(400).json({ message: 'Please provide a valid address, phone number, city, and 6-digit pincode' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const existingCountResult = await client.query(
+            'SELECT COUNT(*)::int AS count FROM user_addresses WHERE user_id = $1',
+            [userId]
+        );
+        const shouldBeDefault = address.is_default || Number(existingCountResult.rows[0]?.count || 0) === 0;
+
+        if (shouldBeDefault) {
+            await client.query(
+                'UPDATE user_addresses SET is_default = FALSE WHERE user_id = $1',
+                [userId]
+            );
+        }
+
+        await client.query(
+            `INSERT INTO user_addresses
+             (user_id, label, full_name, phone, address_line, locality, landmark, city, state, zip, is_default)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            [
+                userId,
+                address.label,
+                address.full_name,
+                address.phone,
+                address.address_line,
+                address.locality || null,
+                address.landmark || null,
+                address.city,
+                address.state || null,
+                address.zip,
+                shouldBeDefault,
+            ]
+        );
+
+        await client.query('COMMIT');
+        return res.status(201).json({ addresses: await listUserAddresses(userId) });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error creating address:', error);
+        return res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
+    }
+};
+
+export const updateProfileAddress = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const addressId = Number(req.params.id);
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!Number.isFinite(addressId) || addressId <= 0) {
+        return res.status(400).json({ message: 'Invalid address id' });
+    }
+
+    const address = normalizeAddressInput(req.body);
+    if (!address.full_name || !address.phone || !address.address_line || !address.city || !/^\d{6}$/.test(address.zip)) {
+        return res.status(400).json({ message: 'Please provide a valid address, phone number, city, and 6-digit pincode' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const existingAddressResult = await client.query(
+            'SELECT id FROM user_addresses WHERE id = $1 AND user_id = $2 LIMIT 1',
+            [addressId, userId]
+        );
+
+        if (existingAddressResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        if (address.is_default) {
+            await client.query(
+                'UPDATE user_addresses SET is_default = FALSE WHERE user_id = $1',
+                [userId]
+            );
+        }
+
+        await client.query(
+            `UPDATE user_addresses
+             SET label = $1,
+                 full_name = $2,
+                 phone = $3,
+                 address_line = $4,
+                 locality = $5,
+                 landmark = $6,
+                 city = $7,
+                 state = $8,
+                 zip = $9,
+                 is_default = $10,
+                 updated_at = NOW()
+             WHERE id = $11 AND user_id = $12`,
+            [
+                address.label,
+                address.full_name,
+                address.phone,
+                address.address_line,
+                address.locality || null,
+                address.landmark || null,
+                address.city,
+                address.state || null,
+                address.zip,
+                address.is_default,
+                addressId,
+                userId,
+            ]
+        );
+
+        await client.query('COMMIT');
+        return res.json({ addresses: await listUserAddresses(userId) });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error updating address:', error);
+        return res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
+    }
+};
+
+export const deleteProfileAddress = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const addressId = Number(req.params.id);
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!Number.isFinite(addressId) || addressId <= 0) {
+        return res.status(400).json({ message: 'Invalid address id' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const deletedResult = await client.query(
+            `DELETE FROM user_addresses
+             WHERE id = $1 AND user_id = $2
+             RETURNING id, is_default`,
+            [addressId, userId]
+        );
+
+        if (deletedResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        if (deletedResult.rows[0].is_default) {
+            await client.query(
+                `UPDATE user_addresses
+                 SET is_default = TRUE, updated_at = NOW()
+                 WHERE id = (
+                    SELECT id
+                    FROM user_addresses
+                    WHERE user_id = $1
+                    ORDER BY updated_at DESC, id DESC
+                    LIMIT 1
+                 )`,
+                [userId]
+            );
+        }
+
+        await client.query('COMMIT');
+        return res.json({ addresses: await listUserAddresses(userId) });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting address:', error);
+        return res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
+    }
+};
+
+export const setDefaultProfileAddress = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const addressId = Number(req.params.id);
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!Number.isFinite(addressId) || addressId <= 0) {
+        return res.status(400).json({ message: 'Invalid address id' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const existingAddressResult = await client.query(
+            'SELECT id FROM user_addresses WHERE id = $1 AND user_id = $2 LIMIT 1',
+            [addressId, userId]
+        );
+
+        if (existingAddressResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Address not found' });
+        }
+
+        await client.query('UPDATE user_addresses SET is_default = FALSE WHERE user_id = $1', [userId]);
+        await client.query(
+            'UPDATE user_addresses SET is_default = TRUE, updated_at = NOW() WHERE id = $1 AND user_id = $2',
+            [addressId, userId]
+        );
+
+        await client.query('COMMIT');
+        return res.json({ addresses: await listUserAddresses(userId) });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error setting default address:', error);
+        return res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
     }
 };
 

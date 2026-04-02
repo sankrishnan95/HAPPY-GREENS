@@ -30,6 +30,60 @@ export const updateProfile = async (payload: { full_name: string; phone: string 
     return data;
 };
 
+export type SavedAddress = {
+    id: number;
+    label: string;
+    full_name: string;
+    phone: string;
+    address_line: string;
+    locality?: string | null;
+    landmark?: string | null;
+    city: string;
+    state?: string | null;
+    zip: string;
+    is_default: boolean;
+    created_at: string;
+    updated_at: string;
+};
+
+export type AddressPayload = {
+    label: string;
+    full_name: string;
+    phone: string;
+    address_line: string;
+    locality: string;
+    landmark: string;
+    city: string;
+    state: string;
+    zip: string;
+    is_default: boolean;
+};
+
+export const getProfileAddresses = async () => {
+    const { data } = await api.get('/auth/profile/addresses');
+    return data as { addresses: SavedAddress[] };
+};
+
+export const createProfileAddress = async (payload: AddressPayload) => {
+    const { data } = await api.post('/auth/profile/addresses', payload);
+    return data as { addresses: SavedAddress[] };
+};
+
+export const updateProfileAddress = async (id: number, payload: AddressPayload) => {
+    const { data } = await api.put(`/auth/profile/addresses/${id}`, payload);
+    return data as { addresses: SavedAddress[] };
+};
+
+export const deleteProfileAddress = async (id: number) => {
+    const { data } = await api.delete(`/auth/profile/addresses/${id}`);
+    return data as { addresses: SavedAddress[] };
+};
+
+export const setDefaultProfileAddress = async (id: number) => {
+    const { data } = await api.patch(`/auth/profile/addresses/${id}/default`);
+    return data as { addresses: SavedAddress[] };
+};
+
 export const forgotPassword = async (email: string) => {
     const { data } = await api.post('/auth/forgot-password', { email });
     return data;

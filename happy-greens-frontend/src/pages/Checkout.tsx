@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { createOrder } from '../services/order.service';
 import { createRazorpayOrder, verifyRazorpayPayment } from '../services/payment.service';
 import { getLoyaltyInfo } from '../services/loyalty.service';
+import { getProfileAddresses } from '../services/auth.service';
 import Button from '../components/Button';
 import { Star, Gift, ShoppingCart, MapPin, CreditCard, ChevronRight, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -36,6 +37,21 @@ type Step = 'address' | 'payment';
 
 const normalizeIndianPhone = (value: string) => value.replace(/\D/g, '').slice(-10);
 const normalizePincode = (value: string) => value.replace(/\D/g, '').slice(0, 6);
+const CHECKOUT_DRAFT_STORAGE_KEY = 'happy-greens-checkout-draft';
+
+type CheckoutDraft = {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    locality: string;
+    landmark: string;
+    city: string;
+    zip: string;
+    state: string;
+    paymentMethod: string;
+    step: Step;
+};
 
 const Checkout = () => {
     const navigate = useNavigate();
@@ -65,6 +81,8 @@ const Checkout = () => {
     const [loyaltyPoints, setLoyaltyPoints] = useState(0);
     const [pointsToUse, setPointsToUse] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [draftRestoreComplete, setDraftRestoreComplete] = useState(false);
+    const [defaultAddressApplied, setDefaultAddressApplied] = useState(false);
 
     const maxRedeemable = Math.min(loyaltyPoints, Math.floor(subtotal * 0.5));
     const discount = Math.min(pointsToUse, maxRedeemable);
@@ -78,6 +96,84 @@ const Checkout = () => {
                 .catch(() => { });
         }
     }, [user]);
+
+    useEffect(() => {
+        try {
+            const rawDraft = localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
+            if (rawDraft) {
+                const draft = JSON.parse(rawDraft) as Partial<CheckoutDraft>;
+                setFormData((current) => ({
+                    ...current,
+                    name: typeof draft.name === 'string' && draft.name.trim().length > 0
+                        ? draft.name
+                        : (user?.full_name || current.name),
+                    phone: typeof draft.phone === 'string' ? normalizeIndianPhone(draft.phone) : current.phone,
+                    email: user?.email || (typeof draft.email === 'string' ? draft.email : current.email),
+                    address: typeof draft.address === 'string' ? draft.address : current.address,
+                    locality: typeof draft.locality === 'string' ? draft.locality : current.locality,
+                    landmark: typeof draft.landmark === 'string' ? draft.landmark : current.landmark,
+                    city: typeof draft.city === 'string' ? draft.city : current.city,
+                    zip: typeof draft.zip === 'string' ? normalizePincode(draft.zip) : current.zip,
+                    state: typeof draft.state === 'string' ? draft.state : current.state,
+                    paymentMethod: draft.paymentMethod === 'razorpay' ? 'razorpay' : current.paymentMethod,
+                }));
+
+                if (draft.step === 'address' || draft.step === 'payment') {
+                    setStep(draft.step);
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to restore checkout draft', error);
+        }
+        setDraftRestoreComplete(true);
+    }, [user?.email, user?.full_name]);
+
+    useEffect(() => {
+        if (!user || !draftRestoreComplete || defaultAddressApplied) return;
+
+        const fetchDefaultAddress = async () => {
+            try {
+                const data = await getProfileAddresses();
+                const defaultAddress = (data.addresses || []).find((item) => item.is_default);
+                if (!defaultAddress) {
+                    setDefaultAddressApplied(true);
+                    return;
+                }
+
+                setFormData((current) => ({
+                    ...current,
+                    name: current.name.trim() ? current.name : defaultAddress.full_name,
+                    phone: current.phone.trim() ? current.phone : defaultAddress.phone,
+                    address: current.address.trim() ? current.address : defaultAddress.address_line,
+                    locality: current.locality.trim() ? current.locality : (defaultAddress.locality || ''),
+                    landmark: current.landmark.trim() ? current.landmark : (defaultAddress.landmark || ''),
+                    city: current.city.trim() ? current.city : defaultAddress.city,
+                    zip: current.zip.trim() ? current.zip : defaultAddress.zip,
+                    state: current.state.trim() ? current.state : (defaultAddress.state || ''),
+                }));
+            } catch (error) {
+                console.error('Failed to load default address for checkout', error);
+            } finally {
+                setDefaultAddressApplied(true);
+            }
+        };
+
+        fetchDefaultAddress();
+    }, [user, defaultAddressApplied]);
+
+    useEffect(() => {
+        const draft: CheckoutDraft = {
+            ...formData,
+            email: user?.email || formData.email,
+            step,
+        };
+
+        try {
+            localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        } catch (error) {
+            console.warn('Failed to save checkout draft', error);
+        }
+    }, [formData, step, user?.email]);
 
     useEffect(() => {
         if (cart.length > 0) {
@@ -212,6 +308,7 @@ const Checkout = () => {
                 toast.success(`You saved ₹${discount} using loyalty points!`);
             }
             toast.success('Order placed successfully!');
+            localStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
             clearCart();
             navigate('/orders');
         } catch (error) {
