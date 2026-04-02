@@ -224,6 +224,39 @@ export const ensureAnalyticsSchema = async (): Promise<void> => {
     console.log('[Schema Bootstrap] analytics schema ensured');
 };
 
+export const ensureNotificationsSchema = async (): Promise<void> => {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS notifications (
+            id SERIAL PRIMARY KEY,
+            recipient_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            type VARCHAR(80) NOT NULL,
+            title VARCHAR(160) NOT NULL,
+            message TEXT NOT NULL,
+            link VARCHAR(255),
+            metadata JSONB DEFAULT '{}'::jsonb,
+            is_read BOOLEAN DEFAULT FALSE,
+            read_at TIMESTAMP NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    await pool.query(`
+        ALTER TABLE notifications ENABLE ROW LEVEL SECURITY
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_notifications_recipient_created_at
+        ON notifications(recipient_user_id, created_at DESC)
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_notifications_recipient_unread
+        ON notifications(recipient_user_id, is_read, created_at DESC)
+    `);
+
+    console.log('[Schema Bootstrap] notifications schema ensured');
+};
+
 export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void> => {
     await pool.query(`
         INSERT INTO categories (name, slug, description)

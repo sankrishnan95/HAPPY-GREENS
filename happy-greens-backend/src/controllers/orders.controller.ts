@@ -3,6 +3,14 @@ import { pool } from '../db';
 import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 import { createUserNotification } from '../services/notification.service';
 
+const safelyRunNotificationTask = async (task: () => Promise<void>) => {
+    try {
+        await task();
+    } catch (error) {
+        console.warn('[Notifications] Skipping admin status notification due to error:', error);
+    }
+};
+
 /**
  * Update Order Status
  * PATCH /api/admin/orders/:id/status
@@ -136,16 +144,18 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                 };
 
                 const normalizedStatus = String(status).toLowerCase();
-                await createUserNotification(pool, customerUserId, {
-                    type: 'order_status_updated',
-                    title: `Order #${id} update`,
-                    message: `Your order is now ${statusLabels[normalizedStatus] || normalizedStatus}.`,
-                    link: `/orders/${id}`,
-                    metadata: {
-                        orderId: Number(id),
-                        oldStatus: currentOrder.status,
-                        newStatus: status,
-                    },
+                await safelyRunNotificationTask(async () => {
+                    await createUserNotification(pool, customerUserId, {
+                        type: 'order_status_updated',
+                        title: `Order #${id} update`,
+                        message: `Your order is now ${statusLabels[normalizedStatus] || normalizedStatus}.`,
+                        link: `/orders/${id}`,
+                        metadata: {
+                            orderId: Number(id),
+                            oldStatus: currentOrder.status,
+                            newStatus: status,
+                        },
+                    });
                 });
             }
         }

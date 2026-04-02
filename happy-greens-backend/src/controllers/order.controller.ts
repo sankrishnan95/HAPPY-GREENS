@@ -22,6 +22,14 @@ const getExistingOrderByToken = async (userId: number, clientOrderToken: string)
     return existing.rows[0] || null;
 };
 
+const safelyRunNotificationTask = async (task: () => Promise<void>) => {
+    try {
+        await task();
+    } catch (error) {
+        console.warn('[Notifications] Skipping order notification due to error:', error);
+    }
+};
+
 export const createOrder = async (req: Request, res: Response) => {
     // @ts-ignore
     const userId = req.user?.id;
@@ -149,27 +157,31 @@ export const createOrder = async (req: Request, res: Response) => {
             [phone, userId]
         );
 
-        await createUserNotification(client, userId, {
-            type: 'order_created',
-            title: `Order #${orderId} placed`,
-            message: `Your order for Rs. ${finalTotal.toFixed(2)} has been placed successfully.`,
-            link: `/orders/${orderId}`,
-            metadata: {
-                orderId,
-                status: orderStatus,
-            },
+        await safelyRunNotificationTask(async () => {
+            await createUserNotification(client, userId, {
+                type: 'order_created',
+                title: `Order #${orderId} placed`,
+                message: `Your order for Rs. ${finalTotal.toFixed(2)} has been placed successfully.`,
+                link: `/orders/${orderId}`,
+                metadata: {
+                    orderId,
+                    status: orderStatus,
+                },
+            });
         });
 
-        await createAdminNotifications(client, {
-            type: 'order_created',
-            title: `New order #${orderId}`,
-            message: `${name} placed an order for Rs. ${finalTotal.toFixed(2)}.`,
-            link: `/orders/${orderId}`,
-            metadata: {
-                orderId,
-                status: orderStatus,
-                userId,
-            },
+        await safelyRunNotificationTask(async () => {
+            await createAdminNotifications(client, {
+                type: 'order_created',
+                title: `New order #${orderId}`,
+                message: `${name} placed an order for Rs. ${finalTotal.toFixed(2)}.`,
+                link: `/orders/${orderId}`,
+                metadata: {
+                    orderId,
+                    status: orderStatus,
+                    userId,
+                },
+            });
         });
 
         await client.query('DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = $1)', [userId]);
@@ -352,27 +364,31 @@ export const cancelOrder = async (req: Request, res: Response) => {
             );
         }
 
-        await createUserNotification(client, userId, {
-            type: 'order_cancelled',
-            title: `Order #${id} cancelled`,
-            message: 'Your order has been cancelled successfully.',
-            link: `/orders/${id}`,
-            metadata: {
-                orderId: Number(id),
-                status: 'cancelled',
-            },
+        await safelyRunNotificationTask(async () => {
+            await createUserNotification(client, userId, {
+                type: 'order_cancelled',
+                title: `Order #${id} cancelled`,
+                message: 'Your order has been cancelled successfully.',
+                link: `/orders/${id}`,
+                metadata: {
+                    orderId: Number(id),
+                    status: 'cancelled',
+                },
+            });
         });
 
-        await createAdminNotifications(client, {
-            type: 'order_cancelled',
-            title: `Order #${id} cancelled by customer`,
-            message: 'A customer cancelled an active order.',
-            link: `/orders/${id}`,
-            metadata: {
-                orderId: Number(id),
-                status: 'cancelled',
-                userId,
-            },
+        await safelyRunNotificationTask(async () => {
+            await createAdminNotifications(client, {
+                type: 'order_cancelled',
+                title: `Order #${id} cancelled by customer`,
+                message: 'A customer cancelled an active order.',
+                link: `/orders/${id}`,
+                metadata: {
+                    orderId: Number(id),
+                    status: 'cancelled',
+                    userId,
+                },
+            });
         });
 
         await client.query('COMMIT');
