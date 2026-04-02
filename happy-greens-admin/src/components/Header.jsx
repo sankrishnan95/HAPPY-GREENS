@@ -1,6 +1,7 @@
-import { Menu, Bell, LogOut, Search, User } from 'lucide-react';
+import { Menu, LogOut, Search, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { removeToken } from '../utils/auth';
+import NotificationBell from './NotificationBell';
 
 export default function Header({ onMenuToggle }) {
   const navigate = useNavigate();
@@ -39,13 +40,7 @@ export default function Header({ onMenuToggle }) {
             />
           </div>
 
-          <button
-            type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-            aria-label="Notifications"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
+          <NotificationBell />
 
           <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 text-white shadow-[0_10px_24px_rgba(16,185,129,0.25)]">

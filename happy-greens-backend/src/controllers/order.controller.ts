@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
 import { calculateOrderTotals } from '../services/order-pricing.service';
+import { createAdminNotifications, createUserNotification } from '../services/notification.service';
 
 const CUSTOMER_CANCELLABLE_STATUSES = new Set(['pending', 'placed', 'accepted', 'paid']);
 
@@ -147,6 +148,29 @@ export const createOrder = async (req: Request, res: Response) => {
                AND (phone IS NULL OR phone <> $1)`,
             [phone, userId]
         );
+
+        await createUserNotification(client, userId, {
+            type: 'order_created',
+            title: `Order #${orderId} placed`,
+            message: `Your order for Rs. ${finalTotal.toFixed(2)} has been placed successfully.`,
+            link: `/orders/${orderId}`,
+            metadata: {
+                orderId,
+                status: orderStatus,
+            },
+        });
+
+        await createAdminNotifications(client, {
+            type: 'order_created',
+            title: `New order #${orderId}`,
+            message: `${name} placed an order for Rs. ${finalTotal.toFixed(2)}.`,
+            link: `/orders/${orderId}`,
+            metadata: {
+                orderId,
+                status: orderStatus,
+                userId,
+            },
+        });
 
         await client.query('DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = $1)', [userId]);
 
@@ -327,6 +351,29 @@ export const cancelOrder = async (req: Request, res: Response) => {
                 [pointsUsed, userId]
             );
         }
+
+        await createUserNotification(client, userId, {
+            type: 'order_cancelled',
+            title: `Order #${id} cancelled`,
+            message: 'Your order has been cancelled successfully.',
+            link: `/orders/${id}`,
+            metadata: {
+                orderId: Number(id),
+                status: 'cancelled',
+            },
+        });
+
+        await createAdminNotifications(client, {
+            type: 'order_cancelled',
+            title: `Order #${id} cancelled by customer`,
+            message: 'A customer cancelled an active order.',
+            link: `/orders/${id}`,
+            metadata: {
+                orderId: Number(id),
+                status: 'cancelled',
+                userId,
+            },
+        });
 
         await client.query('COMMIT');
 

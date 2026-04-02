@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import OptimizedImage from './OptimizedImage';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -116,6 +117,7 @@ const Navbar = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
+                            {user && <NotificationBell />}
                             {user && (
                                 <Link
                                     to="/wishlist"

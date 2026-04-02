@@ -1,29 +1,28 @@
-﻿import { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { pool } from '../db';
 import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
+import { createUserNotification } from '../services/notification.service';
 
 /**
  * Update Order Status
  * PATCH /api/admin/orders/:id/status
- * 
+ *
  * Updates order status and logs change in history
  */
 export const updateOrderStatus = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { status, notes } = req.body;
-        const userId = (req as any).user?.id; // Admin user ID from auth middleware
+        const userId = (req as any).user?.id;
 
-        // Validate status
         const validStatuses = ['pending', 'placed', 'paid', 'accepted', 'processing', 'shipped', 'delivered', 'cancelled'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
                 message: 'Invalid status',
-                validStatuses
+                validStatuses,
             });
         }
 
-        // Get current order
         const orderResult = await pool.query(
             'SELECT id, status FROM orders WHERE id = $1',
             [id]
@@ -48,35 +47,31 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             const latestCancellationNote = String(latestCancellationResult.rows[0]?.notes || '').toLowerCase();
             if (latestCancellationNote === 'cancelled by customer') {
                 return res.status(400).json({
-                    message: 'A customer-cancelled order cannot be reopened by admin'
+                    message: 'A customer-cancelled order cannot be reopened by admin',
                 });
             }
         }
 
-        // Update order status
         const updateResult = await pool.query(
-            `UPDATE orders 
-             SET status = $1, updated_at = NOW() 
-             WHERE id = $2 
+            `UPDATE orders
+             SET status = $1, updated_at = NOW()
+             WHERE id = $2
              RETURNING *`,
             [status, id]
         );
 
         const updatedOrder = updateResult.rows[0];
 
-        // Log status change in history (with notes and admin user)
         if (currentOrder.status !== status) {
             await pool.query(
-                `INSERT INTO order_status_history 
-                 (order_id, old_status, new_status, notes, changed_by) 
+                `INSERT INTO order_status_history
+                 (order_id, old_status, new_status, notes, changed_by)
                  VALUES ($1, $2, $3, $4, $5)`,
                 [id, currentOrder.status, status, notes || null, userId]
             );
         }
 
-        // â”€â”€ Loyalty Points Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (currentOrder.status !== status) {
-            // Fetch full order details for loyalty calculation
             const loyaltyOrderRes = await pool.query(
                 `SELECT user_id, total_amount, points_earned, points_used FROM orders WHERE id = $1`,
                 [id]
@@ -86,7 +81,6 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             if (status === 'delivered' && currentOrder.status !== 'delivered') {
                 const existingEarned = Number(loyaltyOrder.points_earned || 0);
                 if (existingEarned <= 0) {
-                    // Award points: 1 point per INR 20 spent
                     const earnedPoints = Math.floor(Number(loyaltyOrder.total_amount) / 20);
                     if (earnedPoints > 0) {
                         await pool.query(
@@ -112,13 +106,11 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             }
 
             if (status === 'cancelled') {
-                // Refund redeemed points (if customer used points on this order).
-                // Earned reward points are not reversed on cancellation because they are awarded only on delivery.
                 if (loyaltyOrder.points_used > 0) {
                     await pool.query(
                         `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
                          VALUES ($1, $2, 'earned', $3, $4)`,
-                        [loyaltyOrder.user_id, id, loyaltyOrder.points_used, `Points refunded â€” Order #${id} cancelled`]
+                        [loyaltyOrder.user_id, id, loyaltyOrder.points_used, `Points refunded - Order #${id} cancelled`]
                     );
                     await pool.query(
                         `UPDATE users
@@ -129,13 +121,39 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                     );
                 }
             }
+
+            const customerUserId = Number(loyaltyOrder.user_id);
+            if (customerUserId) {
+                const statusLabels: Record<string, string> = {
+                    accepted: 'accepted',
+                    processing: 'being prepared',
+                    shipped: 'shipped',
+                    delivered: 'delivered',
+                    cancelled: 'cancelled',
+                    paid: 'confirmed',
+                    placed: 'placed',
+                    pending: 'pending',
+                };
+
+                const normalizedStatus = String(status).toLowerCase();
+                await createUserNotification(pool, customerUserId, {
+                    type: 'order_status_updated',
+                    title: `Order #${id} update`,
+                    message: `Your order is now ${statusLabels[normalizedStatus] || normalizedStatus}.`,
+                    link: `/orders/${id}`,
+                    metadata: {
+                        orderId: Number(id),
+                        oldStatus: currentOrder.status,
+                        newStatus: status,
+                    },
+                });
+            }
         }
-        // â”€â”€ End Loyalty Points Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         res.json({
             success: true,
             order: updatedOrder,
-            message: `Order status updated to ${status}`
+            message: `Order status updated to ${status}`,
         });
     } catch (error) {
         console.error('Error updating order status:', error);
@@ -143,18 +161,12 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     }
 };
 
-/**
- * Get Order Status History
- * GET /api/admin/orders/:id/history
- * 
- * Returns status change history for an order
- */
 export const getOrderStatusHistory = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
         const result = await pool.query(
-            `SELECT 
+            `SELECT
                 osh.*,
                 u.full_name as changed_by_name
              FROM order_status_history osh
@@ -171,18 +183,12 @@ export const getOrderStatusHistory = async (req: Request, res: Response) => {
     }
 };
 
-/**
- * Get Orders by Status
- * GET /api/admin/orders?status=pending
- * 
- * Returns filtered orders list
- */
 export const getOrdersByStatus = async (req: Request, res: Response) => {
     try {
         const { status, customerId } = req.query;
 
         let query = `
-            SELECT 
+            SELECT
                 o.id,
                 o.user_id,
                 o.total_amount,
@@ -220,7 +226,7 @@ export const getOrdersByStatus = async (req: Request, res: Response) => {
         res.json(result.rows.map(row => ({
             ...row,
             total_amount: parseFloat(row.total_amount) || 0,
-            items_count: parseInt(row.items_count) || 0
+            items_count: parseInt(row.items_count) || 0,
         })));
     } catch (error) {
         console.error('Error fetching orders:', error);
@@ -228,20 +234,13 @@ export const getOrdersByStatus = async (req: Request, res: Response) => {
     }
 };
 
-/**
- * Get Order By ID
- * GET /api/admin/orders/:id
- * 
- * Returns full detailed order including customer and order items.
- */
 export const getOrderById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const baseUrl = getPublicBaseUrl(req);
 
-        // 1. Fetch Order & Customer Details
         const orderResult = await pool.query(
-            `SELECT 
+            `SELECT
                 o.*,
                 u.full_name as customer_name,
                 u.email as customer_email,
@@ -258,9 +257,8 @@ export const getOrderById = async (req: Request, res: Response) => {
 
         const order = orderResult.rows[0];
 
-        // 2. Fetch Order Items
         const itemsResult = await pool.query(
-            `SELECT 
+            `SELECT
                 oi.*,
                 p.image_url,
                 p.images
@@ -270,9 +268,8 @@ export const getOrderById = async (req: Request, res: Response) => {
             [id]
         );
 
-        // 3. Fetch Order Timeline (from existing order_status_history)
         const timelineResult = await pool.query(
-            `SELECT 
+            `SELECT
                 osh.id,
                 osh.old_status,
                 osh.new_status,
@@ -286,14 +283,13 @@ export const getOrderById = async (req: Request, res: Response) => {
             [id]
         );
 
-        // Also inject a synthetic "Order Placed" event from order creation
         const placedEvent = {
             id: 0,
             old_status: null,
             new_status: 'placed',
             notes: 'Order was placed by customer',
             changed_at: order.created_at,
-            changed_by_name: order.customer_name || 'Customer'
+            changed_by_name: order.customer_name || 'Customer',
         };
 
         const timeline = [...timelineResult.rows, placedEvent];
@@ -309,15 +305,12 @@ export const getOrderById = async (req: Request, res: Response) => {
                 ),
                 quantity: Number(item.quantity),
                 price: parseFloat(item.price_at_purchase) || 0,
-                price_at_purchase: parseFloat(item.price_at_purchase) || 0
+                price_at_purchase: parseFloat(item.price_at_purchase) || 0,
             })),
-            timeline
+            timeline,
         });
     } catch (error) {
         console.error('Error fetching order details:', error);
         res.status(500).json({ message: 'Server error fetching order details' });
     }
 };
-
-
-

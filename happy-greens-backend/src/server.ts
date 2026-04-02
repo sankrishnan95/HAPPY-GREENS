@@ -22,6 +22,7 @@ import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
 import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill, ensureAnalyticsSchema, ensureMultiUnitSchema } from './bootstrap/schema';
 import analyticsRoutes from './routes/analytics.routes';
+import notificationRoutes from './routes/notification.routes';
 import { analyticsRateLimiter, authRateLimiter, globalRateLimiter, paymentRateLimiter, uploadRateLimiter } from './middleware/rateLimit';
 import { applySecurityHeaders, enforceHttps } from './middleware/security';
 
@@ -136,6 +137,7 @@ app.use('/api/loyalty', loyaltyRoutes); // Loyalty points
 app.use('/api/wishlist', authenticate, wishlistRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Generic admin routes (MUST be after specific admin routes)
 app.use('/api/admin', adminRoutes);
