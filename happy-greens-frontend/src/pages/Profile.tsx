@@ -9,6 +9,7 @@ const Profile = () => {
     const navigate = useNavigate();
     const { user, logout, setUser, token } = useStore((state) => ({ user: state.user, logout: state.logout, setUser: state.setUser, token: state.token }));
 
+    const [isEditing, setIsEditing] = useState(false);
     const [profileForm, setProfileForm] = useState({
         full_name: user?.full_name || '',
         phone: user?.phone || '',
@@ -81,6 +82,7 @@ const Profile = () => {
             });
             setUser(data.user, token);
             setMessage('Profile updated successfully');
+            setIsEditing(false);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to update profile');
         } finally {
@@ -88,24 +90,59 @@ const Profile = () => {
         }
     };
 
+    const handleStartEditing = () => {
+        setError('');
+        setMessage('');
+        setProfileForm({
+            full_name: user.full_name || '',
+            phone: user.phone || '',
+        });
+        setIsEditing(true);
+    };
+
+    const handleCancelEditing = () => {
+        setError('');
+        setMessage('');
+        setProfileForm({
+            full_name: user.full_name || '',
+            phone: user.phone || '',
+        });
+        setIsEditing(false);
+    };
+
     return (
         <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold mb-8">My Profile</h1>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-                <h2 className="text-xl font-bold mb-4">Account Information</h2>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold">Account Information</h2>
+                    {!isEditing && (
+                        <button
+                            type="button"
+                            onClick={handleStartEditing}
+                            className="text-sm font-semibold text-primary-600 hover:text-primary-700"
+                        >
+                            Edit
+                        </button>
+                    )}
+                </div>
                 {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm font-medium border border-red-200">{error}</div>}
                 {message && <div className="bg-green-50 text-green-700 p-3 rounded-lg mb-4 text-sm font-medium border border-green-200">{message}</div>}
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm text-gray-600 mb-1">Name</label>
-                        <input
-                            type="text"
-                            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500"
-                            value={profileForm.full_name}
-                            onChange={(e) => setProfileForm((prev) => ({ ...prev, full_name: e.target.value }))}
-                            placeholder="Enter your name"
-                        />
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500"
+                                value={profileForm.full_name}
+                                onChange={(e) => setProfileForm((prev) => ({ ...prev, full_name: e.target.value }))}
+                                placeholder="Enter your name"
+                            />
+                        ) : (
+                            <p className="font-medium text-gray-900">{user.full_name}</p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm text-gray-600 mb-1">Email</label>
@@ -125,15 +162,22 @@ const Profile = () => {
                     <div>
                         <label className="block text-sm text-gray-600 mb-1">Phone Number</label>
                         <div className="space-y-2">
-                            <input
-                                type="tel"
-                                inputMode="numeric"
-                                maxLength={10}
-                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500"
-                                value={profileForm.phone}
-                                onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
-                                placeholder="Enter 10-digit mobile number"
-                            />
+                            {isEditing ? (
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">+91</span>
+                                    <input
+                                        type="tel"
+                                        inputMode="numeric"
+                                        maxLength={10}
+                                        className="w-full pl-14 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500"
+                                        value={profileForm.phone}
+                                        onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                                        placeholder="Enter 10-digit mobile number"
+                                    />
+                                </div>
+                            ) : (
+                                <p className="font-medium text-gray-900">{user.phone ? `+91 ${user.phone}` : 'Not provided'}</p>
+                            )}
                             {user.phone_verified ? (
                                 <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-semibold">Verified</span>
                             ) : (
@@ -141,9 +185,16 @@ const Profile = () => {
                             )}
                         </div>
                     </div>
-                    <Button variant="primary" onClick={handleSaveProfile} disabled={loading}>
-                        {loading ? 'Saving...' : 'Save Profile'}
-                    </Button>
+                    {isEditing && (
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <Button variant="primary" onClick={handleSaveProfile} disabled={loading}>
+                                {loading ? 'Saving...' : 'Save Profile'}
+                            </Button>
+                            <Button variant="outline" onClick={handleCancelEditing} disabled={loading}>
+                                Cancel
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
