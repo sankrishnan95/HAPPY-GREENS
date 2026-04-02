@@ -292,6 +292,91 @@ export const sendOtp = async (req: Request, res: Response) => {
     }
 };
 
+export const getProfile = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    try {
+        const result = await pool.query(
+            'SELECT id, email, full_name, role, phone, phone_verified FROM users WHERE id = $1 LIMIT 1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        return res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const updateProfile = async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const fullName = typeof req.body?.full_name === 'string' ? req.body.full_name.trim().slice(0, 150) : '';
+    const phone = req.body?.phone ? normalizePhone(req.body.phone) : null;
+
+    if (!fullName) {
+        return res.status(400).json({ message: 'Name is required' });
+    }
+
+    if (req.body?.phone && !phone) {
+        return res.status(400).json({ message: 'Phone number must be a valid 10-digit mobile number' });
+    }
+
+    try {
+        if (phone) {
+            const existingPhoneOwner = await pool.query(
+                'SELECT id FROM users WHERE phone = $1 AND id <> $2 LIMIT 1',
+                [phone, userId]
+            );
+
+            if (existingPhoneOwner.rows.length > 0) {
+                return res.status(400).json({ message: 'This phone number is already linked to another account' });
+            }
+        }
+
+        const currentUserResult = await pool.query(
+            'SELECT phone, phone_verified FROM users WHERE id = $1 LIMIT 1',
+            [userId]
+        );
+
+        if (currentUserResult.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const currentUser = currentUserResult.rows[0];
+        const nextPhone = phone || null;
+        const nextPhoneVerified = nextPhone && currentUser.phone === nextPhone ? currentUser.phone_verified : false;
+
+        const updatedUserResult = await pool.query(
+            `UPDATE users
+             SET full_name = $1,
+                 phone = $2,
+                 phone_verified = $3
+             WHERE id = $4
+             RETURNING id, email, full_name, role, phone, phone_verified`,
+            [fullName, nextPhone, nextPhoneVerified, userId]
+        );
+
+        return res.json({
+            message: 'Profile updated successfully',
+            user: updatedUserResult.rows[0],
+        });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
 export const firebasePhoneLogin = async (req: Request, res: Response) => {
     const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken.trim() : '';
 

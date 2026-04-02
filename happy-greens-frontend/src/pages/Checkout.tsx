@@ -302,10 +302,13 @@ const Checkout = () => {
                                         <input
                                             type="email"
                                             placeholder="Enter email address"
-                                            className="w-full min-h-[44px] rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                            className={`w-full min-h-[44px] rounded-lg border px-4 py-2.5 text-sm ${user ? 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:border-green-500 focus:ring-1 focus:ring-green-500'}`}
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            readOnly={!!user}
+                                            disabled={!!user}
                                         />
+                                        {user && <p className="mt-1 text-xs text-gray-500">Your account email is fixed and cannot be edited here.</p>}
                                     </div>
 
                                     {/* Address */}

@@ -2,17 +2,17 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useEffect, useState } from 'react';
 import { getOrders } from '../services/order.service';
-import { sendPhoneVerificationOtp, verifyPhoneVerificationOtp } from '../services/auth.service';
+import { updateProfile } from '../services/auth.service';
 import Button from '../components/Button';
 
 const Profile = () => {
     const navigate = useNavigate();
     const { user, logout, setUser, token } = useStore((state) => ({ user: state.user, logout: state.logout, setUser: state.setUser, token: state.token }));
 
-    const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
-    const [phoneInput, setPhoneInput] = useState(user?.phone || '');
-    const [otpInput, setOtpInput] = useState('');
-    const [otpSent, setOtpSent] = useState(false);
+    const [profileForm, setProfileForm] = useState({
+        full_name: user?.full_name || '',
+        phone: user?.phone || '',
+    });
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -46,6 +46,13 @@ const Profile = () => {
         fetchOrders();
     }, [user, token]);
 
+    useEffect(() => {
+        setProfileForm({
+            full_name: user?.full_name || '',
+            phone: user?.phone || '',
+        });
+    }, [user?.full_name, user?.phone]);
+
     const handleLogout = () => {
         logout();
         navigate('/login');
@@ -55,42 +62,27 @@ const Profile = () => {
         return null;
     }
 
-    const handleSendOtp = async () => {
-        if (!phoneInput) {
-            setError('Please enter a phone number');
+    const handleSaveProfile = async () => {
+        if (!profileForm.full_name.trim()) {
+            setError('Please enter your name');
+            return;
+        }
+        if (profileForm.phone && !/^\d{10}$/.test(profileForm.phone)) {
+            setError('Phone number must be a valid 10-digit mobile number');
             return;
         }
         setLoading(true);
         setError('');
         setMessage('');
         try {
-            await sendPhoneVerificationOtp(phoneInput);
-            setOtpSent(true);
-            setMessage('OTP sent! Check your messages.');
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to send OTP');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleVerifyOtp = async () => {
-        if (!otpInput) {
-            setError('Please enter the OTP');
-            return;
-        }
-        setLoading(true);
-        setError('');
-        setMessage('');
-        try {
-            const data = await verifyPhoneVerificationOtp(phoneInput, otpInput);
+            const data = await updateProfile({
+                full_name: profileForm.full_name.trim(),
+                phone: profileForm.phone.trim(),
+            });
             setUser(data.user, token);
-            setIsVerifyingPhone(false);
-            setOtpSent(false);
-            setOtpInput('');
-            setMessage('Phone verified successfully!');
+            setMessage('Profile updated successfully');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Invalid or expired OTP');
+            setError(err.response?.data?.message || 'Failed to update profile');
         } finally {
             setLoading(false);
         }
@@ -102,83 +94,58 @@ const Profile = () => {
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                 <h2 className="text-xl font-bold mb-4">Account Information</h2>
-                <div className="space-y-3">
+                {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm font-medium border border-red-200">{error}</div>}
+                {message && <div className="bg-green-50 text-green-700 p-3 rounded-lg mb-4 text-sm font-medium border border-green-200">{message}</div>}
+                <div className="space-y-4">
                     <div>
-                        <label className="text-sm text-gray-600">Name</label>
-                        <p className="font-medium">{user.full_name}</p>
+                        <label className="block text-sm text-gray-600 mb-1">Name</label>
+                        <input
+                            type="text"
+                            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500"
+                            value={profileForm.full_name}
+                            onChange={(e) => setProfileForm((prev) => ({ ...prev, full_name: e.target.value }))}
+                            placeholder="Enter your name"
+                        />
                     </div>
                     <div>
-                        <label className="text-sm text-gray-600">Email</label>
-                        <p className="font-medium">{user.email}</p>
+                        <label className="block text-sm text-gray-600 mb-1">Email</label>
+                        <input
+                            type="email"
+                            className="w-full px-4 py-2 border-2 border-gray-100 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                            value={user.email}
+                            readOnly
+                            disabled
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Your login email cannot be edited here.</p>
                     </div>
                     <div>
-                        <label className="text-sm text-gray-600">Account Type</label>
+                        <label className="block text-sm text-gray-600 mb-1">Account Type</label>
                         <p className="font-medium capitalize">{user.role}</p>
                     </div>
                     <div>
-                        <label className="text-sm text-gray-600">Phone Number</label>
-                        <div className="flex items-center gap-3">
-                            <p className="font-medium">
-                                {user.phone ? user.phone : 'Not provided'}
-                            </p>
+                        <label className="block text-sm text-gray-600 mb-1">Phone Number</label>
+                        <div className="space-y-2">
+                            <input
+                                type="tel"
+                                inputMode="numeric"
+                                maxLength={10}
+                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500"
+                                value={profileForm.phone}
+                                onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                                placeholder="Enter 10-digit mobile number"
+                            />
                             {user.phone_verified ? (
                                 <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-semibold">Verified</span>
                             ) : (
-                                <button
-                                    onClick={() => setIsVerifyingPhone(!isVerifyingPhone)}
-                                    className="text-primary-600 text-sm font-semibold hover:text-primary-700"
-                                >
-                                    Verify Phone
-                                </button>
+                                <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-semibold">Not verified</span>
                             )}
                         </div>
                     </div>
+                    <Button variant="primary" onClick={handleSaveProfile} disabled={loading}>
+                        {loading ? 'Saving...' : 'Save Profile'}
+                    </Button>
                 </div>
             </div>
-
-            {isVerifyingPhone && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-                    <h2 className="text-xl font-bold mb-4">Phone Verification</h2>
-
-                    {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm font-medium border border-red-200">{error}</div>}
-                    {message && <div className="bg-green-50 text-green-700 p-3 rounded-lg mb-4 text-sm font-medium border border-green-200">{message}</div>}
-
-                    {!otpSent ? (
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
-                                <input
-                                    type="tel"
-                                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500"
-                                    value={phoneInput}
-                                    onChange={(e) => setPhoneInput(e.target.value)}
-                                    placeholder="+1234567890"
-                                />
-                            </div>
-                            <Button variant="primary" onClick={handleSendOtp} disabled={loading}>
-                                {loading ? 'Sending...' : 'Send OTP via SMS'}
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Enter 6-digit OTP</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 tracking-widest text-center text-xl"
-                                    value={otpInput}
-                                    onChange={(e) => setOtpInput(e.target.value)}
-                                    placeholder="000000"
-                                    maxLength={6}
-                                />
-                            </div>
-                            <Button variant="primary" onClick={handleVerifyOtp} disabled={loading} className="w-full">
-                                {loading ? 'Verifying...' : 'Verify Phone'}
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div className="flex justify-between items-center mb-4">

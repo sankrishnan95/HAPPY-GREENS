@@ -25,6 +25,11 @@ export const getProfile = async () => {
     return data;
 };
 
+export const updateProfile = async (payload: { full_name: string; phone: string }) => {
+    const { data } = await api.put('/auth/profile', payload);
+    return data;
+};
+
 export const forgotPassword = async (email: string) => {
     const { data } = await api.post('/auth/forgot-password', { email });
     return data;
