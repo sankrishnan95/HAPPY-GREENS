@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 export const sendEmail = async (to: string, subject: string, message: string) => {
     // If SMTP credentials are provided, use them. Otherwise, mock the email payload to the console.
     const hasCredentials = process.env.SMTP_HOST && process.env.SMTP_USER;
+    const fromAddress = process.env.EMAIL_FROM?.trim() || process.env.SMTP_USER;
 
     if (hasCredentials) {
         try {
@@ -17,7 +18,7 @@ export const sendEmail = async (to: string, subject: string, message: string) =>
             });
 
             await transporter.sendMail({
-                from: `"Happy Greens" <${process.env.SMTP_USER}>`,
+                from: `"Happy Greens" <${fromAddress}>`,
                 to,
                 subject,
                 text: message,
