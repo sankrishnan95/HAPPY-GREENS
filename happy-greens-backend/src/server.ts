@@ -46,6 +46,12 @@ const productionFallbackOrigins = [
   'https://happygreensadmin.vercel.app',
 ].map(normalizeOrigin);
 
+const allowedPreviewOriginPatterns = [
+  /^https:\/\/happy-greens(?:-[a-z0-9-]+)?\.vercel\.app$/i,
+  /^https:\/\/happy-greens-admin(?:-[a-z0-9-]+)?\.vercel\.app$/i,
+  /^https:\/\/happygreensadmin(?:-[a-z0-9-]+)?\.vercel\.app$/i,
+];
+
 const allowedOrigins = new Set(
   process.env.NODE_ENV === 'production'
     ? [...productionFallbackOrigins, ...configuredOrigins]
@@ -60,7 +66,10 @@ const corsOptions: cors.CorsOptions = {
 
     const normalizedOrigin = normalizeOrigin(origin);
 
-    if (allowedOrigins.has(normalizedOrigin)) {
+    if (
+      allowedOrigins.has(normalizedOrigin) ||
+      allowedPreviewOriginPatterns.some((pattern) => pattern.test(normalizedOrigin))
+    ) {
       return callback(null, true);
     }
 
