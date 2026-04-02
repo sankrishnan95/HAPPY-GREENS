@@ -45,12 +45,13 @@ const BackendReadinessGate = ({ children }: { children: ReactNode }) => {
         '/terms-and-conditions',
         '/refund-cancellation-policy',
     ]);
-
-    if (bypassPaths.has(location.pathname)) {
-        return children;
-    }
+    const shouldBypass = bypassPaths.has(location.pathname);
 
     useEffect(() => {
+        if (shouldBypass) {
+            return;
+        }
+
         let timeoutId: number | undefined;
         let isMounted = true;
         const controller = new AbortController();
@@ -80,7 +81,7 @@ const BackendReadinessGate = ({ children }: { children: ReactNode }) => {
         };
     }, []);
 
-    if (isReady) {
+    if (shouldBypass || isReady) {
         return children;
     }
 
