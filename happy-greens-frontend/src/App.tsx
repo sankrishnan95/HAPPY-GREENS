@@ -32,8 +32,23 @@ const PageFallback = () => (
 );
 
 const BackendReadinessGate = ({ children }: { children: ReactNode }) => {
+    const location = useLocation();
     const [isReady, setIsReady] = useState(false);
     const [attempts, setAttempts] = useState(0);
+
+    const bypassPaths = new Set([
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+        '/privacy-policy',
+        '/terms-and-conditions',
+        '/refund-cancellation-policy',
+    ]);
+
+    if (bypassPaths.has(location.pathname)) {
+        return children;
+    }
 
     useEffect(() => {
         let timeoutId: number | undefined;
