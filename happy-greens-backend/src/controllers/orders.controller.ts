@@ -302,21 +302,29 @@ export const getOrderById = async (req: Request, res: Response) => {
             changed_by_name: order.customer_name || 'Customer',
         };
 
+        const items = itemsResult.rows.map(item => ({
+            ...item,
+            image_url: normalizeMediaUrl(
+                Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : item.image_url,
+                baseUrl
+            ),
+            quantity: Number(item.quantity),
+            price: parseFloat(item.price_at_purchase) || 0,
+            price_at_purchase: parseFloat(item.price_at_purchase) || 0,
+        }));
+        const subtotal = items.reduce((sum, item) => sum + Number(item.price_at_purchase || 0), 0);
+        const pointsUsed = Number(order.points_used || 0);
+        const totalAmount = parseFloat(order.total_amount) || 0;
+        const deliveryFee = Math.max(0, totalAmount - subtotal + pointsUsed);
         const timeline = [...timelineResult.rows, placedEvent];
 
         res.json({
             ...order,
-            total_amount: parseFloat(order.total_amount) || 0,
-            items: itemsResult.rows.map(item => ({
-                ...item,
-                image_url: normalizeMediaUrl(
-                    Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : item.image_url,
-                    baseUrl
-                ),
-                quantity: Number(item.quantity),
-                price: parseFloat(item.price_at_purchase) || 0,
-                price_at_purchase: parseFloat(item.price_at_purchase) || 0,
-            })),
+            total_amount: totalAmount,
+            subtotal,
+            delivery_fee: deliveryFee,
+            discount_amount: pointsUsed,
+            items,
             timeline,
         });
     } catch (error) {

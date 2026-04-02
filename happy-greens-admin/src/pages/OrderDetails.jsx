@@ -6,6 +6,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import { getStatusColor } from '../utils/format';
 import { ORDER_STATUS_OPTIONS } from '../utils/status';
 
+const RUPEE = '\u20B9';
+
 export default function OrderDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -120,6 +122,9 @@ export default function OrderDetails() {
 
     if (!order) return null;
 
+    const subtotal = Number(order.subtotal ?? order.items?.reduce((sum, item) => sum + Number(item.price_at_purchase || 0), 0) ?? order.total_amount ?? 0);
+    const deliveryFee = Number(order.delivery_fee ?? Math.max(0, Number(order.total_amount || 0) - subtotal + Number(order.points_used || 0)));
+
     return (
         <div className="space-y-6 pb-12">
             <Toaster position="top-right" />
@@ -181,8 +186,8 @@ export default function OrderDetails() {
                                         <p className="text-xs text-gray-500 mt-0.5">Quantity: {formatQuantity(item.quantity, item.unit)}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-bold text-gray-900">?{(Number(item.price) * item.quantity).toFixed(2)}</p>
-                                        <p className="text-xs text-gray-500 mt-0.5">?{Number(item.price).toFixed(2)}/{formatPriceUnitLabel(item.unit)}</p>
+                                        <p className="text-sm font-bold text-gray-900">{RUPEE}{(Number(item.price) * item.quantity).toFixed(2)}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{RUPEE}{Number(item.price).toFixed(2)}/{formatPriceUnitLabel(item.unit)}</p>
                                     </div>
                                 </div>
                             ))}
@@ -198,15 +203,17 @@ export default function OrderDetails() {
                             <div className="space-y-1 text-right">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Subtotal</span>
-                                    <span className="text-gray-900 font-medium">?{order.total_amount}</span>
+                                    <span className="text-gray-900 font-medium">{RUPEE}{subtotal.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Delivery Fee</span>
-                                    <span className="text-green-600 font-medium">FREE</span>
+                                    <span className="text-gray-900 font-medium">
+                                        {deliveryFee === 0 ? 'FREE' : `${RUPEE}${deliveryFee.toFixed(2)}`}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2 mt-2">
                                     <span className="text-gray-900">Total</span>
-                                    <span className="text-primary-600">?{order.total_amount}</span>
+                                    <span className="text-primary-600">{RUPEE}{Number(order.total_amount).toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>

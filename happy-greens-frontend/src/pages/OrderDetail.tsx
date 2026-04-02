@@ -52,9 +52,10 @@ export default function OrderDetail() {
         );
     }
 
-    const subtotal = order.items?.reduce(
+    const subtotal = Number(order.subtotal ?? order.items?.reduce(
         (sum: number, item: any) => sum + parseFloat(item.price_at_purchase), 0
-    ) || parseFloat(order.total_amount);
+    ) ?? order.total_amount);
+    const deliveryFee = Number(order.delivery_fee ?? Math.max(0, Number(order.total_amount) - subtotal + Number(order.points_used || 0)));
 
     const handleCancelOrder = async () => {
         if (!order || !canCancelOrder(order.status) || cancelling) return;
@@ -224,7 +225,7 @@ export default function OrderDetail() {
                         </div>
                         <div className="flex justify-between text-gray-500 pb-3 border-b border-gray-100">
                             <span>Delivery Fee</span>
-                            <span className="font-medium text-gray-900">₹0.00</span>
+                            <span className="font-medium text-gray-900">₹{deliveryFee.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-base font-bold text-gray-900 pt-1">
                             <span>Total</span>

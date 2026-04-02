@@ -275,6 +275,19 @@ export const getOrderById = async (req: Request, res: Response) => {
             [id]
         );
 
+        const items = itemsResult.rows.map((item) => ({
+            ...item,
+            quantity: Number(item.quantity),
+        }));
+
+        const subtotal = items.reduce(
+            (sum, item) => sum + Number(item.price_at_purchase || 0),
+            0
+        );
+        const pointsUsed = Number(order.points_used || 0);
+        const totalAmount = Number(order.total_amount || 0);
+        const deliveryFee = Math.max(0, totalAmount - subtotal + pointsUsed);
+
         const placedEvent = {
             id: 0,
             old_status: null,
@@ -285,10 +298,11 @@ export const getOrderById = async (req: Request, res: Response) => {
 
         res.json({
             ...order,
-            items: itemsResult.rows.map((item) => ({
-                ...item,
-                quantity: Number(item.quantity),
-            })),
+            total_amount: totalAmount,
+            subtotal,
+            delivery_fee: deliveryFee,
+            discount_amount: pointsUsed,
+            items,
             timeline: [...timelineResult.rows, placedEvent]
         });
     } catch (error) {
