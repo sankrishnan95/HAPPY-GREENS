@@ -4,6 +4,14 @@ import { calculateOrderTotals } from '../services/order-pricing.service';
 
 const CUSTOMER_CANCELLABLE_STATUSES = new Set(['pending', 'placed', 'accepted', 'paid']);
 
+const normalizePhone = (phone: unknown): string | null => {
+    if (typeof phone !== 'string') return null;
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 10) return digits;
+    if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
+    return null;
+};
+
 const getExistingOrderByToken = async (userId: number, clientOrderToken: string) => {
     const existing = await pool.query(
         'SELECT id, total_amount, points_used FROM orders WHERE user_id = $1 AND client_order_token = $2 LIMIT 1',
@@ -51,7 +59,8 @@ export const createOrder = async (req: Request, res: Response) => {
         const address = typeof shippingAddressPayload.address === 'string' ? shippingAddressPayload.address.trim().slice(0, 255) : '';
         const city = typeof shippingAddressPayload.city === 'string' ? shippingAddressPayload.city.trim().slice(0, 100) : '';
         const zip = typeof shippingAddressPayload.zip === 'string' ? shippingAddressPayload.zip.trim().slice(0, 20) : '';
-        if (!address || !city || !zip) {
+        const phone = normalizePhone(shippingAddressPayload.phone);
+        if (!address || !city || !zip || !phone) {
             throw new Error('INVALID_SHIPPING');
         }
 
@@ -129,6 +138,14 @@ export const createOrder = async (req: Request, res: Response) => {
                 [userId, orderId, -validatedPointsUsed, `Points redeemed on Order #${orderId}`]
             );
         }
+
+        await client.query(
+            `UPDATE users
+             SET phone = $1
+             WHERE id = $2
+               AND (phone IS NULL OR phone <> $1)`,
+            [phone, userId]
+        );
 
         await client.query('DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = $1)', [userId]);
 

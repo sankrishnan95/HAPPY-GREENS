@@ -181,7 +181,8 @@ const Checkout = () => {
                 shippingAddress: {
                     address: fullAddress,
                     city: formData.city,
-                    zip: formData.zip
+                    zip: formData.zip,
+                    phone: formData.phone,
                 },
                 paymentMethod: formData.paymentMethod,
                 paymentIntentId,
