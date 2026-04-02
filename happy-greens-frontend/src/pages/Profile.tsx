@@ -532,7 +532,7 @@ const Profile = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => handleSetDefaultAddress(address.id)}
-                                                className="rounded-lg border border-blue-200 px-3 py-2 text-left text-sm font-semibold text-blue-600 transition hover:bg-blue-50 hover:text-blue-700"
+                                                className="rounded-md border border-blue-200 px-2.5 py-1.5 text-left text-xs font-semibold text-blue-600 transition hover:bg-blue-50 hover:text-blue-700"
                                             >
                                                 Make Default
                                             </button>
@@ -540,14 +540,14 @@ const Profile = () => {
                                         <button
                                             type="button"
                                             onClick={() => openEditAddressForm(address)}
-                                            className="rounded-lg border border-gray-200 px-3 py-2 text-left text-sm font-semibold text-primary-600 transition hover:bg-gray-50 hover:text-primary-700"
+                                            className="rounded-md border border-gray-200 px-2.5 py-1.5 text-left text-xs font-semibold text-primary-600 transition hover:bg-gray-50 hover:text-primary-700"
                                         >
                                             Edit
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleDeleteAddress(address.id)}
-                                            className="rounded-lg border border-red-200 px-3 py-2 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:text-red-700"
+                                            className="rounded-md border border-red-200 px-2.5 py-1.5 text-left text-xs font-semibold text-red-600 transition hover:bg-red-50 hover:text-red-700"
                                         >
                                             Delete
                                         </button>

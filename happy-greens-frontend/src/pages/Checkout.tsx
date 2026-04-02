@@ -97,6 +97,7 @@ const Checkout = () => {
     const [hasActiveDraft, setHasActiveDraft] = useState(false);
     const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
     const [savedAddressesLoaded, setSavedAddressesLoaded] = useState(false);
+    const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<number | ''>('');
 
     const maxRedeemable = Math.min(loyaltyPoints, Math.floor(subtotal * 0.5));
     const discount = Math.min(pointsToUse, maxRedeemable);
@@ -157,6 +158,7 @@ const Checkout = () => {
 
                 const defaultAddress = addresses.find((item) => item.is_default);
                 if (defaultAddress && !hasActiveDraft && !defaultAddressApplied) {
+                    setSelectedSavedAddressId(defaultAddress.id);
                     setFormData((current) => ({
                         ...current,
                         name: current.name.trim() ? current.name : defaultAddress.full_name,
@@ -220,6 +222,7 @@ const Checkout = () => {
     };
 
     const applySavedAddress = (savedAddress: SavedAddress) => {
+        setSelectedSavedAddressId(savedAddress.id);
         setFormData((current) => ({
             ...current,
             name: savedAddress.full_name,
@@ -399,43 +402,52 @@ const Checkout = () => {
                                             </Link>
                                         </div>
                                         <div className="space-y-2">
-                                            {savedAddresses.map((savedAddress) => {
-                                                const isSelected =
-                                                    formData.address === savedAddress.address_line &&
-                                                    formData.phone === savedAddress.phone &&
-                                                    formData.zip === savedAddress.zip;
-
-                                                return (
-                                                    <button
-                                                        key={savedAddress.id}
-                                                        type="button"
-                                                        onClick={() => applySavedAddress(savedAddress)}
-                                                        className={`w-full rounded-xl border px-4 py-3 text-left transition ${
-                                                            isSelected
-                                                                ? 'border-green-300 bg-green-50'
-                                                                : 'border-gray-200 bg-white hover:border-green-200 hover:bg-green-50/50'
-                                                        }`}
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <p className="text-sm font-semibold text-gray-900">{savedAddress.label}</p>
-                                                            {savedAddress.is_default && (
-                                                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
-                                                                    Default
-                                                                </span>
-                                                            )}
+                                            <select
+                                                className="w-full min-h-[44px] rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                                value={selectedSavedAddressId}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    if (!value) return;
+                                                    const selected = savedAddresses.find((item) => item.id === Number(value));
+                                                    if (selected) {
+                                                        applySavedAddress(selected);
+                                                    }
+                                                }}
+                                            >
+                                                <option value="">Select a saved address</option>
+                                                {savedAddresses.map((savedAddress) => (
+                                                    <option key={savedAddress.id} value={savedAddress.id}>
+                                                        {savedAddress.label}{savedAddress.is_default ? ' (Default)' : ''} - {savedAddress.city}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {selectedSavedAddressId ? (
+                                                (() => {
+                                                    const selected = savedAddresses.find((item) => item.id === Number(selectedSavedAddressId));
+                                                    if (!selected) return null;
+                                                    return (
+                                                        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-left">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-sm font-semibold text-gray-900">{selected.label}</p>
+                                                                {selected.is_default && (
+                                                                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                                                                        Default
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="mt-1 text-sm font-medium text-gray-800">{selected.full_name}</p>
+                                                            <p className="mt-1 text-xs text-gray-600">
+                                                                {selected.address_line}
+                                                                {selected.locality ? `, ${selected.locality}` : ''}
+                                                                {selected.landmark ? `, ${selected.landmark}` : ''}
+                                                            </p>
+                                                            <p className="mt-1 text-xs text-gray-500">
+                                                                {[selected.city, selected.state, selected.zip].filter(Boolean).join(', ')} · +91 {selected.phone}
+                                                            </p>
                                                         </div>
-                                                        <p className="mt-1 text-sm font-medium text-gray-800">{savedAddress.full_name}</p>
-                                                        <p className="mt-1 text-xs text-gray-600">
-                                                            {savedAddress.address_line}
-                                                            {savedAddress.locality ? `, ${savedAddress.locality}` : ''}
-                                                            {savedAddress.landmark ? `, ${savedAddress.landmark}` : ''}
-                                                        </p>
-                                                        <p className="mt-1 text-xs text-gray-500">
-                                                            {[savedAddress.city, savedAddress.state, savedAddress.zip].filter(Boolean).join(', ')} · +91 {savedAddress.phone}
-                                                        </p>
-                                                    </button>
-                                                );
-                                            })}
+                                                    );
+                                                })()
+                                            ) : null}
                                         </div>
                                     </div>
                                 )}
