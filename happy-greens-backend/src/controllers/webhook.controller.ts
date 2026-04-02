@@ -2,6 +2,24 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { pool } from '../db';
 
+const parseWebhookPayload = (req: Request) => {
+    if (Buffer.isBuffer(req.body)) {
+        const raw = req.body.toString('utf-8').trim();
+        if (!raw) return {};
+        try {
+            return JSON.parse(raw);
+        } catch (_) {
+            return {};
+        }
+    }
+
+    if (req.body && typeof req.body === 'object') {
+        return req.body;
+    }
+
+    return {};
+};
+
 /**
  * Razorpay Webhook Handler
  * Verifies webhook signature and processes payment success
@@ -160,5 +178,50 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Razorpay webhook error:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const handleMsg91Webhook = async (req: Request, res: Response) => {
+    try {
+        const payload = parseWebhookPayload(req);
+        const combined = {
+            ...req.query,
+            ...payload,
+        } as Record<string, unknown>;
+
+        const requestId = String(
+            combined.request_id ??
+            combined.requestId ??
+            combined.req_id ??
+            ''
+        );
+        const mobile = String(
+            combined.mobile ??
+            combined.mobiles ??
+            combined.msisdn ??
+            ''
+        );
+        const status = String(
+            combined.status ??
+            combined.type ??
+            combined.delivery_status ??
+            combined.response ??
+            'unknown'
+        );
+        const description = String(
+            combined.description ??
+            combined.reason ??
+            combined.message ??
+            ''
+        );
+
+        console.log(
+            `[MSG91 Webhook] requestId=${requestId || 'n/a'} mobile=${mobile || 'n/a'} status=${status}${description ? ` reason=${description}` : ''}`
+        );
+
+        return res.status(200).json({ status: 'received' });
+    } catch (error) {
+        console.error('[MSG91 Webhook] Error handling webhook:', error);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 };

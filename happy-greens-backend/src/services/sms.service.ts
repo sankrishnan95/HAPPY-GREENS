@@ -45,7 +45,13 @@ export const sendSms = async (to: string, message: string, otp?: string) => {
                 throw new Error(rawResult || 'MSG91 rejected the request');
             }
 
-            console.log(`[SMS Service] OTP sent via MSG91 to ${formattedPhone}`);
+            let requestId = 'N/A';
+            try {
+                const parsed = JSON.parse(rawResult);
+                requestId = parsed.request_id || parsed.requestId || requestId;
+            } catch (_) { }
+
+            console.log(`[SMS Service] OTP sent via MSG91 to ${formattedPhone}. Request ID: ${requestId}`);
             return true;
         } catch (error: any) {
             console.error('[SMS Service] MSG91 Dispatch Error:', error.message);

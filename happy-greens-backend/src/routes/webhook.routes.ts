@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { handleRazorpayWebhook } from '../controllers/webhook.controller';
+import { handleMsg91Webhook, handleRazorpayWebhook } from '../controllers/webhook.controller';
 
 const router = Router();
 
@@ -26,5 +26,7 @@ const router = Router();
  * Currency: INR only
  */
 router.post('/razorpay', handleRazorpayWebhook);
+router.get('/msg91', handleMsg91Webhook);
+router.post('/msg91', handleMsg91Webhook);
 
 export default router;
