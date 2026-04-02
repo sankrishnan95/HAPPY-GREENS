@@ -362,7 +362,6 @@ const Profile = () => {
                 <div className="mb-4 flex items-center justify-between">
                     <div>
                         <h2 className="text-xl font-bold">Saved Addresses</h2>
-                        <p className="mt-1 text-sm text-gray-500">Save multiple delivery addresses and keep one as default for checkout.</p>
                     </div>
                     {!addressFormOpen && (
                         <button
@@ -506,12 +505,12 @@ const Profile = () => {
                         <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary-600"></div>
                     </div>
                 ) : addresses.length === 0 ? (
-                    <p className="text-gray-600">No saved addresses yet. Add one so checkout can autofill it for you.</p>
+                    <div />
                 ) : (
                     <div className="space-y-3">
                         {addresses.map((address) => (
                             <div key={address.id} className="rounded-xl border border-gray-100 p-4">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                             <p className="font-semibold text-gray-900">{address.label}</p>
@@ -528,12 +527,12 @@ const Profile = () => {
                                         <p className="text-sm text-gray-600">{[address.city, address.state, address.zip].filter(Boolean).join(', ')}</p>
                                         <p className="text-sm text-gray-600">+91 {address.phone}</p>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[9rem]">
                                         {!address.is_default && (
                                             <button
                                                 type="button"
                                                 onClick={() => handleSetDefaultAddress(address.id)}
-                                                className="text-sm font-semibold text-green-600 hover:text-green-700"
+                                                className="rounded-lg border border-blue-200 px-3 py-2 text-left text-sm font-semibold text-blue-600 transition hover:bg-blue-50 hover:text-blue-700"
                                             >
                                                 Make Default
                                             </button>
@@ -541,14 +540,14 @@ const Profile = () => {
                                         <button
                                             type="button"
                                             onClick={() => openEditAddressForm(address)}
-                                            className="text-sm font-semibold text-primary-600 hover:text-primary-700"
+                                            className="rounded-lg border border-gray-200 px-3 py-2 text-left text-sm font-semibold text-primary-600 transition hover:bg-gray-50 hover:text-primary-700"
                                         >
                                             Edit
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleDeleteAddress(address.id)}
-                                            className="text-sm font-semibold text-red-600 hover:text-red-700"
+                                            className="rounded-lg border border-red-200 px-3 py-2 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 hover:text-red-700"
                                         >
                                             Delete
                                         </button>
