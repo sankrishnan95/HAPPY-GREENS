@@ -267,6 +267,9 @@ export default function OrderDetails() {
                                 <div>
                                     <p className="text-sm font-bold text-gray-900">{order.customer_name}</p>
                                     <p className="text-xs text-gray-500">{order.customer_email}</p>
+                                    {(order.customer_phone || order.shipping_address?.phone) && (
+                                        <p className="text-xs text-gray-500">{order.customer_phone || order.shipping_address?.phone}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -34,6 +34,9 @@ const loadRazorpayScript = () =>
 
 type Step = 'address' | 'payment';
 
+const normalizeIndianPhone = (value: string) => value.replace(/\D/g, '').slice(-10);
+const normalizePincode = (value: string) => value.replace(/\D/g, '').slice(0, 6);
+
 const Checkout = () => {
     const navigate = useNavigate();
     const { cart, user, clearCart } = useStore();
@@ -87,6 +90,17 @@ const Checkout = () => {
             toast.error('Please fill in all required fields');
             return;
         }
+
+        if (!/^\d{10}$/.test(formData.phone)) {
+            toast.error('Phone number must be a valid 10-digit mobile number');
+            return;
+        }
+
+        if (!/^\d{6}$/.test(formData.zip)) {
+            toast.error('Pincode must be a valid 6-digit code');
+            return;
+        }
+
         setStep('payment');
     };
 
@@ -179,6 +193,7 @@ const Checkout = () => {
                     quantity: item.quantity,
                 })),
                 shippingAddress: {
+                    name: formData.name,
                     address: fullAddress,
                     city: formData.city,
                     zip: formData.zip,
@@ -267,11 +282,15 @@ const Checkout = () => {
                                             <input
                                                 type="tel"
                                                 required
+                                                inputMode="numeric"
+                                                pattern="[0-9]{10}"
+                                                maxLength={10}
                                                 placeholder="+91 Enter mobile number"
                                                 className="w-full min-h-[44px] rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                                 value={formData.phone}
-                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                onChange={(e) => setFormData({ ...formData, phone: normalizeIndianPhone(e.target.value) })}
                                             />
+                                            <p className="mt-1 text-xs text-gray-500">Enter a valid 10-digit mobile number.</p>
                                         </div>
                                     </div>
 
@@ -341,11 +360,15 @@ const Checkout = () => {
                                             <input
                                                 type="text"
                                                 required
+                                                inputMode="numeric"
+                                                pattern="[0-9]{6}"
+                                                maxLength={6}
                                                 placeholder="Enter pin code"
                                                 className="w-full min-h-[44px] rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                                 value={formData.zip}
-                                                onChange={(e) => setFormData({ ...formData, zip: e.target.value })}
+                                                onChange={(e) => setFormData({ ...formData, zip: normalizePincode(e.target.value) })}
                                             />
+                                            <p className="mt-1 text-xs text-gray-500">Pincode must be 6 digits.</p>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">

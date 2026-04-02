@@ -56,11 +56,12 @@ export const createOrder = async (req: Request, res: Response) => {
     try {
         await client.query('BEGIN');
         const shippingAddressPayload = shippingAddress && typeof shippingAddress === 'object' ? shippingAddress : {};
+        const name = typeof shippingAddressPayload.name === 'string' ? shippingAddressPayload.name.trim().slice(0, 150) : '';
         const address = typeof shippingAddressPayload.address === 'string' ? shippingAddressPayload.address.trim().slice(0, 255) : '';
         const city = typeof shippingAddressPayload.city === 'string' ? shippingAddressPayload.city.trim().slice(0, 100) : '';
         const zip = typeof shippingAddressPayload.zip === 'string' ? shippingAddressPayload.zip.trim().slice(0, 20) : '';
         const phone = normalizePhone(shippingAddressPayload.phone);
-        if (!address || !city || !zip || !phone) {
+        if (!name || !address || !city || !zip || !/^\d{6}$/.test(zip) || !phone) {
             throw new Error('INVALID_SHIPPING');
         }
 
@@ -82,7 +83,7 @@ export const createOrder = async (req: Request, res: Response) => {
                (user_id, total_amount, status, payment_method, payment_intent_id, shipping_address, points_used, client_order_token)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING id`,
-            [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify({ address, city, zip }), validatedPointsUsed, sanitizedClientOrderToken]
+            [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify({ name, address, city, zip, phone }), validatedPointsUsed, sanitizedClientOrderToken]
         );
         const orderId = orderRes.rows[0].id;
 
@@ -209,7 +210,10 @@ export const getOrderById = async (req: Request, res: Response) => {
 
     try {
         const orderResult = await pool.query(
-            'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
+            `SELECT o.*, u.phone as customer_phone
+             FROM orders o
+             LEFT JOIN users u ON o.user_id = u.id
+             WHERE o.id = $1 AND o.user_id = $2`,
             [id, userId]
         );
 

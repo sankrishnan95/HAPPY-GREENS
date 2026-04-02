@@ -147,10 +147,10 @@ export default function OrderDetail() {
                     </h2>
                     <address className="text-sm text-gray-700 not-italic leading-relaxed space-y-0.5">
                         {order.shipping_address.name && <p className="font-semibold">{order.shipping_address.name}</p>}
-                        {order.shipping_address.phone && <p>{order.shipping_address.phone}</p>}
-                        {order.shipping_address.street && <p>{order.shipping_address.street}</p>}
-                        {(order.shipping_address.city || order.shipping_address.state) && (
-                            <p>{[order.shipping_address.city, order.shipping_address.state, order.shipping_address.zipCode].filter(Boolean).join(', ')}</p>
+                        {(order.shipping_address.phone || order.customer_phone) && <p>{order.shipping_address.phone || order.customer_phone}</p>}
+                        {order.shipping_address.address && <p>{order.shipping_address.address}</p>}
+                        {(order.shipping_address.city || order.shipping_address.zip) && (
+                            <p>{[order.shipping_address.city, order.shipping_address.zip].filter(Boolean).join(', ')}</p>
                         )}
                     </address>
                 </div>
