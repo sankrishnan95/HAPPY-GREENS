@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { createOrder } from '../services/order.service';
 import { createRazorpayOrder, verifyRazorpayPayment } from '../services/payment.service';
 import { getLoyaltyInfo } from '../services/loyalty.service';
-import { getProfileAddresses } from '../services/auth.service';
+import { getProfileAddresses, type SavedAddress } from '../services/auth.service';
 import Button from '../components/Button';
 import { Star, Gift, ShoppingCart, MapPin, CreditCard, ChevronRight, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -53,6 +53,17 @@ type CheckoutDraft = {
     step: Step;
 };
 
+const hasMeaningfulDraft = (draft: Partial<CheckoutDraft>) =>
+    Boolean(
+        (typeof draft.phone === 'string' && draft.phone.trim()) ||
+        (typeof draft.address === 'string' && draft.address.trim()) ||
+        (typeof draft.locality === 'string' && draft.locality.trim()) ||
+        (typeof draft.landmark === 'string' && draft.landmark.trim()) ||
+        (typeof draft.city === 'string' && draft.city.trim()) ||
+        (typeof draft.zip === 'string' && draft.zip.trim()) ||
+        (typeof draft.state === 'string' && draft.state.trim())
+    );
+
 const Checkout = () => {
     const navigate = useNavigate();
     const { cart, user, clearCart } = useStore();
@@ -83,6 +94,9 @@ const Checkout = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [draftRestoreComplete, setDraftRestoreComplete] = useState(false);
     const [defaultAddressApplied, setDefaultAddressApplied] = useState(false);
+    const [hasActiveDraft, setHasActiveDraft] = useState(false);
+    const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+    const [savedAddressesLoaded, setSavedAddressesLoaded] = useState(false);
 
     const maxRedeemable = Math.min(loyaltyPoints, Math.floor(subtotal * 0.5));
     const discount = Math.min(pointsToUse, maxRedeemable);
@@ -102,6 +116,7 @@ const Checkout = () => {
             const rawDraft = localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
             if (rawDraft) {
                 const draft = JSON.parse(rawDraft) as Partial<CheckoutDraft>;
+                setHasActiveDraft(hasMeaningfulDraft(draft));
                 setFormData((current) => ({
                     ...current,
                     name: typeof draft.name === 'string' && draft.name.trim().length > 0
@@ -121,45 +136,49 @@ const Checkout = () => {
                 if (draft.step === 'address' || draft.step === 'payment') {
                     setStep(draft.step);
                 }
+            } else {
+                setHasActiveDraft(false);
             }
         } catch (error) {
             console.warn('Failed to restore checkout draft', error);
+            setHasActiveDraft(false);
         }
         setDraftRestoreComplete(true);
     }, [user?.email, user?.full_name]);
 
     useEffect(() => {
-        if (!user || !draftRestoreComplete || defaultAddressApplied) return;
+        if (!user || !draftRestoreComplete || savedAddressesLoaded) return;
 
-        const fetchDefaultAddress = async () => {
+        const fetchSavedAddresses = async () => {
             try {
                 const data = await getProfileAddresses();
-                const defaultAddress = (data.addresses || []).find((item) => item.is_default);
-                if (!defaultAddress) {
-                    setDefaultAddressApplied(true);
-                    return;
-                }
+                const addresses = data.addresses || [];
+                setSavedAddresses(addresses);
 
-                setFormData((current) => ({
-                    ...current,
-                    name: current.name.trim() ? current.name : defaultAddress.full_name,
-                    phone: current.phone.trim() ? current.phone : defaultAddress.phone,
-                    address: current.address.trim() ? current.address : defaultAddress.address_line,
-                    locality: current.locality.trim() ? current.locality : (defaultAddress.locality || ''),
-                    landmark: current.landmark.trim() ? current.landmark : (defaultAddress.landmark || ''),
-                    city: current.city.trim() ? current.city : defaultAddress.city,
-                    zip: current.zip.trim() ? current.zip : defaultAddress.zip,
-                    state: current.state.trim() ? current.state : (defaultAddress.state || ''),
-                }));
+                const defaultAddress = addresses.find((item) => item.is_default);
+                if (defaultAddress && !hasActiveDraft && !defaultAddressApplied) {
+                    setFormData((current) => ({
+                        ...current,
+                        name: current.name.trim() ? current.name : defaultAddress.full_name,
+                        phone: current.phone.trim() ? current.phone : defaultAddress.phone,
+                        address: current.address.trim() ? current.address : defaultAddress.address_line,
+                        locality: current.locality.trim() ? current.locality : (defaultAddress.locality || ''),
+                        landmark: current.landmark.trim() ? current.landmark : (defaultAddress.landmark || ''),
+                        city: current.city.trim() ? current.city : defaultAddress.city,
+                        zip: current.zip.trim() ? current.zip : defaultAddress.zip,
+                        state: current.state.trim() ? current.state : (defaultAddress.state || ''),
+                    }));
+                    setDefaultAddressApplied(true);
+                }
             } catch (error) {
-                console.error('Failed to load default address for checkout', error);
+                console.error('Failed to load saved addresses for checkout', error);
             } finally {
-                setDefaultAddressApplied(true);
+                setSavedAddressesLoaded(true);
             }
         };
 
-        fetchDefaultAddress();
-    }, [user, defaultAddressApplied]);
+        fetchSavedAddresses();
+    }, [user, draftRestoreComplete, savedAddressesLoaded, hasActiveDraft, defaultAddressApplied]);
 
     useEffect(() => {
         const draft: CheckoutDraft = {
@@ -198,6 +217,21 @@ const Checkout = () => {
         }
 
         setStep('payment');
+    };
+
+    const applySavedAddress = (savedAddress: SavedAddress) => {
+        setFormData((current) => ({
+            ...current,
+            name: savedAddress.full_name,
+            phone: savedAddress.phone,
+            address: savedAddress.address_line,
+            locality: savedAddress.locality || '',
+            landmark: savedAddress.landmark || '',
+            city: savedAddress.city,
+            zip: savedAddress.zip,
+            state: savedAddress.state || '',
+        }));
+        setHasActiveDraft(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -355,6 +389,56 @@ const Checkout = () => {
                         {step === 'address' && (
                             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
                                 <h2 className="text-lg font-bold text-gray-900 mb-5">Shipping address</h2>
+
+                                {savedAddresses.length > 0 && (
+                                    <div className="mb-5">
+                                        <div className="mb-2 flex items-center justify-between gap-3">
+                                            <h3 className="text-sm font-semibold text-gray-900">Saved addresses</h3>
+                                            <Link to="/profile" className="text-xs font-semibold text-green-600 hover:text-green-700">
+                                                Manage
+                                            </Link>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {savedAddresses.map((savedAddress) => {
+                                                const isSelected =
+                                                    formData.address === savedAddress.address_line &&
+                                                    formData.phone === savedAddress.phone &&
+                                                    formData.zip === savedAddress.zip;
+
+                                                return (
+                                                    <button
+                                                        key={savedAddress.id}
+                                                        type="button"
+                                                        onClick={() => applySavedAddress(savedAddress)}
+                                                        className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                                                            isSelected
+                                                                ? 'border-green-300 bg-green-50'
+                                                                : 'border-gray-200 bg-white hover:border-green-200 hover:bg-green-50/50'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="text-sm font-semibold text-gray-900">{savedAddress.label}</p>
+                                                            {savedAddress.is_default && (
+                                                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                                                                    Default
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="mt-1 text-sm font-medium text-gray-800">{savedAddress.full_name}</p>
+                                                        <p className="mt-1 text-xs text-gray-600">
+                                                            {savedAddress.address_line}
+                                                            {savedAddress.locality ? `, ${savedAddress.locality}` : ''}
+                                                            {savedAddress.landmark ? `, ${savedAddress.landmark}` : ''}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-gray-500">
+                                                            {[savedAddress.city, savedAddress.state, savedAddress.zip].filter(Boolean).join(', ')} · +91 {savedAddress.phone}
+                                                        </p>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="space-y-4">
                                     {/* Name & Phone */}
