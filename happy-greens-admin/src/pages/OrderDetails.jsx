@@ -56,6 +56,22 @@ export default function OrderDetails() {
         }
     };
 
+    const getLineTotal = (item) => Number(item.price_at_purchase ?? item.price ?? 0);
+
+    const getUnitPrice = (item) => {
+        const normalizedUnit = String(item?.unit || '').toUpperCase();
+        const quantity = Number(item?.quantity || 0);
+        const lineTotal = getLineTotal(item);
+
+        if (!Number.isFinite(quantity) || quantity <= 0) return lineTotal;
+
+        if (normalizedUnit === 'GRAM') {
+            return lineTotal / (quantity / 1000);
+        }
+
+        return lineTotal / quantity;
+    };
+
     const fetchOrderDetails = async () => {
         try {
             setLoading(true);
@@ -186,8 +202,8 @@ export default function OrderDetails() {
                                         <p className="text-xs text-gray-500 mt-0.5">Quantity: {formatQuantity(item.quantity, item.unit)}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-bold text-gray-900">{RUPEE}{(Number(item.price) * item.quantity).toFixed(2)}</p>
-                                        <p className="text-xs text-gray-500 mt-0.5">{RUPEE}{Number(item.price).toFixed(2)}/{formatPriceUnitLabel(item.unit)}</p>
+                                        <p className="text-sm font-bold text-gray-900">{RUPEE}{getLineTotal(item).toFixed(2)}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">{RUPEE}{getUnitPrice(item).toFixed(2)}/{formatPriceUnitLabel(item.unit)}</p>
                                     </div>
                                 </div>
                             ))}
