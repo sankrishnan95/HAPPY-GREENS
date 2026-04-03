@@ -6,11 +6,12 @@ import { createRazorpayOrder, verifyRazorpayPayment } from '../services/payment.
 import { getLoyaltyInfo } from '../services/loyalty.service';
 import { getProfileAddresses, type SavedAddress } from '../services/auth.service';
 import Button from '../components/Button';
-import { Star, Gift, ShoppingCart, MapPin, CreditCard, ChevronRight, Truck } from 'lucide-react';
+import { Star, Gift, ShoppingCart, MapPin, CreditCard, ChevronRight, Truck, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { trackEvent } from '../services/analytics.service';
 import { calculateLineTotal, formatQuantity } from '../utils/productUnits';
 import { normalizeImageUrl } from '../utils/image';
+import { isPondicherryPincode, SERVICE_AREA_LABEL, SERVICE_STATE } from '../config/pondicherryPincodes';
 
 declare global {
     interface Window {
@@ -83,9 +84,9 @@ const Checkout = () => {
         address: '',
         locality: '',
         landmark: '',
-        city: '',
+        city: SERVICE_AREA_LABEL,
         zip: '',
-        state: '',
+        state: SERVICE_STATE,
         paymentMethod: 'cod'
     });
 
@@ -215,6 +216,11 @@ const Checkout = () => {
 
         if (!/^\d{6}$/.test(formData.zip)) {
             toast.error('Pincode must be a valid 6-digit code');
+            return;
+        }
+
+        if (!isPondicherryPincode(formData.zip)) {
+            toast.error(`Sorry, we currently deliver only in ${SERVICE_AREA_LABEL}. Please enter a valid ${SERVICE_AREA_LABEL} pincode.`);
             return;
         }
 
@@ -391,7 +397,11 @@ const Checkout = () => {
                         {/* Step 1: Address */}
                         {step === 'address' && (
                             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
-                                <h2 className="text-lg font-bold text-gray-900 mb-5">Shipping address</h2>
+                                <h2 className="text-lg font-bold text-gray-900 mb-3">Shipping address</h2>
+                                <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+                                    <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                                    <p className="text-sm text-green-800">We currently deliver only in <strong>{SERVICE_AREA_LABEL}</strong>.</p>
+                                </div>
 
                                 {savedAddresses.length > 0 && (
                                     <div className="mb-5">
@@ -559,12 +569,12 @@ const Checkout = () => {
                                                 inputMode="numeric"
                                                 pattern="[0-9]{6}"
                                                 maxLength={6}
-                                                placeholder="Enter pin code"
+                                                placeholder="Enter Pondicherry pin code"
                                                 className="w-full min-h-[44px] rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                                 value={formData.zip}
                                                 onChange={(e) => setFormData({ ...formData, zip: normalizePincode(e.target.value) })}
                                             />
-                                            <p className="mt-1 text-xs text-gray-500">Pincode must be 6 digits.</p>
+                                            <p className="mt-1 text-xs text-gray-500">E.g. 605001, 605007, etc.</p>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -573,10 +583,9 @@ const Checkout = () => {
                                             <input
                                                 type="text"
                                                 required
-                                                placeholder="Enter city"
-                                                className="w-full min-h-[44px] rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                                readOnly
+                                                className="w-full min-h-[44px] rounded-lg border border-gray-100 bg-gray-50 px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed"
                                                 value={formData.city}
-                                                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                                             />
                                         </div>
                                     </div>
@@ -586,32 +595,12 @@ const Checkout = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             State
                                         </label>
-                                        <select
-                                            className="w-full min-h-[44px] rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 bg-white"
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            className="w-full min-h-[44px] rounded-lg border border-gray-100 bg-gray-50 px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed"
                                             value={formData.state}
-                                            onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                                        >
-                                            <option value="">Select state</option>
-                                            <option value="Andhra Pradesh">Andhra Pradesh</option>
-                                            <option value="Bihar">Bihar</option>
-                                            <option value="Delhi">Delhi</option>
-                                            <option value="Goa">Goa</option>
-                                            <option value="Gujarat">Gujarat</option>
-                                            <option value="Haryana">Haryana</option>
-                                            <option value="Himachal Pradesh">Himachal Pradesh</option>
-                                            <option value="Jharkhand">Jharkhand</option>
-                                            <option value="Karnataka">Karnataka</option>
-                                            <option value="Kerala">Kerala</option>
-                                            <option value="Madhya Pradesh">Madhya Pradesh</option>
-                                            <option value="Maharashtra">Maharashtra</option>
-                                            <option value="Odisha">Odisha</option>
-                                            <option value="Punjab">Punjab</option>
-                                            <option value="Rajasthan">Rajasthan</option>
-                                            <option value="Tamil Nadu">Tamil Nadu</option>
-                                            <option value="Telangana">Telangana</option>
-                                            <option value="Uttar Pradesh">Uttar Pradesh</option>
-                                            <option value="West Bengal">West Bengal</option>
-                                        </select>
+                                        />
                                     </div>
                                 </div>
                             </div>

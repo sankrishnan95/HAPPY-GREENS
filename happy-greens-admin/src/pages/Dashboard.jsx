@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, DollarSign, Package, ShoppingBag, Users } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -27,6 +27,45 @@ const quickActions = [
     description: 'Open analytics for revenue, products, customers, and traffic.',
     icon: DollarSign,
     tone: 'from-sky-500 to-indigo-500',
+  },
+];
+
+const metricCards = [
+  {
+    to: '/analytics/sales',
+    title: "Today's Revenue",
+    statKey: 'revenue',
+    icon: DollarSign,
+    color: 'primary',
+    trend: 'Total revenue collected today',
+    format: (value) => formatCurrency(value),
+  },
+  {
+    to: '/orders',
+    title: "Today's Orders",
+    statKey: 'orders',
+    icon: ShoppingBag,
+    color: 'secondary',
+    trend: 'Orders placed since midnight',
+    format: (value) => value,
+  },
+  {
+    to: '/customers',
+    title: 'Total Customers',
+    statKey: 'customers',
+    icon: Users,
+    color: 'info',
+    trend: 'Registered customers in the store',
+    format: (value) => value,
+  },
+  {
+    to: '/products',
+    title: 'Low Stock Items',
+    statKey: 'lowStock',
+    icon: AlertTriangle,
+    color: 'warning',
+    trend: 'Products that need replenishment',
+    format: (value) => value,
   },
 ];
 
@@ -105,40 +144,23 @@ export default function Dashboard() {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Monitor revenue, order flow, customers, and inventory health from one place.</p>
           </div>
           <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 ring-1 ring-emerald-100">
-            Updated with today&apos;s revenue, orders, and stock pressure.
+            Updated with today's revenue, orders, and stock pressure.
           </div>
         </div>
       </section>
 
       <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <StatsCard
-          title="Today's Revenue"
-          value={formatCurrency(stats.revenue)}
-          icon={DollarSign}
-          color="primary"
-          trend="Total revenue collected today"
-        />
-        <StatsCard
-          title="Today's Orders"
-          value={stats.orders}
-          icon={ShoppingBag}
-          color="secondary"
-          trend="Orders placed since midnight"
-        />
-        <StatsCard
-          title="Total Customers"
-          value={stats.customers}
-          icon={Users}
-          color="info"
-          trend="Registered customers in the store"
-        />
-        <StatsCard
-          title="Low Stock Items"
-          value={stats.lowStock}
-          icon={AlertTriangle}
-          color="warning"
-          trend="Products that need replenishment"
-        />
+        {metricCards.map((card) => (
+          <Link key={card.title} to={card.to} className="block">
+            <StatsCard
+              title={card.title}
+              value={card.format(stats[card.statKey])}
+              icon={card.icon}
+              color={card.color}
+              trend={card.trend}
+            />
+          </Link>
+        ))}
       </section>
 
       <section className="rounded-[18px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
@@ -210,7 +232,7 @@ export default function Dashboard() {
 
           <div className="space-y-4">
             {activityCards.map((item) => (
-              <div key={item.status} className="rounded-2xl bg-slate-50 px-4 py-4 ring-1 ring-slate-100">
+              <Link key={item.status} to="/orders" className="block rounded-2xl bg-slate-50 px-4 py-4 ring-1 ring-slate-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-50/60 hover:ring-emerald-100">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold capitalize text-slate-900">{item.status}</p>
@@ -224,7 +246,7 @@ export default function Dashboard() {
                 <div className="mt-3 h-2 rounded-full bg-slate-200">
                   <div className="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-400" style={{ width: `${Math.max(Number(item.share), 8)}%` }} />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -242,16 +264,16 @@ export default function Dashboard() {
 
           <div className="space-y-3">
             {recentOrders.map((order) => (
-              <div key={order.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 px-4 py-4 transition-colors duration-200 hover:border-emerald-200 hover:bg-emerald-50/40 sm:flex-row sm:items-center sm:justify-between">
+              <Link key={order.id} to={`/orders/${order.id}`} className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 px-4 py-4 transition-colors duration-200 hover:border-emerald-200 hover:bg-emerald-50/40 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">Order #{order.id}</p>
-                  <p className="mt-1 text-sm text-slate-500">{order.customer_name || order.customer_email || 'Customer'} � {new Date(order.created_at).toLocaleDateString('en-IN')}</p>
+                  <p className="mt-1 text-sm text-slate-500">{order.customer_name || order.customer_email || 'Customer'} • {new Date(order.created_at).toLocaleDateString('en-IN')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">{order.status}</span>
                   <span className="text-sm font-bold text-slate-900">{formatCurrency(order.total_amount)}</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -263,18 +285,18 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-2xl bg-emerald-50 px-4 py-4 ring-1 ring-emerald-100">
+            <Link to="/analytics/sales" className="block rounded-2xl bg-emerald-50 px-4 py-4 ring-1 ring-emerald-100 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,185,129,0.08)]">
               <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Revenue</p>
-              <p className="mt-2 text-sm leading-6 text-emerald-900">Today&apos;s revenue is {formatCurrency(stats.revenue)} with {stats.orders} orders already placed.</p>
-            </div>
-            <div className="rounded-2xl bg-amber-50 px-4 py-4 ring-1 ring-amber-100">
+              <p className="mt-2 text-sm leading-6 text-emerald-900">Today's revenue is {formatCurrency(stats.revenue)} with {stats.orders} orders already placed.</p>
+            </Link>
+            <Link to="/products" className="block rounded-2xl bg-amber-50 px-4 py-4 ring-1 ring-amber-100 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(245,158,11,0.08)]">
               <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-amber-700">Inventory</p>
               <p className="mt-2 text-sm leading-6 text-amber-900">{stats.lowStock} items are low on stock and may need replenishment.</p>
-            </div>
-            <div className="rounded-2xl bg-sky-50 px-4 py-4 ring-1 ring-sky-100">
+            </Link>
+            <Link to="/customers" className="block rounded-2xl bg-sky-50 px-4 py-4 ring-1 ring-sky-100 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(14,165,233,0.08)]">
               <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-sky-700">Customers</p>
               <p className="mt-2 text-sm leading-6 text-sky-900">Customer base stands at {stats.customers}, giving a good view of repeat demand potential.</p>
-            </div>
+            </Link>
           </div>
         </div>
       </section>

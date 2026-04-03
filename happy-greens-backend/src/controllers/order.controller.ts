@@ -3,6 +3,7 @@ import { pool } from '../db';
 import { calculateOrderTotals } from '../services/order-pricing.service';
 import { createAdminNotifications, createUserNotification } from '../services/notification.service';
 import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
+import { isPondicherryPincode } from '../config/pondicherry-pincodes';
 
 const CUSTOMER_CANCELLABLE_STATUSES = new Set(['pending', 'placed', 'accepted', 'paid']);
 
@@ -73,6 +74,10 @@ export const createOrder = async (req: Request, res: Response) => {
         const phone = normalizePhone(shippingAddressPayload.phone);
         if (!name || !address || !city || !zip || !/^\d{6}$/.test(zip) || !phone) {
             throw new Error('INVALID_SHIPPING');
+        }
+
+        if (!isPondicherryPincode(zip)) {
+            throw new Error('PINCODE_NOT_SERVICEABLE');
         }
 
         if (paymentMethod !== 'cod' && paymentMethod !== 'razorpay') {
@@ -203,6 +208,9 @@ export const createOrder = async (req: Request, res: Response) => {
         }
         if (error?.message === 'INVALID_PAYMENT_METHOD') {
             return res.status(400).json({ message: 'Invalid payment method' });
+        }
+        if (error?.message === 'PINCODE_NOT_SERVICEABLE') {
+            return res.status(400).json({ message: 'Sorry, we currently deliver only in Pondicherry. Please use a valid Pondicherry pincode.' });
         }
         if (error?.message === 'INVALID_ITEMS' || error?.message === 'INVALID_PRODUCT') {
             return res.status(400).json({ message: 'Invalid order items' });

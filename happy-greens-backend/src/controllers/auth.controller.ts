@@ -7,6 +7,7 @@ import { sendEmail } from '../services/email.service';
 import { sendSms } from '../services/sms.service';
 import { OAuth2Client } from 'google-auth-library';
 import { isFirebaseAdminConfigured, verifyFirebaseIdToken } from '../services/firebase-admin.service';
+import { isPondicherryPincode } from '../config/pondicherry-pincodes';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
@@ -441,6 +442,10 @@ export const createProfileAddress = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Please provide a valid address, phone number, city, and 6-digit pincode' });
     }
 
+    if (!isPondicherryPincode(address.zip)) {
+        return res.status(400).json({ message: 'Sorry, we currently deliver only in Pondicherry. Please use a valid Pondicherry pincode.' });
+    }
+
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -502,6 +507,10 @@ export const updateProfileAddress = async (req: Request, res: Response) => {
     const address = normalizeAddressInput(req.body);
     if (!address.full_name || !address.phone || !address.address_line || !address.city || !/^\d{6}$/.test(address.zip)) {
         return res.status(400).json({ message: 'Please provide a valid address, phone number, city, and 6-digit pincode' });
+    }
+
+    if (!isPondicherryPincode(address.zip)) {
+        return res.status(400).json({ message: 'Sorry, we currently deliver only in Pondicherry. Please use a valid Pondicherry pincode.' });
     }
 
     const client = await pool.connect();
