@@ -106,9 +106,10 @@ const NotificationBell = () => {
 
             {open ? (
                 <div className="absolute right-0 top-[calc(100%+0.65rem)] z-[80] w-[min(92vw,24rem)] overflow-hidden rounded-[1.5rem] border border-[#e4ecda] bg-white shadow-[0_18px_42px_rgba(15,23,42,0.16)]">
-                    <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-4 py-3.5">
                         <div>
-                            <p className="text-sm font-bold text-slate-900">Notifications</p>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Inbox</p>
+                            <p className="mt-1 text-base font-bold text-slate-900">Notifications</p>
                             <p className="text-xs text-slate-500">{unreadCount} unread</p>
                         </div>
                         <button
@@ -138,8 +139,8 @@ const NotificationBell = () => {
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-slate-900">{notification.title}</p>
-                                            <p className="mt-1 text-sm text-slate-600">{notification.message}</p>
+                                            <p className="text-[13px] font-semibold text-slate-800">{notification.title}</p>
+                                            <p className="mt-1 text-sm leading-5 text-slate-600">{notification.message}</p>
                                         </div>
                                         {!notification.is_read ? <span className="mt-1 h-2.5 w-2.5 rounded-full bg-green-600" /> : null}
                                     </div>
