@@ -127,39 +127,44 @@ const AuthRedirectHandler = () => {
     return null;
 };
 
-function App() {
+const authPaths = new Set(['/login', '/register', '/forgot-password', '/reset-password']);
+
+function AppLayout() {
+    const location = useLocation();
+    const isAuthPage = authPaths.has(location.pathname);
+
     return (
-        <Router>
-            <BackendReadinessGate>
-                <PageTracker />
-                <AuthRedirectHandler />
-                <div className="min-h-screen flex flex-col overflow-x-hidden">
-                    <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-                    <Navbar />
-                    <main className="page-shell flex-grow w-full">
-                        <Suspense fallback={<PageFallback />}>
-                            <Routes>
-                                <Route path="/" element={<Home />} />
-                                <Route path="/shop" element={<Shop />} />
-                                <Route path="/product/:id" element={<ProductDetail />} />
-                                <Route path="/cart" element={<Cart />} />
-                                <Route path="/checkout" element={<Checkout />} />
-                                <Route path="/login" element={<Login />} />
-                                <Route path="/register" element={<Register />} />
-                                <Route path="/forgot-password" element={<ForgotPassword />} />
-                                <Route path="/reset-password" element={<ResetPassword />} />
-                                <Route path="/admin" element={<AdminDashboard />} />
-                                <Route path="/profile" element={<Profile />} />
-                                <Route path="/orders" element={<OrdersList />} />
-                                <Route path="/orders/:id" element={<OrderDetail />} />
-                                <Route path="/rewards" element={<Rewards />} />
-                                <Route path="/wishlist" element={<Wishlist />} />
-                                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                                <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-                                <Route path="/refund-cancellation-policy" element={<RefundCancellationPolicy />} />
-                            </Routes>
-                        </Suspense>
-                    </main>
+        <>
+            <PageTracker />
+            <AuthRedirectHandler />
+            <div className="min-h-screen flex flex-col overflow-x-hidden">
+                <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+                {!isAuthPage && <Navbar />}
+                <main className={isAuthPage ? 'flex-grow w-full' : 'page-shell flex-grow w-full'}>
+                    <Suspense fallback={<PageFallback />}>
+                        <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/shop" element={<Shop />} />
+                            <Route path="/product/:id" element={<ProductDetail />} />
+                            <Route path="/cart" element={<Cart />} />
+                            <Route path="/checkout" element={<Checkout />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route path="/reset-password" element={<ResetPassword />} />
+                            <Route path="/admin" element={<AdminDashboard />} />
+                            <Route path="/profile" element={<Profile />} />
+                            <Route path="/orders" element={<OrdersList />} />
+                            <Route path="/orders/:id" element={<OrderDetail />} />
+                            <Route path="/rewards" element={<Rewards />} />
+                            <Route path="/wishlist" element={<Wishlist />} />
+                            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+                            <Route path="/refund-cancellation-policy" element={<RefundCancellationPolicy />} />
+                        </Routes>
+                    </Suspense>
+                </main>
+                    {!isAuthPage && (
                     <footer className="bg-gray-800 px-4 py-8 text-white sm:px-6 sm:py-10">
                         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 md:flex-row md:items-start text-center md:text-left">
                             <div className="flex flex-col items-center md:items-start gap-4 max-w-sm">
@@ -193,8 +198,18 @@ function App() {
                             </div>
                         </div>
                     </footer>
-                    <ChatbotWidget />
+                    )}
+                    {!isAuthPage && <ChatbotWidget />}
                 </div>
+        </>
+    );
+}
+
+function App() {
+    return (
+        <Router>
+            <BackendReadinessGate>
+                <AppLayout />
             </BackendReadinessGate>
         </Router>
     );
