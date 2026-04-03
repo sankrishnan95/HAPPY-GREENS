@@ -39,6 +39,10 @@ type Step = 'address' | 'payment';
 const normalizeIndianPhone = (value: string) => value.replace(/\D/g, '').slice(-10);
 const normalizePincode = (value: string) => value.replace(/\D/g, '').slice(0, 6);
 const CHECKOUT_DRAFT_STORAGE_KEY = 'happy-greens-checkout-draft';
+const getCheckoutDraftStorageKey = (user?: { id?: number | string | null; email?: string | null } | null) => {
+    const userIdentifier = user?.id ?? user?.email ?? 'guest';
+    return `${CHECKOUT_DRAFT_STORAGE_KEY}:${String(userIdentifier)}`;
+};
 
 type CheckoutDraft = {
     name: string;
@@ -104,6 +108,7 @@ const Checkout = () => {
     const discount = Math.min(pointsToUse, maxRedeemable);
     const deliveryFee = subtotal >= 500 ? 0 : 30;
     const total = Math.max(0, subtotal - discount + deliveryFee);
+    const draftStorageKey = getCheckoutDraftStorageKey(user);
 
     useEffect(() => {
         if (user) {
@@ -115,7 +120,7 @@ const Checkout = () => {
 
     useEffect(() => {
         try {
-            const rawDraft = localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
+            const rawDraft = localStorage.getItem(draftStorageKey);
             if (rawDraft) {
                 const draft = JSON.parse(rawDraft) as Partial<CheckoutDraft>;
                 setHasActiveDraft(hasMeaningfulDraft(draft));
@@ -146,7 +151,7 @@ const Checkout = () => {
             setHasActiveDraft(false);
         }
         setDraftRestoreComplete(true);
-    }, [user?.email, user?.full_name]);
+    }, [draftStorageKey, user?.email, user?.full_name]);
 
     useEffect(() => {
         if (!user || !draftRestoreComplete || savedAddressesLoaded) return;
@@ -191,11 +196,11 @@ const Checkout = () => {
         };
 
         try {
-            localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+            localStorage.setItem(draftStorageKey, JSON.stringify(draft));
         } catch (error) {
             console.warn('Failed to save checkout draft', error);
         }
-    }, [formData, step, user?.email]);
+    }, [draftStorageKey, formData, step, user?.email]);
 
     useEffect(() => {
         if (cart.length > 0) {
@@ -351,7 +356,7 @@ const Checkout = () => {
                 toast.success(`You saved ₹${discount} using loyalty points!`);
             }
             toast.success('Order placed successfully!');
-            localStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+            localStorage.removeItem(draftStorageKey);
             clearCart();
             navigate('/orders');
         } catch (error) {
