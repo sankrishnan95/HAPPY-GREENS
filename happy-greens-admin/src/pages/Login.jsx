@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Leaf, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { login } from '../services/auth.service';
 import { setToken } from '../utils/auth';
 
@@ -53,7 +53,7 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/20 bg-white/15 p-8 shadow-2xl backdrop-blur-xl">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-white/20 p-4 rounded-full mb-4 backdrop-blur-sm">
-            <Leaf className="w-12 h-12 text-white" />
+            <img src="/logo.png" alt="Happy Greens" className="w-12 h-12 object-contain" />
           </div>
           <h1 className="text-3xl font-bold text-white">Happy Greens</h1>
           <p className="text-white/70 mt-2">Admin Dashboard</p>
