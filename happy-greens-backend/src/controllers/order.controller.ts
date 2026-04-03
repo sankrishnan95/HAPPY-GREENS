@@ -160,8 +160,8 @@ export const createOrder = async (req: Request, res: Response) => {
         await safelyRunNotificationTask(async () => {
             await createUserNotification(client, userId, {
                 type: 'order_created',
-                title: `Order #${orderId} placed`,
-                message: `Your order for Rs. ${finalTotal.toFixed(2)} has been placed successfully.`,
+                title: 'Order placed',
+                message: `Order #${orderId} was placed successfully for Rs. ${finalTotal.toFixed(2)}.`,
                 link: `/orders/${orderId}`,
                 metadata: {
                     orderId,
@@ -173,8 +173,8 @@ export const createOrder = async (req: Request, res: Response) => {
         await safelyRunNotificationTask(async () => {
             await createAdminNotifications(client, {
                 type: 'order_created',
-                title: `New order #${orderId}`,
-                message: `${name} placed an order for Rs. ${finalTotal.toFixed(2)}.`,
+                title: 'New order received',
+                message: `${name} placed order #${orderId} for Rs. ${finalTotal.toFixed(2)}.`,
                 link: `/orders/${orderId}`,
                 metadata: {
                     orderId,
@@ -381,8 +381,8 @@ export const cancelOrder = async (req: Request, res: Response) => {
         await safelyRunNotificationTask(async () => {
             await createUserNotification(client, userId, {
                 type: 'order_cancelled',
-                title: `Order #${id} cancelled`,
-                message: 'Your order has been cancelled successfully.',
+                title: 'Order cancelled',
+                message: `Order #${id} has been cancelled successfully.`,
                 link: `/orders/${id}`,
                 metadata: {
                     orderId: Number(id),
@@ -394,8 +394,8 @@ export const cancelOrder = async (req: Request, res: Response) => {
         await safelyRunNotificationTask(async () => {
             await createAdminNotifications(client, {
                 type: 'order_cancelled',
-                title: `Order #${id} cancelled by customer`,
-                message: 'A customer cancelled an active order.',
+                title: 'Customer cancelled order',
+                message: `Order #${id} was cancelled by the customer.`,
                 link: `/orders/${id}`,
                 metadata: {
                     orderId: Number(id),

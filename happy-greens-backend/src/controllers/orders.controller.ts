@@ -147,8 +147,8 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                 await safelyRunNotificationTask(async () => {
                     await createUserNotification(pool, customerUserId, {
                         type: 'order_status_updated',
-                        title: `Order #${id} update`,
-                        message: `Your order is now ${statusLabels[normalizedStatus] || normalizedStatus}.`,
+                        title: 'Order status updated',
+                        message: `Order #${id} is now ${statusLabels[normalizedStatus] || normalizedStatus}.`,
                         link: `/orders/${id}`,
                         metadata: {
                             orderId: Number(id),
