@@ -126,7 +126,19 @@ export const useStore = create<AppState>()(
                     apiClearCart().catch(console.error);
                 }
             },
-            setUser: (user, token) => set({ user, token }),
+            setUser: (user, token) =>
+                set((state) => {
+                    const currentUserId = state.user?.id ?? null;
+                    const nextUserId = user?.id ?? null;
+                    const isSwitchingAccounts = currentUserId !== null && nextUserId !== null && currentUserId !== nextUserId;
+
+                    return {
+                        user,
+                        token,
+                        cart: isSwitchingAccounts ? [] : state.cart,
+                        wishlistIds: isSwitchingAccounts ? [] : state.wishlistIds,
+                    };
+                }),
             setWishlist: (productIds) => set({ wishlistIds: [...new Set(productIds)] }),
             addWishlistItem: (productId) =>
                 set((state) => ({
@@ -138,7 +150,7 @@ export const useStore = create<AppState>()(
                 set((state) => ({
                     wishlistIds: state.wishlistIds.filter((id) => id !== productId),
                 })),
-            logout: () => set({ user: null, token: null }),
+            logout: () => set({ user: null, token: null, cart: [], wishlistIds: [] }),
             syncCartWithBackend: async () => {
                 try {
                     const localCart = get().cart || [];
