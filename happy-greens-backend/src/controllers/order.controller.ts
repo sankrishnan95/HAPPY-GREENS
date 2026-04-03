@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../db';
 import { calculateOrderTotals } from '../services/order-pricing.service';
 import { createAdminNotifications, createUserNotification } from '../services/notification.service';
+import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 
 const CUSTOMER_CANCELLABLE_STATUSES = new Set(['pending', 'placed', 'accepted', 'paid']);
 
@@ -245,6 +246,7 @@ export const getOrderById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
+        const baseUrl = getPublicBaseUrl(req);
         const orderResult = await pool.query(
             `SELECT o.*, u.phone as customer_phone
              FROM orders o
@@ -277,7 +279,9 @@ export const getOrderById = async (req: Request, res: Response) => {
 
         const items = itemsResult.rows.map((item) => ({
             ...item,
+            image_url: normalizeMediaUrl(item.image_url, baseUrl),
             quantity: Number(item.quantity),
+            price_at_purchase: Number(item.price_at_purchase || 0),
         }));
 
         const subtotal = items.reduce(
