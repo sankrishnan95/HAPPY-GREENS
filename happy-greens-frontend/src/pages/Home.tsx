@@ -83,7 +83,7 @@ const Home = () => {
                                 <OptimizedImage src={heroBanner?.image_url} alt="Storefront Hero" className="hero-banner-media" width={1280} height={720} aspectRatio="16 / 9" loading="eager" fetchPriority="high" sizes="100vw" />
                             )}
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/70 via-slate-900/35 to-lime-500/20" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/40 via-slate-900/15 to-lime-500/10" />
 
                         <div className="relative z-10 flex h-full flex-col justify-end px-4 py-5 sm:px-5 sm:py-6 md:max-w-[70%] md:px-7 md:py-7 lg:px-10 lg:py-9">
                             <Badge variant="accent" size="sm" className="mb-3 w-fit border-white/20 bg-white/15 text-white backdrop-blur-sm">
