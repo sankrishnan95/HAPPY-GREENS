@@ -133,7 +133,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                     <h3 className="line-clamp-2 text-[0.94rem] font-semibold leading-[1.35] text-slate-900 [word-break:normal]" title={product.name}>{product.name}</h3>
                 </Link>
 
-                <div className="flex items-end justify-between gap-2">
+                <div className="flex flex-wrap items-end justify-between gap-2">
                     <div className="min-w-0">
                         {product.discountPrice ? (
                             <div className="flex flex-col">

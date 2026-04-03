@@ -80,7 +80,7 @@ const Home = () => {
                             {isVideo(heroBanner?.image_url) ? (
                                 <video src={normalizeImageUrl(heroBanner.image_url)} className="hero-banner-media" autoPlay loop muted playsInline preload="metadata" />
                             ) : (
-                                <OptimizedImage src={heroBanner?.image_url} alt="Storefront Hero" className="hero-banner-media" width={1280} height={720} aspectRatio="16 / 9" loading="eager" fetchPriority="high" sizes="100vw" />
+                                <OptimizedImage src={heroBanner?.image_url} alt="Storefront Hero" className="hero-banner-media" width={1280} height={720} loading="eager" fetchPriority="high" sizes="100vw" />
                             )}
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-br from-slate-950/40 via-slate-900/15 to-lime-500/10" />
@@ -161,11 +161,11 @@ const Home = () => {
                             <div className="mt-4"><Link to={dealBanner?.link || '/shop'} className="w-full sm:w-auto"><Button variant="accent" size="lg" className="w-full sm:w-auto">View offers</Button></Link></div>
                         </div>
 
-                        <div className="overflow-hidden rounded-[1.5rem] bg-white/10 p-1 backdrop-blur-sm">
+                        <div className="overflow-hidden rounded-[1.5rem] bg-white/10 p-1 backdrop-blur-sm h-full w-full">
                             {isVideo(dealBanner?.image_url) ? (
-                                <video src={normalizeImageUrl(dealBanner.image_url)} className="hero-banner-media max-h-[280px] rounded-[1.3rem]" autoPlay loop muted playsInline preload="metadata" />
+                                <video src={normalizeImageUrl(dealBanner.image_url)} className="hero-banner-media max-h-[280px] w-full h-full object-cover rounded-[1.3rem]" autoPlay loop muted playsInline preload="metadata" />
                             ) : (
-                                <OptimizedImage src={dealBanner?.image_url} alt="Deals Graphic" className="hero-banner-media max-h-[280px] rounded-[1.3rem]" width={960} height={720} aspectRatio="4 / 3" sizes="(max-width: 767px) 100vw, 40vw" />
+                                <OptimizedImage src={dealBanner?.image_url} alt="Deals Graphic" className="hero-banner-media max-h-[280px] w-full h-full object-cover rounded-[1.3rem]" width={960} height={720} sizes="(max-width: 767px) 100vw, 40vw" />
                             )}
                         </div>
                     </div>
