@@ -8,8 +8,6 @@ export const PONDICHERRY_PINCODES = new Set([
   '605006', '605007', '605008', '605009', '605010',
   '605011', '605012', '605013', '605014',
   // Surrounding communes & villages
-  '605102', '605104', '605106',
-  '605110', '605111',
   // Bahoor commune
   '607402',
 ]);

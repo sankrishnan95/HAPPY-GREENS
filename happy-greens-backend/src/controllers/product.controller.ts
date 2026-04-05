@@ -61,7 +61,7 @@ const validateQuantityRules = (unit: string, minQty: number, stepQty: number) =>
 
 export const getProducts = async (req: Request, res: Response) => {
     try {
-        const { category, q, page = 1, limit = 10, sort } = req.query;
+        const { category, q, page = 1, limit = 10, sort, hasOffer } = req.query;
         const offset = (Number(page) - 1) * Number(limit);
 
         let query = 'SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", p.price_per_unit as "pricePerUnit", p.min_qty as "minQty", p.step_qty as "stepQty", c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_deleted = false';
@@ -82,6 +82,10 @@ export const getProducts = async (req: Request, res: Response) => {
             )`;
             params.push(normalizedCategory);
             paramCount++;
+        }
+
+        if (hasOffer === 'true') {
+            query += ` AND p.discount_price IS NOT NULL AND p.discount_price < COALESCE(p.price_per_unit, p.price)`;
         }
 
         if (q) {
@@ -120,6 +124,10 @@ export const getProducts = async (req: Request, res: Response) => {
             )`;
             countParams.push(normalizedCategory);
             countParam++;
+        }
+
+        if (hasOffer === 'true') {
+            countQuery += ` AND p.discount_price IS NOT NULL AND p.discount_price < COALESCE(p.price_per_unit, p.price)`;
         }
 
         if (q) {

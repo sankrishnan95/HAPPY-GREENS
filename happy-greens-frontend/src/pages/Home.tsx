@@ -7,6 +7,8 @@ import Badge from '../components/Badge';
 import OptimizedImage from '../components/OptimizedImage';
 import { getActiveBanners } from '../services/banner.service';
 import { normalizeImageUrl } from '../utils/image';
+import { getProducts } from '../services/product.service';
+import ProductCard from '../components/ProductCard';
 
 const categories = [
     { name: 'Fruits', image: '/categories/apple.png' },
@@ -40,6 +42,8 @@ const staggerContainer: Variants = {
 const Home = () => {
     const [banners, setBanners] = useState<any[]>([]);
     const [loadingBanners, setLoadingBanners] = useState(true);
+    const [offerProducts, setOfferProducts] = useState<any[]>([]);
+    const [loadingOffers, setLoadingOffers] = useState(true);
 
     const isVideo = (url: string) => {
         if (!url) return false;
@@ -60,7 +64,20 @@ const Home = () => {
                 setLoadingBanners(false);
             }
         };
+        const fetchOffers = async () => {
+            try {
+                const data = await getProducts({ hasOffer: true, limit: 10 });
+                if (data && data.products) {
+                    setOfferProducts(data.products);
+                }
+            } catch {
+                console.error('Failed to fetch offers');
+            } finally {
+                setLoadingOffers(false);
+            }
+        };
         fetchBanners();
+        fetchOffers();
     }, []);
 
     const heroBanner = banners.length > 0 ? banners[0] : null;
@@ -129,6 +146,39 @@ const Home = () => {
                     </div>
                 </motion.div>
             </motion.section>
+
+            {offerProducts.length > 0 || loadingOffers ? (
+                <motion.section 
+                    initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
+                    className="space-y-4"
+                >
+                    <div className="flex items-end justify-between gap-3 px-2">
+                        <div>
+                            <p className="section-kicker">Grab these deals</p>
+                            <h2 className="mt-1 text-[1.35rem] font-display font-bold text-slate-900 md:text-[1.6rem]">Special Offers</h2>
+                        </div>
+                        <Link to="/shop?hasOffer=true" className="text-[0.85rem] font-bold text-green-700 hover:text-green-800 transition">View all</Link>
+                    </div>
+
+                    {loadingOffers ? (
+                        <div className="flex gap-4 overflow-x-auto hide-scrollbar px-1 pb-6 pt-2">
+                            {[1, 2, 3, 4].map(i => (
+                                <div key={i} className="min-w-[180px] md:min-w-[220px] h-[340px] animate-pulse rounded-[1.35rem] bg-slate-200" />
+                            ))}
+                        </div>
+                    ) : (
+                        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="-mx-1 overflow-x-auto px-1 pb-6 pt-2 hide-scrollbar overscroll-x-contain">
+                            <div className="flex min-w-max gap-4 px-3 md:gap-6">
+                                {offerProducts.map((product) => (
+                                    <motion.div key={product.id} variants={fadeInUp} className="flex-none snap-start w-[180px] md:w-[220px]">
+                                        <ProductCard product={product} />
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </motion.section>
+            ) : null}
 
             <motion.section 
                 initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
