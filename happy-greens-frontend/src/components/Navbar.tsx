@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShoppingCart, User, Search, MapPin, Star, Heart, Menu, X, ChevronRight } from 'lucide-react';
+import { ShoppingCart, User, Search, Star, Heart, Menu, X, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -18,7 +18,6 @@ const Navbar = () => {
     const syncCartWithBackend = useStore((state) => state.syncCartWithBackend);
     const cartCount = cart.length;
 
-    const [location, setLocation] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -53,23 +52,6 @@ const Navbar = () => {
 
         return () => clearTimeout(timer);
     }, [searchQuery]);
-
-    useEffect(() => {
-        const idleFetch = () => {
-            fetch('https://get.geojs.io/v1/ip/geo.json')
-                .then((res) => res.json())
-                .then((data) => setLocation(data.city))
-                .catch(() => setLocation(''));
-        };
-
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            const idleId = (window as any).requestIdleCallback(idleFetch, { timeout: 2500 });
-            return () => (window as any).cancelIdleCallback?.(idleId);
-        }
-
-        const timeout = setTimeout(idleFetch, 1500);
-        return () => clearTimeout(timeout);
-    }, []);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -144,15 +126,7 @@ const Navbar = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 md:hidden">
-                        <div className="min-w-0">
-                            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-green-700/70">Delivery zone</p>
-                            <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-slate-800">
-                                <MapPin className="h-4 w-4 text-green-700" />
-                                <span className="truncate">{location || 'Select location'}</span>
-                            </div>
-                        </div>
-
+                    <div className="flex items-center justify-end gap-3 md:hidden">
                         <Link to={user ? '/profile' : '/login'} className="safe-touch inline-flex items-center gap-2 rounded-2xl border border-[#dbe7d0] bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm">
                             <User className="h-4 w-4" />
                             <span>{user ? 'Account' : 'Login'}</span>
@@ -184,12 +158,7 @@ const Navbar = () => {
                         )}
                     </div>
 
-                    <div className="hidden items-center justify-between gap-4 md:flex">
-                        <div className="flex items-center gap-2 rounded-full border border-green-100 bg-green-50 px-3 py-2 text-sm font-semibold text-green-800">
-                            <MapPin className="h-4 w-4" />
-                            <span>{location || 'Location unavailable'}</span>
-                        </div>
-
+                    <div className="hidden items-center justify-end gap-4 md:flex">
                         <div className="flex items-center gap-2 lg:gap-3">
                             <Link to="/shop" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-green-700">Shop</Link>
                             {user && <Link to="/wishlist" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-rose-600">Wishlist</Link>}
