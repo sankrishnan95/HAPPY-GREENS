@@ -74,7 +74,7 @@ const Cart = () => {
             <h1 className="mb-6 text-2xl font-display font-bold text-gray-900 sm:mb-8">Shopping Cart</h1>
 
             <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
-                <div className="space-y-4 lg:col-span-2">
+                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden divide-y divide-gray-100 lg:col-span-2 h-fit">
                     {cart.map((item) => {
                         const unitLabel = getUnitLabel(item.unit);
                         const lineTotal = calculateLineTotal(item, item.quantity);
@@ -82,20 +82,20 @@ const Cart = () => {
                         const nextDecrement = decrementQuantity(item, item.quantity);
 
                         return (
-                            <div key={item.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-soft transition-shadow hover:shadow-medium sm:p-6">
+                            <div key={item.id} className="p-4 transition-colors hover:bg-gray-50 sm:p-6">
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                                     <div className="rounded-xl bg-gradient-soft p-3 sm:p-4">
                                         <img
                                             src={normalizeImageUrl(item.images && item.images.length > 0 ? item.images[0] : item.image_url)}
                                             alt={item.name}
-                                            className="h-20 w-20 object-contain sm:h-24 sm:w-24"
+                                            className="h-16 w-16 object-contain sm:h-20 sm:w-20"
                                         />
                                     </div>
 
                                     <div className="flex-1">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0 flex-1">
-                                                <h3 className="mb-1 text-lg font-display font-bold text-gray-900 sm:text-xl">{item.name}</h3>
+                                                <h3 className="mb-1 text-base font-display font-bold text-gray-900 sm:text-lg">{item.name}</h3>
                                                 <div className="mb-3 text-sm">
                                                     {item.discountPrice ? (
                                                         <>
@@ -118,17 +118,17 @@ const Cart = () => {
                                         </div>
 
                                         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-                                            <div className="flex items-center rounded-full border-2 border-primary-200 bg-primary-50 w-fit">
+                                            <div className="flex items-center rounded-full border border-primary-200 bg-primary-50 w-fit">
                                                 <button
                                                     onClick={() => nextDecrement > 0 ? updateQuantity(item.id, nextDecrement) : removeFromCart(item.id)}
-                                                    className="rounded-full p-2 text-primary-600 transition-all hover:bg-primary-500 hover:text-white"
+                                                    className="rounded-full p-1.5 text-primary-600 transition-all hover:bg-primary-500 hover:text-white"
                                                 >
                                                     <Minus className="h-4 w-4" />
                                                 </button>
-                                                <span className="min-w-[5rem] px-2 text-center font-bold text-primary-700">{formatQuantity(item, item.quantity)}</span>
+                                                <span className="min-w-[4rem] px-2 text-center text-sm font-bold text-primary-700">{formatQuantity(item, item.quantity)}</span>
                                                 <button
                                                     onClick={() => updateQuantity(item.id, nextIncrement)}
-                                                    className="rounded-full p-2 text-primary-600 transition-all hover:bg-primary-500 hover:text-white"
+                                                    className="rounded-full p-1.5 text-primary-600 transition-all hover:bg-primary-500 hover:text-white"
                                                 >
                                                     <Plus className="h-4 w-4" />
                                                 </button>
@@ -136,7 +136,7 @@ const Cart = () => {
 
                                             <button
                                                 onClick={() => removeFromCart(item.id)}
-                                                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 sm:hidden"
+                                                className="inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 sm:hidden"
                                                 title="Remove item"
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -146,11 +146,8 @@ const Cart = () => {
                                     </div>
 
                                     <div className="text-left sm:text-right">
-                                        <div className="text-xl font-display font-bold text-gray-900 sm:text-2xl">
+                                        <div className="text-lg font-display font-bold text-gray-900 sm:text-xl">
                                             Rs. {lineTotal.toFixed(2)}
-                                        </div>
-                                        <div className="mt-1 text-sm text-gray-500">
-                                            {formatQuantity(item, item.quantity)}
                                         </div>
                                     </div>
                                 </div>
