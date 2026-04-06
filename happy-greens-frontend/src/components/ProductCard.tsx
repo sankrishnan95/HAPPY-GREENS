@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { normalizeImageUrl } from '../utils/image';
 import OptimizedImage from './OptimizedImage';
 import { trackEvent } from '../services/analytics.service';
-import { decrementQuantity, formatQuantity, getInitialQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, incrementQuantity } from '../utils/productUnits';
+import { calculateLineTotal, decrementQuantity, formatQuantity, getInitialQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, incrementQuantity } from '../utils/productUnits';
 
 interface Product {
     id: number;
@@ -58,6 +58,28 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
         });
     };
 
+    const showCartToast = (nextQuantity: number) => {
+        const nextCart = quantity > 0
+            ? cart.map((item) => (item.id === product.id ? { ...item, quantity: nextQuantity } : item))
+            : [...cart, { ...product, quantity: nextQuantity }];
+        const cartTotal = nextCart.reduce((sum, item) => sum + calculateLineTotal(item, item.quantity), 0);
+
+        toast.custom(
+            (t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} pointer-events-auto flex min-w-[260px] items-center gap-3 rounded-2xl bg-slate-900 px-3 py-3 text-white shadow-[0_18px_36px_rgba(15,23,42,0.3)]`}>
+                    <div className="h-11 w-11 overflow-hidden rounded-xl bg-white/10">
+                        <img src={primaryImage} alt={product.name} className="h-full w-full object-cover" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{formatQuantity(product, nextQuantity)} in cart</p>
+                        <p className="mt-0.5 text-xs text-white/75">{nextCart.length} items • Rs. {cartTotal.toFixed(0)}</p>
+                    </div>
+                </div>
+            ),
+            { id: `cart-${product.id}`, duration: 1800 }
+        );
+    };
+
     const handleIncrement = () => {
         const nextQuantity = quantity > 0 ? incrementQuantity(product, quantity) : minimumQuantity;
         if (quantity > 0) {
@@ -65,7 +87,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
         } else {
             addToCart(product);
         }
-        toast.success(`${formatQuantity(product, nextQuantity)} in cart`, { id: `cart-${product.id}` });
+        showCartToast(nextQuantity);
         trackAddToCart();
     };
 
