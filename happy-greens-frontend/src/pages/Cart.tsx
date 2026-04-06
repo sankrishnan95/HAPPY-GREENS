@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import api from '../services/api';
@@ -12,6 +12,19 @@ const Cart = () => {
     const [isApplying, setIsApplying] = useState(false);
     const [couponError, setCouponError] = useState('');
     const [couponSuccess, setCouponSuccess] = useState('');
+    const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchAvailableCoupons = async () => {
+            try {
+                const res = await api.get('/coupons/active');
+                setAvailableCoupons(res.data);
+            } catch (err) {
+                console.error('Error fetching dynamic coupons:', err);
+            }
+        };
+        fetchAvailableCoupons();
+    }, []);
 
     const subtotal = cart.reduce((acc, item) => acc + calculateLineTotal(item, item.quantity), 0);
     const discount = coupon ? Number(coupon.discount) || 0 : 0;
@@ -222,6 +235,39 @@ const Cart = () => {
                             </div>
                             {couponError && <p className="mt-2 text-sm text-red-500">{couponError}</p>}
                             {couponSuccess && <p className="mt-2 text-sm text-green-600">{couponSuccess}</p>}
+
+                            {/* Available Public Coupons */}
+                            {!coupon && availableCoupons.length > 0 && (
+                                <div className="mt-4 space-y-2 animate-fade-in">
+                                    <p className="mx-1 text-[0.65rem] font-bold uppercase tracking-wider text-gray-500">Available Offers</p>
+                                    <div className="flex flex-col gap-2.5 max-h-56 overflow-y-auto hide-scrollbar pr-1">
+                                        {availableCoupons.map((c: any) => (
+                                            <button
+                                                key={c.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setCouponInput(c.code);
+                                                    setCouponError('');
+                                                }}
+                                                className="group flex flex-col items-start gap-1 rounded-xl border border-dashed border-green-300 bg-green-50/40 p-3 text-left transition-colors hover:bg-green-50 w-full"
+                                            >
+                                                <div className="flex w-full items-center justify-between">
+                                                    <span className="font-display font-bold text-sm text-green-700">{c.code}</span>
+                                                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800">
+                                                        {c.discount_type === 'percentage' ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`}
+                                                    </span>
+                                                </div>
+                                                <p className="w-full text-xs text-gray-600 leading-relaxed font-medium">
+                                                    {c.description || (c.applicable_category_name ? `Valid on ${c.applicable_category_name} items` : 'Applies to your order')}
+                                                </p>
+                                                {c.min_order_amount > 0 && (
+                                                    <p className="text-[0.65rem] text-gray-400 font-medium">Min. order: ₹{c.min_order_amount}</p>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="mb-6 flex justify-between border-t-2 border-gray-200 pt-4 text-xl font-display font-bold text-gray-900">

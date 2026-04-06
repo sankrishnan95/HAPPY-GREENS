@@ -7,7 +7,8 @@ import {
     updateCoupon,
     deleteCoupon,
     validateCoupon,
-    getCouponUsage
+    getCouponUsage,
+    getActiveCoupons
 } from '../controllers/coupons.controller';
 
 const router = Router();
@@ -37,6 +38,14 @@ router.post('/', authenticate, requireAdmin, createCoupon);
  * Auth: Admin only
  */
 router.get('/', authenticate, requireAdmin, getCoupons);
+
+/**
+ * Get Active Public Coupons
+ * GET /api/coupons/active
+ * 
+ * Auth: Public
+ */
+router.get('/active', getActiveCoupons);
 
 /**
  * Get Coupon by ID

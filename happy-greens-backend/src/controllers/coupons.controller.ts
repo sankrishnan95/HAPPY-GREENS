@@ -398,3 +398,30 @@ export const getCouponUsage = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+/**
+ * Get Public Active Coupons
+ * GET /api/coupons/active
+ */
+export const getActiveCoupons = async (req: Request, res: Response) => {
+    try {
+        const query = `
+            SELECT 
+                c.id, c.code, c.description, c.discount_type, c.discount_value, 
+                c.min_order_amount, c.max_discount_amount, c.valid_from, c.valid_until,
+                cat.name as applicable_category_name
+            FROM coupons c
+            LEFT JOIN categories cat ON c.applicable_category_id = cat.id
+            WHERE c.is_active = true 
+              AND c.valid_until > NOW() 
+              AND (c.valid_from <= NOW() OR c.valid_from IS NULL)
+            ORDER BY c.created_at DESC
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching active coupons:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
