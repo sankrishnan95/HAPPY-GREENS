@@ -20,7 +20,7 @@ import chatRoutes from './routes/chat.routes';
 import path from 'path';
 import { authenticate } from './middleware/auth';
 import { ensureAdminFromEnv } from './bootstrap/admin';
-import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill, ensureAnalyticsSchema, ensureMultiUnitSchema, ensureNotificationsSchema, ensureAddressBookSchema, ensureProductCategoriesSchema, ensureCategoryHierarchySchema } from './bootstrap/schema';
+import { ensureProductImagesColumn, ensureBannerTextColumns, ensureAuthColumns, ensureOperationsSchema, ensureCategoriesAndProductCategoryBackfill, ensureAnalyticsSchema, ensureMultiUnitSchema, ensureNotificationsSchema, ensureAddressBookSchema, ensureProductCategoriesSchema, ensureCategoryHierarchySchema, ensureCategoryVisibilitySchema } from './bootstrap/schema';
 import analyticsRoutes from './routes/analytics.routes';
 import notificationRoutes from './routes/notification.routes';
 import { analyticsRateLimiter, authRateLimiter, globalRateLimiter, paymentRateLimiter, uploadRateLimiter } from './middleware/rateLimit';
@@ -152,6 +152,7 @@ const startServer = async () => {
     await ensureCategoriesAndProductCategoryBackfill();
     await ensureProductCategoriesSchema();
     await ensureCategoryHierarchySchema();
+    await ensureCategoryVisibilitySchema();
     await ensureProductImagesColumn();
     await ensureMultiUnitSchema();
     await ensureBannerTextColumns();

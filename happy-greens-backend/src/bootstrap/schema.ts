@@ -413,3 +413,11 @@ export const ensureCategoryHierarchySchema = async (): Promise<void> => {
 
     console.log('[Schema Bootstrap] categories.parent_id hierarchy ensured');
 };
+
+export const ensureCategoryVisibilitySchema = async (): Promise<void> => {
+    await pool.query(`
+        ALTER TABLE categories
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
+    `);
+    console.log('[Schema Bootstrap] categories.is_active visibility ensured');
+};

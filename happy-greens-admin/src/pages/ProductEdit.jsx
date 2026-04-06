@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, UploadCloud, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, UploadCloud, X, Image as ImageIcon, Check } from 'lucide-react';
 import { getProductById, createProduct, updateProduct, getCategories } from '../services/product.service';
 import { uploadImages } from '../services/upload.service';
 import { API_BASE_URL } from '../services/api';
@@ -240,42 +240,29 @@ export default function ProductEdit() {
                         {categories.length > 0 && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-3">Categories & Tags *</label>
-                                <div className="flex flex-wrap gap-2.5">
-                                    {categories.sort((a, b) => a.name.localeCompare(b.name)).map(cat => {
-                                        const isSelected = formData.category_ids.includes(cat.id);
-                                        const isSub = !!cat.parent_id;
-                                        
-                                        // Find parent name for context if it's a sub
-                                        const parent = isSub ? categories.find(c => c.id === cat.parent_id) : null;
-                                        const label = parent ? `${parent.name} > ${cat.name}` : cat.name;
-
-                                        return (
-                                            <button
-                                                key={cat.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    setFormData(prev => {
-                                                        const newIds = isSelected
-                                                            ? prev.category_ids.filter(id => id !== cat.id)
-                                                            : [...prev.category_ids, cat.id];
-                                                        return {
-                                                            ...prev,
-                                                            category_ids: newIds,
-                                                            category_id: newIds.length > 0 ? newIds[0] : ''
-                                                        };
-                                                    });
-                                                }}
-                                                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border flex items-center gap-1.5 ${
-                                                    isSelected 
-                                                    ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm' 
-                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                                                } ${isSub ? 'border-dashed' : ''}`}
-                                            >
-                                                {isSub && <div className="w-1.5 h-1.5 rounded-full bg-current opacity-40" />}
-                                                {label}
-                                            </button>
-                                        );
-                                    })}
+                                <div className="space-y-4 max-h-96 overflow-y-auto p-4 border border-gray-100 rounded-xl bg-gray-50/30">
+                                    {categories.filter(c => !c.parent_id).map(cat => (
+                                        <CategoryOption 
+                                            key={cat.id} 
+                                            category={cat} 
+                                            categories={categories} 
+                                            selectedIds={formData.category_ids} 
+                                            onToggle={(id) => {
+                                                setFormData(prev => {
+                                                    const isSelected = prev.category_ids.includes(id);
+                                                    const newIds = isSelected
+                                                        ? prev.category_ids.filter(i => i !== id)
+                                                        : [...prev.category_ids, id];
+                                                    return {
+                                                        ...prev,
+                                                        category_ids: newIds,
+                                                        category_id: newIds.length > 0 ? newIds[0] : ''
+                                                    };
+                                                });
+                                            }}
+                                            depth={0}
+                                        />
+                                    ))}
                                 </div>
                                 {formData.category_ids.length === 0 && (
                                     <p className="text-red-500 text-xs mt-2 font-medium">Select at least one category tag</p>
@@ -370,6 +357,54 @@ export default function ProductEdit() {
                     </div>
                 </div>
             </form>
+        </div>
+    );
+}
+
+function CategoryOption({ category, categories, selectedIds, onToggle, depth = 0 }) {
+    const isSelected = selectedIds.includes(category.id);
+    const children = categories.filter(c => c.parent_id === category.id);
+    const hasChildren = children.length > 0;
+
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center gap-3">
+                {depth > 0 && (
+                    <div 
+                        className="w-4 h-4 rounded-bl-sm border-b-2 border-l-2 border-gray-300 opacity-40 -mt-2" 
+                        style={{ marginLeft: `${(depth - 1) * 20}px` }} 
+                    />
+                )}
+                <button
+                    type="button"
+                    onClick={() => onToggle(category.id)}
+                    className={`flex-1 flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border ${
+                        isSelected 
+                        ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm' 
+                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                    <span className="flex items-center gap-2">
+                        {category.name}
+                        {isSelected && <Check className="w-4 h-4" />}
+                    </span>
+                    {hasChildren && <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Parent</span>}
+                </button>
+            </div>
+            {hasChildren && (
+                <div className="space-y-2 ml-4">
+                    {children.map(child => (
+                        <CategoryOption 
+                            key={child.id} 
+                            category={child} 
+                            categories={categories} 
+                            selectedIds={selectedIds} 
+                            onToggle={onToggle} 
+                            depth={depth + 1} 
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

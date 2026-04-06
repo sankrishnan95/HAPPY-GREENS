@@ -61,7 +61,7 @@ const Shop = () => {
 
         const fetchCats = async () => {
             try {
-                const res = await getCategories();
+                const res = await getCategories(true);
                 setAllCategories(res || []);
             } catch (err) {
                 console.error("Failed to fetch categories", err);
@@ -189,7 +189,11 @@ const Shop = () => {
                                 key={sub.id}
                                 type="button"
                                 onClick={() => handleCategoryChange(sub.slug)}
-                                className={`min-h-[34px] whitespace-nowrap rounded-full px-4 py-1 text-xs font-semibold transition-colors duration-200 ${category === sub.slug ? 'bg-slate-800 text-white' : 'bg-[#eef5e6] text-slate-600 hover:bg-[#e4ebdc]'}`}
+                                className={`min-h-[34px] whitespace-nowrap rounded-full px-5 py-1.5 text-xs font-bold transition-all duration-200 ${
+                                    category === sub.slug 
+                                    ? 'bg-sky-600 text-white shadow-md transform scale-105' 
+                                    : 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100'
+                                }`}
                             >
                                 {sub.name}
                             </button>

@@ -10,7 +10,7 @@ export const getProductById = async (id: string | number) => {
     return data;
 };
 
-export const getCategories = async () => {
-    const { data } = await api.get('/products/categories');
+export const getCategories = async (activeOnly: boolean = false) => {
+    const { data } = await api.get('/products/categories', { params: { activeOnly: activeOnly ? 'true' : 'false' } });
     return data;
 };

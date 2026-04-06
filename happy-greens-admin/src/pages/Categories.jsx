@@ -7,7 +7,7 @@ export default function Categories() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [formData, setFormData] = useState({ name: '', description: '', parent_id: '' });
+    const [formData, setFormData] = useState({ name: '', description: '', parent_id: '', is_active: true });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -25,14 +25,14 @@ export default function Categories() {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', description: '', parent_id: '' });
+        setFormData({ name: '', description: '', parent_id: '', is_active: true });
         setEditingId(null);
         setShowForm(false);
         setError('');
     };
 
     const handleEdit = (cat) => {
-        setFormData({ name: cat.name, description: cat.description || '', parent_id: cat.parent_id || '' });
+        setFormData({ name: cat.name, description: cat.description || '', parent_id: cat.parent_id || '', is_active: cat.is_active !== false });
         setEditingId(cat.id);
         setShowForm(true);
         setError('');
@@ -115,6 +115,16 @@ export default function Categories() {
                             <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                             <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="Short description (optional)" />
                         </div>
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="checkbox" 
+                                id="is_active"
+                                checked={formData.is_active} 
+                                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} 
+                                className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                            />
+                            <label htmlFor="is_active" className="text-sm font-medium text-gray-700 cursor-pointer">Visible in Storefront</label>
+                        </div>
                         {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
                         <div className="flex gap-3 pt-2">
                             <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50">
@@ -157,15 +167,29 @@ function CategoryRow({ category, allCategories, onEdit, onDelete, depth = 0 }) {
     const children = allCategories.filter(c => c.parent_id === category.id);
     const hasChildren = children.length > 0;
 
+    const toggleActive = async (e) => {
+        e.stopPropagation();
+        try {
+            await api.put(`/products/categories/${category.id}`, {
+                ...category,
+                is_active: !category.is_active
+            });
+            window.location.reload(); // Simple way to refresh for now
+        } catch (err) {
+            alert('Failed to toggle status');
+        }
+    };
+
     return (
         <>
-            <div className={`flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors ${depth > 0 ? 'bg-gray-50/30' : ''}`} style={{ paddingLeft: `${24 + depth * 32}px` }}>
+            <div className={`flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors ${depth > 0 ? 'bg-gray-50/30' : ''} ${!category.is_active ? 'opacity-60' : ''}`} style={{ paddingLeft: `${24 + depth * 32}px` }}>
                 <div className="min-w-0 flex-1 relative">
                     {depth > 0 && (
                         <div className="w-4 h-4 rounded-bl-sm border-b-2 border-l-2 border-gray-300 opacity-40 absolute -ml-6 mt-[-6px]" />
                     )}
                     <div className="flex items-center gap-3">
-                        <span className={`font-semibold ${depth === 0 ? 'text-gray-900' : 'text-gray-700'}`}>{category.name}</span>
+                        <span className={`font-semibold ${depth === 0 ? 'text-gray-900' : 'text-gray-700'} ${!category.is_active ? 'italic' : ''}`}>{category.name}</span>
+                        {!category.is_active && <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-bold uppercase">Hidden</span>}
                         <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md font-mono">{category.slug}</span>
                     </div>
                     <div className="flex items-center gap-3 mt-1">
@@ -173,13 +197,22 @@ function CategoryRow({ category, allCategories, onEdit, onDelete, depth = 0 }) {
                         <span className="text-xs text-gray-400">{category.product_count || 0} product{category.product_count !== 1 ? 's' : ''}</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button onClick={() => onEdit(category)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Edit">
-                        <Pencil className="w-4 h-4" />
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    <button 
+                        onClick={toggleActive}
+                        className={`px-3 py-1 text-[10px] font-bold uppercase rounded-full transition-colors ${category.is_active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                        title={category.is_active ? 'Click to hide' : 'Click to show'}
+                    >
+                        {category.is_active ? 'Active' : 'Inactive'}
                     </button>
-                    <button onClick={() => onDelete(category)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1.5 border-l border-gray-100 pl-3">
+                        <button onClick={() => onEdit(category)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Edit">
+                            <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => onDelete(category)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
             {hasChildren && (

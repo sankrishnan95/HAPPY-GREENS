@@ -81,7 +81,7 @@ const Home = () => {
             try {
                 // re-use product.service.ts if we export it, wait we need to import it at top of Home.tsx
                 const { getCategories } = await import('../services/product.service');
-                const data = await getCategories();
+                const data = await getCategories(true);
                 if (data) {
                     setCategories(data.filter((c: any) => !c.parent_id)); // Only top level on home page
                 }
