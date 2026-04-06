@@ -33,7 +33,7 @@ const Cart = () => {
             }));
             const res = await api.post('/coupons/validate', { code: couponInput, cart_items: mappedCart });
             if (res.data.valid) {
-                setCoupon({ code: res.data.code, discount: res.data.discount_amount, message: res.data.message });
+                setCoupon({ code: res.data.code, discount: Number(res.data.discount_amount), message: res.data.message });
                 setCouponSuccess(res.data.message || 'Coupon applied successfully!');
             } else {
                 setCouponError(res.data.message || 'Invalid coupon');
