@@ -150,32 +150,30 @@ const ProductDetail = () => {
             </button>
 
             <div className="grid gap-4 py-1 md:grid-cols-[0.92fr_1.08fr] md:gap-6 lg:gap-8">
-                <div className="rounded-[1.75rem] border border-gray-100 bg-gradient-soft p-3 shadow-soft sm:p-4 lg:p-5">
-                    <div className="overflow-hidden rounded-[1.35rem] bg-white/60">
-                        <img
-                            src={productImages[selectedImage] || productImages[0]}
-                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }}
-                            alt={product.name}
-                            className="h-[240px] w-full object-contain p-4 transition-opacity duration-300 sm:h-[300px] sm:p-5 lg:h-[360px]"
-                        />
-                    </div>
+                <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+                    <img
+                        src={productImages[selectedImage] || productImages[0]}
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }}
+                        alt={product.name}
+                        className="h-[300px] w-full object-cover transition-opacity duration-300 sm:h-[400px] lg:h-[480px]"
+                    />
 
                     {productImages.length > 1 && (
-                        <div className="hide-scrollbar mt-4 flex snap-x justify-start gap-2 overflow-x-auto px-1 pb-1 sm:mt-5 sm:gap-3">
+                        <div className="hide-scrollbar flex snap-x justify-start gap-3 overflow-x-auto bg-gray-50 p-4">
                             {productImages.map((img: string, idx: number) => (
                                 <button
                                     key={idx}
                                     onClick={() => setSelectedImage(idx)}
-                                    className={`h-16 w-16 flex-shrink-0 snap-center overflow-hidden rounded-[1rem] border-2 bg-white transition-all duration-200 sm:h-20 sm:w-20 ${
+                                    className={`h-20 w-20 flex-shrink-0 snap-center overflow-hidden rounded-xl border-2 transition-all duration-200 sm:h-24 sm:w-24 ${
                                         selectedImage === idx
-                                            ? 'scale-105 transform border-primary-500 shadow-md ring-2 ring-primary-200'
-                                            : 'border-transparent opacity-60 hover:scale-105 hover:opacity-100 hover:shadow'
+                                            ? 'border-primary-500 shadow-md ring-2 ring-primary-200'
+                                            : 'border-transparent bg-white opacity-70 hover:opacity-100 hover:shadow-sm'
                                     }`}
                                 >
                                     <img
                                         src={img}
                                         alt={`${product.name} view ${idx + 1}`}
-                                        className="h-full w-full object-cover p-1.5"
+                                        className="h-full w-full object-cover"
                                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }}
                                     />
                                 </button>
