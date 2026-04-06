@@ -132,7 +132,7 @@ const ProductDetail = () => {
     ).map((img: string) => normalizeImageUrl(img));
 
     return (
-        <div className="animate-fade-in pb-16 sm:pb-24">
+        <div className="animate-fade-in">
             <nav className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-gray-600 sm:mb-4 sm:text-sm">
                 <Link to="/" className="transition-colors hover:text-primary-600">Home</Link>
                 <ChevronRight className="h-3.5 w-3.5" />

@@ -140,7 +140,7 @@ function AppLayout() {
             <div className="min-h-screen flex flex-col overflow-x-hidden">
                 <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
                 {!isAuthPage && <Navbar />}
-                <main className={isAuthPage ? 'flex-grow w-full' : 'page-shell flex-grow w-full'}>
+                <main className={isAuthPage ? 'flex-grow w-full' : 'page-shell flex-grow w-full pb-16 sm:pb-24'}>
                     <Suspense fallback={<PageFallback />}>
                         <Routes>
                             <Route path="/" element={<Home />} />
