@@ -84,11 +84,11 @@ const Cart = () => {
                         return (
                             <div key={item.id} className="p-4 transition-colors hover:bg-gray-50 sm:p-6">
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-                                    <div className="rounded-xl bg-gradient-soft p-3 sm:p-4">
+                                    <div className="flex-shrink-0">
                                         <img
                                             src={normalizeImageUrl(item.images && item.images.length > 0 ? item.images[0] : item.image_url)}
                                             alt={item.name}
-                                            className="h-16 w-16 object-contain sm:h-20 sm:w-20"
+                                            className="h-20 w-20 rounded-xl border border-gray-100 object-cover sm:h-24 sm:w-24"
                                         />
                                     </div>
 
