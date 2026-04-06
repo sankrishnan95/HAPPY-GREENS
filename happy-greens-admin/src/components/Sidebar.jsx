@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Truck, Tag, BarChart3, Image as ImageIcon, Users } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Truck, Tag, BarChart3, Image as ImageIcon, Users, FolderTree } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -17,7 +17,15 @@ const navItems = [
     ],
   },
   { to: '/orders', icon: ShoppingCart, label: 'Orders' },
-  { to: '/products', icon: Package, label: 'Products' },
+  {
+    to: '/products',
+    icon: Package,
+    label: 'Products & Inventory',
+    children: [
+      { to: '/products', label: 'All Products' },
+      { to: '/categories', label: 'Categories' },
+    ],
+  },
   { to: '/customers', icon: Users, label: 'Customers' },
   { to: '/deliveries', icon: Truck, label: 'Deliveries' },
   { to: '/discounts', icon: Tag, label: 'Discounts' },
@@ -49,7 +57,7 @@ export default function Sidebar() {
       <nav className="sidebar-scroll-hidden relative flex-1 overflow-y-auto px-4 py-6">
         <ul className="space-y-2">
           {navItems.map((item, index) => {
-            const isAnalyticsSection = item.children?.some((child) => location.pathname.startsWith(child.to.replace(/\/(sales|products|customers|orders|inventory|traffic)$/, ''))) || false;
+            const isParentActive = item.children?.some((child) => location.pathname === child.to || location.pathname.startsWith(child.to + '/')) || false;
 
             return (
               <li key={item.to}>
@@ -58,8 +66,8 @@ export default function Sidebar() {
                   to={item.to}
                   end={item.to === '/'}
                   className={({ isActive }) =>
-                    `group flex min-h-[48px] items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 ${isActive || isAnalyticsSection
-                      ? 'bg-white/88 text-emerald-900 shadow-[0_12px_24px_rgba(255,255,255,0.14)]'
+                    `group flex min-h-[48px] items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 ${isActive || isParentActive
+                      ? 'bg-white text-emerald-900 font-semibold shadow-[0_4px_16px_rgba(0,0,0,0.1)]'
                       : 'text-white/88 hover:bg-white/10 hover:text-white'
                     }`
                   }

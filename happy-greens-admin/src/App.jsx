@@ -11,6 +11,7 @@ import Discounts from './pages/Discounts';
 import Banners from './pages/Banners';
 import BannerEdit from './pages/BannerEdit';
 import Customers from './pages/Customers';
+import Categories from './pages/Categories';
 import CustomerDetails from './pages/CustomerDetails';
 import OrderDetails from './pages/OrderDetails';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -59,6 +60,7 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="products/edit/:id" element={<ProductEdit />} />
           <Route path="deliveries" element={<Deliveries />} />
+          <Route path="categories" element={<Categories />} />
           <Route path="discounts" element={<Discounts />} />
           <Route path="banners" element={<Banners />} />
           <Route path="banners/edit/:id" element={<BannerEdit />} />

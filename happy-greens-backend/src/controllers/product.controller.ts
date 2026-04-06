@@ -359,10 +359,90 @@ export const updateProductStatus = async (req: Request, res: Response) => {
 
 export const getCategories = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query('SELECT id, name, slug FROM categories ORDER BY name ASC');
+        const result = await pool.query(`
+            SELECT c.id, c.name, c.slug, c.description,
+                   (SELECT COUNT(*)::int FROM products p WHERE p.category_id = c.id AND p.is_deleted = false) as product_count
+            FROM categories c ORDER BY c.name ASC
+        `);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching categories:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const createCategory = async (req: Request, res: Response) => {
+    try {
+        const { name, description } = req.body;
+        if (!name || typeof name !== 'string' || !name.trim()) {
+            return res.status(400).json({ message: 'Category name is required' });
+        }
+        const safeName = name.trim().slice(0, 100);
+        const slug = safeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const safeDescription = typeof description === 'string' ? description.trim().slice(0, 500) : '';
+
+        const existing = await pool.query('SELECT id FROM categories WHERE slug = $1', [slug]);
+        if (existing.rows.length > 0) {
+            return res.status(409).json({ message: 'A category with this name already exists' });
+        }
+
+        const result = await pool.query(
+            'INSERT INTO categories (name, slug, description) VALUES ($1, $2, $3) RETURNING *',
+            [safeName, slug, safeDescription]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating category:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const updateCategory = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+        if (!name || typeof name !== 'string' || !name.trim()) {
+            return res.status(400).json({ message: 'Category name is required' });
+        }
+        const safeName = name.trim().slice(0, 100);
+        const slug = safeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const safeDescription = typeof description === 'string' ? description.trim().slice(0, 500) : '';
+
+        const conflict = await pool.query('SELECT id FROM categories WHERE slug = $1 AND id != $2', [slug, id]);
+        if (conflict.rows.length > 0) {
+            return res.status(409).json({ message: 'Another category with this name already exists' });
+        }
+
+        const result = await pool.query(
+            'UPDATE categories SET name = $1, slug = $2, description = $3 WHERE id = $4 RETURNING *',
+            [safeName, slug, safeDescription, id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating category:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const deleteCategory = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const productCheck = await pool.query(
+            'SELECT COUNT(*)::int as count FROM products WHERE category_id = $1 AND is_deleted = false', [id]
+        );
+        if (productCheck.rows[0].count > 0) {
+            return res.status(400).json({ message: `Cannot delete: ${productCheck.rows[0].count} product(s) still assigned to this category` });
+        }
+        const result = await pool.query('DELETE FROM categories WHERE id = $1 RETURNING id', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+        res.json({ message: 'Category deleted' });
+    } catch (error) {
+        console.error('Error deleting category:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
