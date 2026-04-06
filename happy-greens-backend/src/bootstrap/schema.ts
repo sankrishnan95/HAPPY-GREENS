@@ -138,6 +138,20 @@ export const ensureOperationsSchema = async (): Promise<void> => {
     `);
 
     await pool.query(`
+        ALTER TABLE coupons
+        ADD COLUMN IF NOT EXISTS applicable_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS applicable_product_id INTEGER REFERENCES products(id) ON DELETE SET NULL
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_coupons_applicable_category ON coupons(applicable_category_id)
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_coupons_applicable_product ON coupons(applicable_product_id)
+    `);
+
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS order_status_history (
             id SERIAL PRIMARY KEY,
             order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,

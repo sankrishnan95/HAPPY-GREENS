@@ -39,10 +39,14 @@ export const createCoupon = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Percentage discount cannot exceed 100%' });
         }
 
-        // Helper function to convert empty strings to null
         const toNullIfEmpty = (value: any) => {
             if (value === '' || value === undefined) return null;
             return value;
+        };
+
+        const adjustValidUntil = (dateStr: string) => {
+            if (!dateStr) return dateStr;
+            return dateStr.length === 10 ? `${dateStr} 23:59:59` : dateStr;
         };
 
         // Create coupon
@@ -62,7 +66,7 @@ export const createCoupon = async (req: Request, res: Response) => {
                 toNullIfEmpty(max_discount_amount),
                 toNullIfEmpty(usage_limit),
                 valid_from,
-                valid_until,
+                adjustValidUntil(valid_until),
                 userId,
                 toNullIfEmpty(applicable_category_id),
                 toNullIfEmpty(applicable_product_id)
@@ -76,8 +80,10 @@ export const createCoupon = async (req: Request, res: Response) => {
         if (error.code === '23505') { // Unique violation
             return res.status(400).json({ message: 'Coupon code already exists' });
         }
-        
-        res.status(500).json({ message: 'Server error' });
+        if (error.constraint === 'valid_dates') {
+            return res.status(400).json({ message: 'Valid until date must be after valid from date' });
+        }
+        res.status(500).json({ message: 'Server error', error: String(error.message) });
     }
 };
 
@@ -172,10 +178,14 @@ export const updateCoupon = async (req: Request, res: Response) => {
             applicable_product_id
         } = req.body;
 
-        // Helper function to convert empty strings to null
         const toNullIfEmpty = (value: any) => {
             if (value === '' || value === undefined) return null;
             return value;
+        };
+
+        const adjustValidUntil = (dateStr: string) => {
+            if (!dateStr) return dateStr;
+            return dateStr.length === 10 ? `${dateStr} 23:59:59` : dateStr;
         };
 
         const result = await pool.query(
@@ -200,7 +210,7 @@ export const updateCoupon = async (req: Request, res: Response) => {
                 toNullIfEmpty(max_discount_amount), 
                 toNullIfEmpty(usage_limit), 
                 valid_from, 
-                valid_until, 
+                adjustValidUntil(valid_until), 
                 is_active, 
                 toNullIfEmpty(applicable_category_id),
                 toNullIfEmpty(applicable_product_id),
@@ -213,8 +223,10 @@ export const updateCoupon = async (req: Request, res: Response) => {
         }
 
         res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Error updating coupon:', error);
+    } catch (error: any) {
+        if (error.constraint === 'valid_dates') {
+            return res.status(400).json({ message: 'Valid until date must be after valid from date' });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 };
