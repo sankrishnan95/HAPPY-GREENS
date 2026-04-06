@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
 import { buildUnitConfig, calculateLineTotal, isValidQuantityForConfig, normalizeQuantityForUnit } from '../services/unit-pricing.service';
+import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 
 const getProductForCart = async (productId: number) => {
     const result = await pool.query(
@@ -27,9 +28,10 @@ const getOrCreateCartId = async (userId: number): Promise<number> => {
 export const getCart = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     try {
+        const baseUrl = getPublicBaseUrl(req);
         const result = await pool.query(
             `SELECT ci.id as cart_item_id, ci.quantity, ci.unit, p.id as product_id, p.name, p.price, p.discount_price as "discountPrice",
-                    p.price_per_unit as "pricePerUnit", p.min_qty as "minQty", p.step_qty as "stepQty", p.image_url
+                    p.price_per_unit as "pricePerUnit", p.min_qty as "minQty", p.step_qty as "stepQty", p.image_url, p.images
              FROM carts c
              JOIN cart_items ci ON ci.cart_id = c.id
              JOIN products p ON ci.product_id = p.id
@@ -41,6 +43,13 @@ export const getCart = async (req: Request, res: Response) => {
             ...row,
             id: Number(row.product_id),
             quantity: Number(row.quantity),
+            images: Array.isArray(row.images)
+                ? row.images.map((image: string) => normalizeMediaUrl(image, baseUrl))
+                : [],
+            image_url: normalizeMediaUrl(
+                Array.isArray(row.images) && row.images.length > 0 ? row.images[0] : row.image_url,
+                baseUrl
+            ),
             lineTotal: calculateLineTotal(Number(row.quantity), buildUnitConfig(row)),
         })));
     } catch (error) {
