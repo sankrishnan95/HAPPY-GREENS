@@ -21,14 +21,14 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
     }
     // @ts-ignore
     const userId = req.user?.id;
-    const { items, pointsUsed } = req.body;
+    const { items, pointsUsed, couponCode } = req.body;
 
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
         return res.status(500).json({ message: 'Razorpay is not configured on server' });
     }
 
     try {
-        const { finalTotal } = await calculateOrderTotals(pool, items, pointsUsed, userId);
+        const { finalTotal } = await calculateOrderTotals(pool, items, pointsUsed, couponCode, userId);
         const options = {
             amount: Math.round(finalTotal * 100),
             currency: 'INR',

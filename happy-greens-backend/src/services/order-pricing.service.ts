@@ -17,12 +17,15 @@ interface CalculatedOrderItem {
     pricePerUnit: number;
     minQty: number;
     stepQty: number;
+    category_id: number;
 }
 
 export interface CalculatedOrderTotals {
     items: CalculatedOrderItem[];
     subtotal: number;
     validatedPointsUsed: number;
+    couponDiscount: number;
+    validatedCouponId: number | null;
     deliveryFee: number;
     finalTotal: number;
 }
@@ -31,6 +34,7 @@ export const calculateOrderTotals = async (
     dbClient: DbClient,
     rawItems: OrderItemInput[],
     requestedPointsUsed: unknown,
+    couponCode: unknown,
     userId: number
 ): Promise<CalculatedOrderTotals> => {
     if (!Array.isArray(rawItems) || rawItems.length === 0) {
@@ -48,7 +52,7 @@ export const calculateOrderTotals = async (
 
     const productIds = [...new Set(normalizedItems.map((item) => item.productId))];
     const productsResult = await dbClient.query(
-        `SELECT id, name, price, discount_price, price_per_unit, unit, min_qty, step_qty, is_active, is_deleted
+        `SELECT id, name, price, discount_price, price_per_unit, unit, min_qty, step_qty, is_active, is_deleted, category_id
          FROM products
          WHERE id = ANY($1::int[])`,
         [productIds]
@@ -85,6 +89,7 @@ export const calculateOrderTotals = async (
             pricePerUnit: config.pricePerUnit,
             minQty: config.minQty,
             stepQty: config.stepQty,
+            category_id: product.category_id,
         };
     });
 
@@ -103,16 +108,53 @@ export const calculateOrderTotals = async (
     const maxRedeemable = Math.floor(subtotal * 0.5);
     const validatedPointsUsed = Math.max(0, Math.min(safeRequested, availablePoints, maxRedeemable));
 
-    // Delivery fee: free for orders with subtotal >= 500, otherwise 30
+    let couponDiscount = 0;
+    let validatedCouponId: number | null = null;
+    
+    if (typeof couponCode === 'string' && couponCode.trim()) {
+        const couponResult = await dbClient.query(
+            `SELECT * FROM coupons WHERE UPPER(code) = UPPER($1) AND is_active = true AND valid_from <= NOW() AND valid_until >= NOW()`, 
+            [couponCode.trim()]
+        );
+        if (couponResult.rows.length > 0) {
+            const coupon = couponResult.rows[0];
+            let applicableSubtotal = 0;
+            calculatedItems.forEach(item => {
+                let isValid = true;
+                if (coupon.applicable_category_id && Number(item.category_id) !== Number(coupon.applicable_category_id)) isValid = false;
+                if (coupon.applicable_product_id && Number(item.product_id) !== Number(coupon.applicable_product_id)) isValid = false;
+                if (isValid) applicableSubtotal += item.price;
+            });
+            
+            if (applicableSubtotal >= Number(coupon.min_order_amount)) {
+                if (coupon.discount_type === 'flat') {
+                    couponDiscount = Number(coupon.discount_value);
+                } else {
+                    couponDiscount = (applicableSubtotal * Number(coupon.discount_value)) / 100;
+                    if (coupon.max_discount_amount) {
+                        couponDiscount = Math.min(couponDiscount, Number(coupon.max_discount_amount));
+                    }
+                }
+                couponDiscount = Math.min(couponDiscount, applicableSubtotal);
+                validatedCouponId = coupon.id;
+            }
+        }
+    }
+
+    const totalAfterDiscounts = Math.max(0, subtotal - validatedPointsUsed - couponDiscount);
+    
+    // Delivery fee: free for orders with total >= 500, otherwise 30
     const FREE_DELIVERY_THRESHOLD = 500;
     const DELIVERY_FEE = 30;
-    const deliveryFee = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+    const deliveryFee = totalAfterDiscounts >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
 
     return {
         items: calculatedItems,
         subtotal,
         validatedPointsUsed,
+        couponDiscount,
+        validatedCouponId,
         deliveryFee,
-        finalTotal: roundCurrency(Math.max(0, subtotal - validatedPointsUsed + deliveryFee)),
+        finalTotal: roundCurrency(totalAfterDiscounts + deliveryFee),
     };
 };

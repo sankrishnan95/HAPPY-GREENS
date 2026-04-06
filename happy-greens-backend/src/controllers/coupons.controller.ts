@@ -18,7 +18,9 @@ export const createCoupon = async (req: Request, res: Response) => {
             max_discount_amount,
             usage_limit,
             valid_from,
-            valid_until
+            valid_until,
+            applicable_category_id,
+            applicable_product_id
         } = req.body;
 
         const userId = (req as any).user?.id;
@@ -47,8 +49,9 @@ export const createCoupon = async (req: Request, res: Response) => {
         const result = await pool.query(
             `INSERT INTO coupons 
              (code, description, discount_type, discount_value, min_order_amount, 
-              max_discount_amount, usage_limit, valid_from, valid_until, created_by)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              max_discount_amount, usage_limit, valid_from, valid_until, created_by,
+              applicable_category_id, applicable_product_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
              RETURNING *`,
             [
                 code.toUpperCase(),
@@ -60,7 +63,9 @@ export const createCoupon = async (req: Request, res: Response) => {
                 toNullIfEmpty(usage_limit),
                 valid_from,
                 valid_until,
-                userId
+                userId,
+                toNullIfEmpty(applicable_category_id),
+                toNullIfEmpty(applicable_product_id)
             ]
         );
 
@@ -87,9 +92,13 @@ export const getCoupons = async (req: Request, res: Response) => {
         let query = `
             SELECT 
                 c.*,
-                u.full_name as created_by_name
+                u.full_name as created_by_name,
+                cat.name as applicable_category_name,
+                p.name as applicable_product_name
             FROM coupons c
             LEFT JOIN users u ON c.created_by = u.id
+            LEFT JOIN categories cat ON c.applicable_category_id = cat.id
+            LEFT JOIN products p ON c.applicable_product_id = p.id
         `;
 
         const params: any[] = [];
@@ -121,9 +130,13 @@ export const getCouponById = async (req: Request, res: Response) => {
         const result = await pool.query(
             `SELECT 
                 c.*,
-                u.full_name as created_by_name
+                u.full_name as created_by_name,
+                cat.name as applicable_category_name,
+                p.name as applicable_product_name
              FROM coupons c
              LEFT JOIN users u ON c.created_by = u.id
+             LEFT JOIN categories cat ON c.applicable_category_id = cat.id
+             LEFT JOIN products p ON c.applicable_product_id = p.id
              WHERE c.id = $1`,
             [id]
         );
@@ -154,7 +167,9 @@ export const updateCoupon = async (req: Request, res: Response) => {
             usage_limit,
             valid_from,
             valid_until,
-            is_active
+            is_active,
+            applicable_category_id,
+            applicable_product_id
         } = req.body;
 
         // Helper function to convert empty strings to null
@@ -173,8 +188,10 @@ export const updateCoupon = async (req: Request, res: Response) => {
                  valid_from = COALESCE($6, valid_from),
                  valid_until = COALESCE($7, valid_until),
                  is_active = COALESCE($8, is_active),
+                 applicable_category_id = $9,
+                 applicable_product_id = $10,
                  updated_at = NOW()
-             WHERE id = $9
+             WHERE id = $11
              RETURNING *`,
             [
                 description, 
@@ -185,6 +202,8 @@ export const updateCoupon = async (req: Request, res: Response) => {
                 valid_from, 
                 valid_until, 
                 is_active, 
+                toNullIfEmpty(applicable_category_id),
+                toNullIfEmpty(applicable_product_id),
                 id
             ]
         );
@@ -232,11 +251,11 @@ export const deleteCoupon = async (req: Request, res: Response) => {
  */
 export const validateCoupon = async (req: Request, res: Response) => {
     try {
-        const { code, order_amount } = req.body;
+        const { code, cart_items } = req.body;
         const userId = (req as any).user?.id;
 
-        if (!code || !order_amount) {
-            return res.status(400).json({ message: 'Code and order_amount are required' });
+        if (!code || !cart_items || !Array.isArray(cart_items)) {
+            return res.status(400).json({ message: 'Code and valid cart_items array are required' });
         }
 
         // Get coupon
@@ -258,11 +277,29 @@ export const validateCoupon = async (req: Request, res: Response) => {
 
         const coupon = couponResult.rows[0];
 
+        let applicable_subtotal = 0;
+        let total_order_amount = 0;
+
+        for (const item of cart_items) {
+            const itemTotal = Number(item.price) * Number(item.quantity || 1);
+            total_order_amount += itemTotal;
+
+            let isApplicable = true;
+            if (coupon.applicable_category_id && Number(item.category_id) !== Number(coupon.applicable_category_id)) isApplicable = false;
+            if (coupon.applicable_product_id && Number(item.product_id) !== Number(coupon.applicable_product_id)) isApplicable = false;
+
+            if (isApplicable) applicable_subtotal += itemTotal;
+        }
+
+        if (applicable_subtotal === 0) {
+            return res.status(400).json({ valid: false, message: 'This coupon is not applicable to any items in your cart' });
+        }
+
         // Check minimum order amount
-        if (order_amount < parseFloat(coupon.min_order_amount)) {
+        if (applicable_subtotal < parseFloat(coupon.min_order_amount)) {
             return res.status(400).json({
                 valid: false,
-                message: `Minimum order amount is ₹${coupon.min_order_amount}`
+                message: `Minimum applicable item amount is ₹${coupon.min_order_amount}`
             });
         }
 
@@ -294,7 +331,7 @@ export const validateCoupon = async (req: Request, res: Response) => {
         if (coupon.discount_type === 'flat') {
             discount_amount = parseFloat(coupon.discount_value);
         } else { // percentage
-            discount_amount = (order_amount * parseFloat(coupon.discount_value)) / 100;
+            discount_amount = (applicable_subtotal * parseFloat(coupon.discount_value)) / 100;
             
             // Apply max discount cap if set
             if (coupon.max_discount_amount) {
@@ -302,7 +339,9 @@ export const validateCoupon = async (req: Request, res: Response) => {
             }
         }
 
-        const final_amount = Math.max(0, order_amount - discount_amount);
+        // discount cannot be greater than the applicable subtotal
+        discount_amount = Math.min(discount_amount, applicable_subtotal);
+        const final_amount = Math.max(0, total_order_amount - discount_amount);
 
         res.json({
             valid: true,

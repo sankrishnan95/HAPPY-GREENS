@@ -71,7 +71,7 @@ const hasMeaningfulDraft = (draft: Partial<CheckoutDraft>) =>
 
 const Checkout = () => {
     const navigate = useNavigate();
-    const { cart, user, clearCart } = useStore();
+    const { cart, user, clearCart, coupon } = useStore();
     const subtotal = cart.reduce((acc, item) => acc + calculateLineTotal(item, item.quantity), 0);
     const clientOrderTokenRef = useRef(
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -105,9 +105,12 @@ const Checkout = () => {
     const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<number | ''>('');
 
     const maxRedeemable = Math.min(loyaltyPoints, Math.floor(subtotal * 0.5));
-    const discount = Math.min(pointsToUse, maxRedeemable);
-    const deliveryFee = subtotal >= 500 ? 0 : 30;
-    const total = Math.max(0, subtotal - discount + deliveryFee);
+    const loyaltyDiscount = Math.min(pointsToUse, maxRedeemable);
+    const couponDiscountAmount = coupon ? coupon.discount : 0;
+    const finalTotalDiscount = loyaltyDiscount + couponDiscountAmount;
+    const totalAfterDiscounts = Math.max(0, subtotal - finalTotalDiscount);
+    const deliveryFee = totalAfterDiscounts >= 500 ? 0 : 30;
+    const total = totalAfterDiscounts + deliveryFee;
     const draftStorageKey = getCheckoutDraftStorageKey(user);
 
     useEffect(() => {
@@ -273,7 +276,8 @@ const Checkout = () => {
                         product_id: item.id,
                         quantity: item.quantity,
                     })),
-                    pointsUsed: discount,
+                    pointsUsed: loyaltyDiscount,
+                    couponCode: coupon?.code,
                 });
 
                 const paymentResult = await new Promise<any>((resolve, reject) => {
@@ -346,14 +350,15 @@ const Checkout = () => {
                 paymentMethod: formData.paymentMethod,
                 paymentIntentId,
                 paymentDetails,
-                pointsUsed: discount,
+                pointsUsed: loyaltyDiscount,
+                couponCode: coupon?.code,
                 clientOrderToken: clientOrderTokenRef.current
             };
 
             await createOrder(orderData);
 
-            if (discount > 0) {
-                toast.success(`You saved ₹${discount} using loyalty points!`);
+            if (loyaltyDiscount > 0) {
+                toast.success(`You saved ₹${loyaltyDiscount} using loyalty points!`);
             }
             toast.success('Order placed successfully!');
             localStorage.removeItem(draftStorageKey);
@@ -707,10 +712,10 @@ const Checkout = () => {
                                                 </button>
                                             )}
                                         </div>
-                                        {discount > 0 && (
+                                        {loyaltyDiscount > 0 && (
                                             <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-green-700">
                                                 <Gift className="h-4 w-4" />
-                                                <span className="text-sm font-semibold">Discount applied: ₹{discount} off your order.</span>
+                                                <span className="text-sm font-semibold">Discount applied: ₹{loyaltyDiscount} off your order.</span>
                                             </div>
                                         )}
                                     </div>
@@ -771,10 +776,16 @@ const Checkout = () => {
                                         <span className="font-medium text-gray-900">₹{deliveryFee}</span>
                                     )}
                                 </div>
-                                {discount > 0 && (
+                                {couponDiscountAmount > 0 && (
+                                    <div className="flex justify-between text-green-600 font-medium">
+                                        <span>Coupon ({coupon?.code})</span>
+                                        <span>-₹{couponDiscountAmount}</span>
+                                    </div>
+                                )}
+                                {loyaltyDiscount > 0 && (
                                     <div className="flex justify-between text-green-600 font-medium">
                                         <span>Loyalty discount</span>
-                                        <span>-₹{discount}</span>
+                                        <span>-₹{loyaltyDiscount}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between pt-3 border-t border-gray-200 text-base font-bold text-gray-900">
@@ -789,18 +800,18 @@ const Checkout = () => {
                                 <span>Average delivery time: <strong>6-24 hours</strong></span>
                             </div>
 
-                            {subtotal < 500 && (
+                            {totalAfterDiscounts < 500 && (
                                 <div className="mt-3 rounded-lg bg-green-50 border border-green-200 p-3">
                                     <p className="text-xs text-green-700 font-medium">
-                                        🎉 Save ₹{deliveryFee} on delivery fee by adding ₹{(500 - subtotal).toFixed(0)} more to cart
+                                        🎉 Save ₹{deliveryFee} on delivery fee by adding ₹{(500 - totalAfterDiscounts).toFixed(0)} more to cart
                                     </p>
                                 </div>
                             )}
 
-                            {discount > 0 && (
+                            {finalTotalDiscount > 0 && (
                                 <div className="mt-3 rounded-lg bg-green-50 border border-green-200 p-3">
                                     <p className="text-xs text-green-700 font-semibold">
-                                        You have saved ₹{discount} on your order! Yay!
+                                        You have saved ₹{finalTotalDiscount} on your order! Yay!
                                     </p>
                                 </div>
                             )}

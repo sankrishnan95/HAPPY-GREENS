@@ -42,6 +42,7 @@ export const createOrder = async (req: Request, res: Response) => {
         paymentMethod,
         paymentDetails,
         pointsUsed = 0,
+        couponCode,
         clientOrderToken,
     } = req.body;
 
@@ -84,10 +85,11 @@ export const createOrder = async (req: Request, res: Response) => {
             throw new Error('INVALID_PAYMENT_METHOD');
         }
 
-        const { items: pricedItems, validatedPointsUsed, finalTotal } = await calculateOrderTotals(
+        const { items: pricedItems, validatedPointsUsed, couponDiscount, validatedCouponId, finalTotal } = await calculateOrderTotals(
             client,
             items,
             pointsUsed,
+            couponCode,
             userId
         );
 
@@ -95,10 +97,10 @@ export const createOrder = async (req: Request, res: Response) => {
 
         const orderRes = await client.query(
             `INSERT INTO orders
-               (user_id, total_amount, status, payment_method, payment_intent_id, shipping_address, points_used, client_order_token)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+               (user_id, total_amount, status, payment_method, payment_intent_id, shipping_address, points_used, client_order_token, coupon_id, discount_amount)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              RETURNING id`,
-            [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify({ name, address, city, zip, phone }), validatedPointsUsed, sanitizedClientOrderToken]
+            [userId, finalTotal, orderStatus, paymentMethod, paymentIntentId, JSON.stringify({ name, address, city, zip, phone }), validatedPointsUsed, sanitizedClientOrderToken, validatedCouponId, couponDiscount]
         );
         const orderId = orderRes.rows[0].id;
 
@@ -131,6 +133,14 @@ export const createOrder = async (req: Request, res: Response) => {
             await client.query(
                 'INSERT INTO order_items (order_id, product_id, product_name, quantity, unit, price_at_purchase) VALUES ($1, $2, $3, $4, $5, $6)',
                 [orderId, item.product_id, item.product_name, item.quantity, item.unit, item.price]
+            );
+        }
+        
+        if (validatedCouponId) {
+            await client.query(
+                `INSERT INTO coupon_usage (coupon_id, user_id, order_id, discount_amount)
+                 VALUES ($1, $2, $3, $4)`,
+                [validatedCouponId, userId, orderId, couponDiscount]
             );
         }
 
@@ -197,7 +207,8 @@ export const createOrder = async (req: Request, res: Response) => {
             orderId,
             message: 'Order created successfully',
             pointsUsed: validatedPointsUsed,
-            discount: validatedPointsUsed,
+            couponDiscount,
+            discount: validatedPointsUsed + couponDiscount,
             finalTotal,
         });
     } catch (error: any) {

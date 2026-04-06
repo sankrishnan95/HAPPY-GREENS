@@ -94,7 +94,9 @@ export const getProducts = async (req: Request, res: Response) => {
             paramCount++;
         }
 
-        if (sort === 'price_asc') {
+        if (hasOffer === 'true') {
+            query += ' ORDER BY (COALESCE(p.price_per_unit, p.price) - p.discount_price) DESC, p.created_at DESC';
+        } else if (sort === 'price_asc') {
             query += ' ORDER BY COALESCE(p.discount_price, p.price_per_unit, p.price) ASC';
         } else if (sort === 'price_desc') {
             query += ' ORDER BY COALESCE(p.discount_price, p.price_per_unit, p.price) DESC';

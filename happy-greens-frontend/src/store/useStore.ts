@@ -35,10 +35,12 @@ interface AppState {
     user: User | null;
     token: string | null;
     wishlistIds: number[];
+    coupon: { code: string; discount: number; message: string } | null;
     addToCart: (product: Product) => void;
     removeFromCart: (productId: number) => void;
     updateQuantity: (productId: number, quantity: number) => void;
     clearCart: () => void;
+    setCoupon: (coupon: { code: string; discount: number; message: string } | null) => void;
     setUser: (user: User | null, token: string | null) => void;
     setWishlist: (productIds: number[]) => void;
     addWishlistItem: (productId: number) => void;
@@ -75,6 +77,8 @@ export const useStore = create<AppState>()(
             user: null,
             token: null,
             wishlistIds: [],
+            coupon: null,
+            setCoupon: (coupon) => set({ coupon }),
             addToCart: (product) => {
                 const normalizedProduct = normalizeCartItem(product);
                 const quantityToAdd = getInitialQuantity(normalizedProduct);
@@ -86,9 +90,10 @@ export const useStore = create<AppState>()(
                             cart: state.cart.map((item) =>
                                 item.id === product.id ? { ...item, quantity: incrementQuantity(item, item.quantity) } : item
                             ),
+                            coupon: null,
                         };
                     }
-                    return { cart: [...state.cart, { ...normalizedProduct, quantity: quantityToAdd }] };
+                    return { cart: [...state.cart, { ...normalizedProduct, quantity: quantityToAdd }], coupon: null };
                 });
 
                 if (get().user && get().token) {
@@ -98,6 +103,7 @@ export const useStore = create<AppState>()(
             removeFromCart: (productId) => {
                 set((state) => ({
                     cart: state.cart.filter((item) => item.id !== productId),
+                    coupon: null,
                 }));
                 if (get().user && get().token) {
                     apiRemoveFromCart(productId).catch(console.error);
@@ -105,6 +111,7 @@ export const useStore = create<AppState>()(
             },
             updateQuantity: (productId, quantity) => {
                 set((state) => ({
+                    coupon: null,
                     cart: state.cart.flatMap((item) => {
                         if (item.id !== productId) return [item];
                         const nextQuantity = Number(quantity);
@@ -121,7 +128,7 @@ export const useStore = create<AppState>()(
                 }
             },
             clearCart: () => {
-                set({ cart: [] });
+                set({ cart: [], coupon: null });
                 if (get().user && get().token) {
                     apiClearCart().catch(console.error);
                 }
@@ -150,7 +157,7 @@ export const useStore = create<AppState>()(
                 set((state) => ({
                     wishlistIds: state.wishlistIds.filter((id) => id !== productId),
                 })),
-            logout: () => set({ user: null, token: null, cart: [], wishlistIds: [] }),
+            logout: () => set({ user: null, token: null, cart: [], wishlistIds: [], coupon: null }),
             syncCartWithBackend: async () => {
                 try {
                     const localCart = get().cart || [];

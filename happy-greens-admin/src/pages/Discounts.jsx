@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Tag, Edit2, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { getCoupons, createCoupon, updateCoupon, deleteCoupon } from '../services/coupon.service';
+import { getCategories, getProducts } from '../services/product.service';
 export default function Discounts() {
   const [coupons, setCoupons] = useState([]);
   const [filteredCoupons, setFilteredCoupons] = useState([]);
@@ -180,6 +181,21 @@ export default function Discounts() {
             </div>
 
             <p className="text-sm text-gray-600 mb-4">{coupon.description}</p>
+            
+            {(coupon.applicable_category_name || coupon.applicable_product_name) && (
+              <div className="mb-4 inline-flex flex-col gap-1 items-start">
+                {coupon.applicable_category_name && (
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-100">
+                    Category: {coupon.applicable_category_name}
+                  </span>
+                )}
+                {coupon.applicable_product_name && (
+                  <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-semibold rounded-full border border-purple-100">
+                    Product: {coupon.applicable_product_name}
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm">
@@ -263,7 +279,17 @@ function CouponModal({ coupon, onClose, onSave }) {
     usage_limit: coupon?.usage_limit || '',
     valid_from: coupon?.valid_from?.split('T')[0] || new Date().toISOString().split('T')[0],
     valid_until: coupon?.valid_until?.split('T')[0] || '',
+    applicable_category_id: coupon?.applicable_category_id || '',
+    applicable_product_id: coupon?.applicable_product_id || '',
   });
+
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    getCategories().then((res) => setCategories(res.data)).catch(console.error);
+    getProducts({ limit: 1000 }).then((res) => setProducts(res.data.products || [])).catch(console.error);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -336,6 +362,22 @@ function CouponModal({ coupon, onClose, onSave }) {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               rows="2"
             />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Applicable Category
+            </label>
+            <select
+              value={formData.applicable_category_id}
+              onChange={(e) => setFormData({ ...formData, applicable_category_id: e.target.value, applicable_product_id: '' })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+            >
+              <option value="">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
