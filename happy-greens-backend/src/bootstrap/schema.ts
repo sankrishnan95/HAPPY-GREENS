@@ -399,3 +399,17 @@ export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void
     const unassigned = await pool.query('SELECT COUNT(*)::int AS count FROM products WHERE category_id IS NULL');
     console.log(`[Schema Bootstrap] categories ensured and product category backfill done (unassigned: ${unassigned.rows[0]?.count ?? 0})`);
 };
+
+export const ensureCategoryHierarchySchema = async (): Promise<void> => {
+    await pool.query(`
+        ALTER TABLE categories
+        ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES categories(id) ON DELETE CASCADE
+    `);
+
+    // Create an index for faster lookups of subcategories
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id)
+    `);
+
+    console.log('[Schema Bootstrap] categories.parent_id hierarchy ensured');
+};

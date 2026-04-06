@@ -10,17 +10,17 @@ import { normalizeImageUrl } from '../utils/image';
 import { getProducts } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
 
-const categories = [
-    { name: 'Fruits', image: '/categories/apple.png' },
-    { name: 'Vegetables', image: '/categories/broccoli.png' },
-    { name: 'Dairy', image: '/categories/milk.png' },
-    { name: 'Staples', image: '/categories/rice.png' },
-    { name: 'Snacks', image: '/categories/chips.png' },
-    { name: 'Beverages', image: '/categories/juice.png' },
-    { name: 'Flowers', image: '/categories/flowers-dahlia.png' },
-    { name: 'Laundromat', image: '/categories/detergent.png' },
-    { name: 'Personal Care', image: '/categories/shampoo.png' },
-];
+const CATEGORY_IMAGES: Record<string, string> = {
+    'fruits': '/categories/apple.png',
+    'vegetables': '/categories/broccoli.png',
+    'dairy': '/categories/milk.png',
+    'staples': '/categories/rice.png',
+    'snacks': '/categories/chips.png',
+    'beverages': '/categories/juice.png',
+    'flowers': '/categories/flowers-dahlia.png',
+    'laundromat': '/categories/detergent.png',
+    'personal-care': '/categories/shampoo.png',
+};
 
 const features = [
     { icon: Truck, title: 'Same day delivery', description: 'Fast slots in busy city zones', tone: 'bg-green-50 text-green-700' },
@@ -44,6 +44,7 @@ const Home = () => {
     const [loadingBanners, setLoadingBanners] = useState(true);
     const [offerProducts, setOfferProducts] = useState<any[]>([]);
     const [loadingOffers, setLoadingOffers] = useState(true);
+    const [categories, setCategories] = useState<any[]>([]);
 
     const isVideo = (url: string) => {
         if (!url) return false;
@@ -76,8 +77,22 @@ const Home = () => {
                 setLoadingOffers(false);
             }
         };
+        const fetchCategories = async () => {
+            try {
+                // re-use product.service.ts if we export it, wait we need to import it at top of Home.tsx
+                const { getCategories } = await import('../services/product.service');
+                const data = await getCategories();
+                if (data) {
+                    setCategories(data.filter((c: any) => !c.parent_id)); // Only top level on home page
+                }
+            } catch {
+                console.error('Failed to fetch categories');
+            }
+        };
+
         fetchBanners();
         fetchOffers();
+        fetchCategories();
     }, []);
 
     const heroBanner = banners.length > 0 ? banners[0] : null;
@@ -128,12 +143,12 @@ const Home = () => {
 
                 <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="-mx-1 overflow-x-auto px-1 pb-6 pt-4 hide-scrollbar overscroll-x-contain">
                     <div className="flex min-w-max gap-4 px-3 md:gap-8">
-                    {categories.map((cat) => (
-                        <motion.div key={cat.name} variants={fadeInUp} className="flex-none snap-start">
-                            <Link to={`/shop?category=${cat.name.toLowerCase()}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
+                    {categories.length > 0 ? categories.map((cat) => (
+                        <motion.div key={cat.id} variants={fadeInUp} className="flex-none snap-start">
+                            <Link to={`/shop?category=${cat.slug}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
                                 <div className="relative flex h-20 w-20 rounded-[1.75rem] sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03]">
                                     <img
-                                        src={cat.image}
+                                        src={CATEGORY_IMAGES[cat.slug] || '/categories/apple.png'} // Fallback to apple if no custom image
                                         alt={cat.name}
                                         loading="lazy"
                                         className="h-full w-full object-contain p-0.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.05)] md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.05)]"
@@ -142,7 +157,11 @@ const Home = () => {
                                 <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
                             </Link>
                         </motion.div>
-                    ))}
+                    )) : (
+                        [1,2,3,4,5,6].map(i => (
+                            <div key={i} className="flex-none w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-[1.75rem] bg-slate-100 animate-pulse" />
+                        ))
+                    )}
                     </div>
                 </motion.div>
             </motion.section>

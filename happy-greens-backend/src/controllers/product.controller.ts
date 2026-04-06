@@ -360,7 +360,7 @@ export const updateProductStatus = async (req: Request, res: Response) => {
 export const getCategories = async (req: Request, res: Response) => {
     try {
         const result = await pool.query(`
-            SELECT c.id, c.name, c.slug, c.description,
+            SELECT c.id, c.name, c.slug, c.description, c.parent_id,
                    (SELECT COUNT(*)::int FROM products p WHERE p.category_id = c.id AND p.is_deleted = false) as product_count
             FROM categories c ORDER BY c.name ASC
         `);
@@ -373,7 +373,7 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
     try {
-        const { name, description } = req.body;
+        const { name, description, parent_id } = req.body;
         if (!name || typeof name !== 'string' || !name.trim()) {
             return res.status(400).json({ message: 'Category name is required' });
         }
@@ -386,9 +386,11 @@ export const createCategory = async (req: Request, res: Response) => {
             return res.status(409).json({ message: 'A category with this name already exists' });
         }
 
+        const safeParentId = (!parent_id || isNaN(Number(parent_id))) ? null : Number(parent_id);
+
         const result = await pool.query(
-            'INSERT INTO categories (name, slug, description) VALUES ($1, $2, $3) RETURNING *',
-            [safeName, slug, safeDescription]
+            'INSERT INTO categories (name, slug, description, parent_id) VALUES ($1, $2, $3, $4) RETURNING *',
+            [safeName, slug, safeDescription, safeParentId]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -400,7 +402,7 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, description } = req.body;
+        const { name, description, parent_id } = req.body;
         if (!name || typeof name !== 'string' || !name.trim()) {
             return res.status(400).json({ message: 'Category name is required' });
         }
@@ -412,10 +414,15 @@ export const updateCategory = async (req: Request, res: Response) => {
         if (conflict.rows.length > 0) {
             return res.status(409).json({ message: 'Another category with this name already exists' });
         }
+        
+        const safeParentId = (!parent_id || isNaN(Number(parent_id))) ? null : Number(parent_id);
+        if (safeParentId === Number(id)) {
+            return res.status(400).json({ message: 'Category cannot be its own parent' });
+        }
 
         const result = await pool.query(
-            'UPDATE categories SET name = $1, slug = $2, description = $3 WHERE id = $4 RETURNING *',
-            [safeName, slug, safeDescription, id]
+            'UPDATE categories SET name = $1, slug = $2, description = $3, parent_id = $4 WHERE id = $5 RETURNING *',
+            [safeName, slug, safeDescription, safeParentId, id]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Category not found' });

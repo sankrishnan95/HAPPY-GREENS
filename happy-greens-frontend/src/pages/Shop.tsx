@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getProducts } from '../services/product.service';
+import { getProducts, getCategories } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import RewardBanner from '../components/RewardBanner';
 
-const categories = ['Fruits', 'Vegetables', 'Dairy', 'Staples', 'Snacks', 'Beverages', 'Flowers', 'Laundromat', 'Personal Care'];
-
 const Shop = () => {
     const [products, setProducts] = useState([]);
+    const [allCategories, setAllCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [fetching, setFetching] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -60,8 +59,37 @@ const Shop = () => {
             }
         };
 
+        const fetchCats = async () => {
+            try {
+                const res = await getCategories();
+                setAllCategories(res || []);
+            } catch (err) {
+                console.error("Failed to fetch categories", err);
+            }
+        };
+
         fetchProducts();
+        if (allCategories.length === 0) fetchCats();
     }, [category, q, page, sort]);
+
+    const topLevelCategories = allCategories.filter((c: any) => !c.parent_id);
+    
+    // Determine active category context for subcategories
+    let activeSubcategories: any[] = [];
+    let activeParentSlug = '';
+
+    if (category) {
+        const selectedCatObj = allCategories.find((c: any) => c.slug === category);
+        if (selectedCatObj) {
+            const activeParentId = selectedCatObj.parent_id ? selectedCatObj.parent_id : selectedCatObj.id;
+            activeSubcategories = allCategories.filter((c: any) => c.parent_id === activeParentId);
+            
+            const parentObj = allCategories.find((c: any) => c.id === activeParentId);
+            if (parentObj) {
+                activeParentSlug = parentObj.slug;
+            }
+        }
+    }
 
     const updateParams = (updater: (params: URLSearchParams) => void) => {
         const newParams = new URLSearchParams(searchParams);
@@ -139,32 +167,50 @@ const Shop = () => {
                     >
                         All
                     </button>
-                    {categories.map((cat) => (
-                        <button
-                            key={cat}
-                            type="button"
-                            onClick={() => handleCategoryChange(cat)}
-                            className={`min-h-[40px] whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${category === cat.toLowerCase() ? 'bg-green-600 text-white' : 'bg-white text-slate-700 border border-[#d7e4cc]'}`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
+                    {topLevelCategories.map((cat: any) => {
+                        const isActiveParent = category === cat.slug || activeParentSlug === cat.slug;
+                        return (
+                            <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => handleCategoryChange(cat.slug)}
+                                className={`min-h-[40px] whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 ${isActiveParent ? 'bg-green-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-[#d7e4cc] hover:bg-slate-50'}`}
+                            >
+                                {cat.name}
+                            </button>
+                        );
+                    })}
                 </div>
+
+                {activeSubcategories.length > 0 && (
+                    <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1 mt-1">
+                        {activeSubcategories.map((sub: any) => (
+                            <button
+                                key={sub.id}
+                                type="button"
+                                onClick={() => handleCategoryChange(sub.slug)}
+                                className={`min-h-[34px] whitespace-nowrap rounded-full px-4 py-1 text-xs font-semibold transition-colors duration-200 ${category === sub.slug ? 'bg-slate-800 text-white' : 'bg-[#eef5e6] text-slate-600 hover:bg-[#e4ebdc]'}`}
+                            >
+                                {sub.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 <div className={`${showFilters ? 'block' : 'hidden'} rounded-[1.4rem] border border-[#e1ead8] bg-white p-3 md:hidden`}>
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-green-700/70">Quick filter</p>
                     <div className="grid grid-cols-2 gap-2">
-                        {categories.map((cat) => (
+                        {topLevelCategories.map((cat: any) => (
                             <button
-                                key={`mobile-${cat}`}
+                                key={`mobile-${cat.id}`}
                                 type="button"
                                 onClick={() => {
-                                    handleCategoryChange(cat);
+                                    handleCategoryChange(cat.slug);
                                     setShowFilters(false);
                                 }}
-                                className={`rounded-[1rem] px-3 py-3 text-sm font-semibold ${category === cat.toLowerCase() ? 'bg-green-600 text-white' : 'bg-[#f5f8f1] text-slate-700'}`}
+                                className={`rounded-[1rem] px-3 py-3 text-sm font-semibold ${category === cat.slug ? 'bg-green-600 text-white' : 'bg-[#f5f8f1] text-slate-700'}`}
                             >
-                                {cat}
+                                {cat.name}
                             </button>
                         ))}
                     </div>

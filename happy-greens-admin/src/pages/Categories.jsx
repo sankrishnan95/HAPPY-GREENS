@@ -7,7 +7,7 @@ export default function Categories() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [formData, setFormData] = useState({ name: '', description: '' });
+    const [formData, setFormData] = useState({ name: '', description: '', parent_id: '' });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -25,14 +25,14 @@ export default function Categories() {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', description: '' });
+        setFormData({ name: '', description: '', parent_id: '' });
         setEditingId(null);
         setShowForm(false);
         setError('');
     };
 
     const handleEdit = (cat) => {
-        setFormData({ name: cat.name, description: cat.description || '' });
+        setFormData({ name: cat.name, description: cat.description || '', parent_id: cat.parent_id || '' });
         setEditingId(cat.id);
         setShowForm(true);
         setError('');
@@ -103,6 +103,15 @@ export default function Categories() {
                             <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Fresh Fruits" autoFocus />
                         </div>
                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Parent Category (Optional)</label>
+                            <select value={formData.parent_id || ''} onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none">
+                                <option value="">None (Top-level Category)</option>
+                                {categories.filter(c => (!editingId || c.id !== editingId) && !c.parent_id).map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                             <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="Short description (optional)" />
                         </div>
@@ -127,26 +136,51 @@ export default function Categories() {
             ) : (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="divide-y divide-gray-100">
-                        {categories.map((cat) => (
-                            <div key={cat.id} className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <span className="font-semibold text-gray-900">{cat.name}</span>
-                                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md font-mono">{cat.slug}</span>
+                        {categories.filter(c => !c.parent_id).map((parentCat) => (
+                            <div key={parentCat.id}>
+                                <div className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-semibold text-gray-900">{parentCat.name}</span>
+                                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md font-mono">{parentCat.slug}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 mt-1">
+                                            {parentCat.description && <span className="text-sm text-gray-500 truncate">{parentCat.description}</span>}
+                                            <span className="text-xs text-gray-400">{parentCat.product_count || 0} product{parentCat.product_count !== 1 ? 's' : ''}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        {cat.description && <span className="text-sm text-gray-500 truncate">{cat.description}</span>}
-                                        <span className="text-xs text-gray-400">{cat.product_count || 0} product{cat.product_count !== 1 ? 's' : ''}</span>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                        <button onClick={() => handleEdit(parentCat)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Edit">
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => handleDelete(parentCat)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 flex-shrink-0">
-                                    <button onClick={() => handleEdit(cat)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Edit">
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
-                                    <button onClick={() => handleDelete(cat)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
+                                {categories.filter(c => c.parent_id === parentCat.id).map(subCat => (
+                                    <div key={subCat.id} className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors bg-gray-50/50 border-t border-gray-100 pl-12">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-3 h-3 rounded-bl-sm border-b-2 border-l-2 border-gray-300 opacity-50 absolute -ml-5 mt-[-10px]" />
+                                                <span className="font-semibold text-gray-800">{subCat.name}</span>
+                                                <span className="text-xs text-gray-400 bg-gray-200/60 px-2 py-0.5 rounded-md font-mono">{subCat.slug}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1 pl-4">
+                                                {subCat.description && <span className="text-sm text-gray-500 truncate">{subCat.description}</span>}
+                                                <span className="text-xs text-gray-400">{subCat.product_count || 0} product{subCat.product_count !== 1 ? 's' : ''}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                            <button onClick={() => handleEdit(subCat)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Edit">
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleDelete(subCat)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ))}
                     </div>
