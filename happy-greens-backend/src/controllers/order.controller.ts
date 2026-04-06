@@ -15,6 +15,11 @@ const normalizePhone = (phone: unknown): string | null => {
     return null;
 };
 
+const normalizeText = (value: unknown, maxLength: number): string => {
+    if (typeof value !== 'string') return '';
+    return value.trim().slice(0, maxLength);
+};
+
 const getExistingOrderByToken = async (userId: number, clientOrderToken: string) => {
     const existing = await pool.query(
         'SELECT id, total_amount, points_used FROM orders WHERE user_id = $1 AND client_order_token = $2 LIMIT 1',
@@ -68,9 +73,13 @@ export const createOrder = async (req: Request, res: Response) => {
     try {
         await client.query('BEGIN');
         const shippingAddressPayload = shippingAddress && typeof shippingAddress === 'object' ? shippingAddress : {};
-        const name = typeof shippingAddressPayload.name === 'string' ? shippingAddressPayload.name.trim().slice(0, 150) : '';
-        const address = typeof shippingAddressPayload.address === 'string' ? shippingAddressPayload.address.trim().slice(0, 255) : '';
-        const city = typeof shippingAddressPayload.city === 'string' ? shippingAddressPayload.city.trim().slice(0, 100) : '';
+        const name = normalizeText(shippingAddressPayload.name, 150);
+        const address = normalizeText(shippingAddressPayload.address, 255);
+        const addressLine = normalizeText(shippingAddressPayload.address_line, 255) || address;
+        const locality = normalizeText(shippingAddressPayload.locality, 150);
+        const landmark = normalizeText(shippingAddressPayload.landmark, 150);
+        const city = normalizeText(shippingAddressPayload.city, 100);
+        const state = normalizeText(shippingAddressPayload.state, 100);
         const zip = typeof shippingAddressPayload.zip === 'string' ? shippingAddressPayload.zip.trim().slice(0, 20) : '';
         const phone = normalizePhone(shippingAddressPayload.phone);
         if (!name || !address || !city || !zip || !/^\d{6}$/.test(zip) || !phone) {
@@ -172,6 +181,31 @@ export const createOrder = async (req: Request, res: Response) => {
                AND (phone IS NULL OR phone <> $1)`,
             [phone, userId]
         );
+
+        const existingAddressCountResult = await client.query(
+            'SELECT COUNT(*)::int AS count FROM user_addresses WHERE user_id = $1',
+            [userId]
+        );
+
+        if (Number(existingAddressCountResult.rows[0]?.count || 0) === 0) {
+            await client.query(
+                `INSERT INTO user_addresses
+                 (user_id, label, full_name, phone, address_line, locality, landmark, city, state, zip, is_default)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE)`,
+                [
+                    userId,
+                    'Primary',
+                    name,
+                    phone,
+                    addressLine,
+                    locality || null,
+                    landmark || null,
+                    city,
+                    state || null,
+                    zip,
+                ]
+            );
+        }
 
         await safelyRunNotificationTask(async () => {
             await createUserNotification(client, userId, {

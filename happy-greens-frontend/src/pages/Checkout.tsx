@@ -343,9 +343,13 @@ const Checkout = () => {
                 shippingAddress: {
                     name: formData.name,
                     address: fullAddress,
+                    address_line: formData.address,
+                    locality: formData.locality,
+                    landmark: formData.landmark,
                     city: formData.city,
                     zip: formData.zip,
                     phone: formData.phone,
+                    state: formData.state,
                 },
                 paymentMethod: formData.paymentMethod,
                 paymentIntentId,
