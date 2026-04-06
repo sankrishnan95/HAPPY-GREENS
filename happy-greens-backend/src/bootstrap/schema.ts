@@ -128,7 +128,28 @@ export const ensureOperationsSchema = async (): Promise<void> => {
         ALTER TABLE orders
         ADD COLUMN IF NOT EXISTS points_earned INTEGER NOT NULL DEFAULT 0,
         ADD COLUMN IF NOT EXISTS points_used INTEGER NOT NULL DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS client_order_token VARCHAR(64)
+        ADD COLUMN IF NOT EXISTS client_order_token VARCHAR(64),
+        ADD COLUMN IF NOT EXISTS coupon_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS coupon_usage (
+            id SERIAL PRIMARY KEY,
+            coupon_id INTEGER NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+            discount_amount DECIMAL(10,2) NOT NULL,
+            used_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_coupon_usage_coupon ON coupon_usage(coupon_id)
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_coupon_usage_user ON coupon_usage(user_id)
     `);
 
     await pool.query(`
