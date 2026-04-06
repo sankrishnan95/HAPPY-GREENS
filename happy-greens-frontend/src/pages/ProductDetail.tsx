@@ -10,7 +10,8 @@ import { normalizeImageUrl } from '../utils/image';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
 import { trackEvent } from '../services/analytics.service';
-import { calculateLineTotal, decrementQuantity, formatQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, getQuantityRules, incrementQuantity } from '../utils/productUnits';
+import { decrementQuantity, formatQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, getQuantityRules, incrementQuantity } from '../utils/productUnits';
+import CartSummaryToast from '../components/CartSummaryToast';
 
 const FALLBACK_PRODUCT_IMAGE = normalizeImageUrl(null);
 
@@ -58,21 +59,8 @@ const ProductDetail = () => {
         const nextCart = quantity > 0
             ? cart.map((item) => (item.id === product.id ? { ...item, quantity: nextQuantity } : item))
             : [...cart, { ...product, quantity: nextQuantity }];
-        const cartTotal = nextCart.reduce((sum, item) => sum + calculateLineTotal(item, item.quantity), 0);
-        const toastImage = product.images && product.images.length > 0 ? product.images[0] : product.image_url;
-
         toast.custom(
-            (t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} pointer-events-auto flex min-w-[260px] items-center gap-3 rounded-2xl bg-slate-900 px-3 py-3 text-white shadow-[0_18px_36px_rgba(15,23,42,0.3)]`}>
-                    <div className="h-11 w-11 overflow-hidden rounded-xl bg-white/10">
-                        <img src={normalizeImageUrl(toastImage)} alt={product.name} className="h-full w-full object-cover" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{formatQuantity(product, nextQuantity)} in cart</p>
-                        <p className="mt-0.5 text-xs text-white/75">{nextCart.length} items • Rs. {cartTotal.toFixed(0)}</p>
-                    </div>
-                </div>
-            ),
+            (t) => <div className={t.visible ? 'animate-enter' : 'animate-leave'}><CartSummaryToast items={nextCart} /></div>,
             { id: `cart-${product.id}`, duration: 1800 }
         );
     };
