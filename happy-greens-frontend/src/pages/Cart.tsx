@@ -14,7 +14,7 @@ const Cart = () => {
     const [couponSuccess, setCouponSuccess] = useState('');
 
     const subtotal = cart.reduce((acc, item) => acc + calculateLineTotal(item, item.quantity), 0);
-    const discount = coupon ? coupon.discount : 0;
+    const discount = coupon ? Number(coupon.discount) || 0 : 0;
     const totalAfterDiscount = Math.max(0, subtotal - discount);
     const deliveryFee = totalAfterDiscount >= 500 ? 0 : 30;
     const finalTotal = totalAfterDiscount + deliveryFee;
