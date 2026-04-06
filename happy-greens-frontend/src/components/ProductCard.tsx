@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { normalizeImageUrl } from '../utils/image';
 import OptimizedImage from './OptimizedImage';
 import { trackEvent } from '../services/analytics.service';
-import { decrementQuantity, formatQuantity, getUnitLabel, incrementQuantity } from '../utils/productUnits';
+import { decrementQuantity, formatQuantity, getInitialQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, incrementQuantity } from '../utils/productUnits';
 
 interface Product {
     id: number;
@@ -46,7 +46,10 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = wishlistIds.includes(product.id);
     const primaryImage = normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url);
-    const productUnitLabel = getUnitLabel(product.unit);
+    const minimumQuantity = getInitialQuantity(product);
+    const minimumQuantityLabel = formatQuantity(product, minimumQuantity);
+    const minimumQuantityPrice = getMinimumQuantityPrice(product);
+    const originalMinimumQuantityPrice = getOriginalMinimumQuantityPrice(product);
 
     const trackAddToCart = () => {
         trackEvent('add_to_cart', {
@@ -56,11 +59,13 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     };
 
     const handleIncrement = () => {
+        const nextQuantity = quantity > 0 ? incrementQuantity(product, quantity) : minimumQuantity;
         if (quantity > 0) {
-            updateQuantity(product.id, incrementQuantity(product, quantity));
+            updateQuantity(product.id, nextQuantity);
         } else {
             addToCart(product);
         }
+        toast.success(`${formatQuantity(product, nextQuantity)} in cart`, { id: `cart-${product.id}` });
         trackAddToCart();
     };
 
@@ -144,15 +149,15 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
 
                 <div className="flex flex-wrap items-end justify-between gap-2">
                     <div className="min-w-0">
-                        {product.discountPrice ? (
+                        {product.discountPrice && originalMinimumQuantityPrice > minimumQuantityPrice ? (
                             <div className="flex flex-col">
-                                <span className="text-[0.72rem] leading-none text-slate-400 line-through">Rs. {product.price}</span>
-                                <span className="mt-1 text-[1rem] font-bold leading-none text-green-700">Rs. {product.discountPrice}</span>
+                                <span className="text-[0.72rem] leading-none text-slate-400 line-through">Rs. {originalMinimumQuantityPrice.toFixed(0)}</span>
+                                <span className="mt-1 text-[1rem] font-bold leading-none text-green-700">Rs. {minimumQuantityPrice.toFixed(0)}</span>
                             </div>
                         ) : (
-                            <span className="text-[1rem] font-bold leading-none text-slate-900">Rs. {product.pricePerUnit ?? product.price}</span>
+                            <span className="text-[1rem] font-bold leading-none text-slate-900">Rs. {minimumQuantityPrice.toFixed(0)}</span>
                         )}
-                        <p className="mt-1 text-[0.72rem] leading-none text-slate-500">per {productUnitLabel}</p>
+                        <p className="mt-1 text-[0.72rem] leading-none text-slate-500">{minimumQuantityLabel}</p>
                     </div>
 
                     {quantity > 0 ? (

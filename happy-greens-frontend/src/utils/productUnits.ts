@@ -100,12 +100,30 @@ export const getEffectivePricePerUnit = (product: UnitAwareProduct) => {
     return Number.isFinite(pricePerUnit) ? pricePerUnit : 0;
 };
 
+export const getBasePricePerUnit = (product: UnitAwareProduct) => {
+    const pricePerUnit = Number(product.pricePerUnit ?? product.price ?? 0);
+    return Number.isFinite(pricePerUnit) ? pricePerUnit : 0;
+};
+
 export const calculateLineTotal = (product: UnitAwareProduct, quantity: number) => {
     const unit = normalizeUnit(product.unit);
     const pricePerUnit = getEffectivePricePerUnit(product);
     const raw = unit === 'GRAM' ? (quantity / 1000) * pricePerUnit : quantity * pricePerUnit;
     return roundCurrency(raw);
 };
+
+export const calculateLineTotalForBasePrice = (product: UnitAwareProduct, quantity: number) => {
+    const unit = normalizeUnit(product.unit);
+    const pricePerUnit = getBasePricePerUnit(product);
+    const raw = unit === 'GRAM' ? (quantity / 1000) * pricePerUnit : quantity * pricePerUnit;
+    return roundCurrency(raw);
+};
+
+export const getMinimumQuantityPrice = (product: UnitAwareProduct) =>
+    calculateLineTotal(product, getInitialQuantity(product));
+
+export const getOriginalMinimumQuantityPrice = (product: UnitAwareProduct) =>
+    calculateLineTotalForBasePrice(product, getInitialQuantity(product));
 
 export const formatQuantity = (product: UnitAwareProduct, quantity: number) => {
     const { unit } = getQuantityRules(product);

@@ -10,7 +10,7 @@ import { normalizeImageUrl } from '../utils/image';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
 import { trackEvent } from '../services/analytics.service';
-import { decrementQuantity, formatQuantity, getQuantityRules, getUnitLabel, incrementQuantity } from '../utils/productUnits';
+import { decrementQuantity, formatQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, getQuantityRules, incrementQuantity } from '../utils/productUnits';
 
 const FALLBACK_PRODUCT_IMAGE = normalizeImageUrl(null);
 
@@ -54,11 +54,13 @@ const ProductDetail = () => {
     }, [id]);
 
     const handleIncrement = () => {
+        const nextQuantity = quantity > 0 ? incrementQuantity(product, quantity) : minQty;
         if (quantity > 0) {
-            updateQuantity(Number(id), incrementQuantity(product, quantity));
+            updateQuantity(Number(id), nextQuantity);
         } else {
             addToCart(product);
         }
+        toast.success(`${formatQuantity(product, nextQuantity)} in cart`, { id: `cart-${product.id}` });
         trackEvent('add_to_cart', {
             product_id: Number(id),
             page: `/product/${id}`,
@@ -123,8 +125,9 @@ const ProductDetail = () => {
     }
 
     const categoryName = product.category_name || 'Uncategorized';
-    const unitLabel = getUnitLabel(product.unit);
     const { minQty } = getQuantityRules(product);
+    const minQuantityPrice = getMinimumQuantityPrice(product);
+    const originalMinQuantityPrice = getOriginalMinimumQuantityPrice(product);
     const productImages = (
         Array.isArray(product.images) && product.images.length > 0
             ? product.images
@@ -202,15 +205,15 @@ const ProductDetail = () => {
                     </div>
 
                     <div className="flex flex-wrap items-end gap-2">
-                        {product.discountPrice ? (
+                        {product.discountPrice && originalMinQuantityPrice > minQuantityPrice ? (
                             <>
-                                <span className="text-lg text-gray-400 line-through sm:text-xl">Rs. {product.price}</span>
-                                <span className="text-[2rem] font-display font-bold text-green-600 sm:text-[2.25rem]">Rs. {product.discountPrice}</span>
+                                <span className="text-lg text-gray-400 line-through sm:text-xl">Rs. {originalMinQuantityPrice.toFixed(0)}</span>
+                                <span className="text-[2rem] font-display font-bold text-green-600 sm:text-[2.25rem]">Rs. {minQuantityPrice.toFixed(0)}</span>
                             </>
                         ) : (
-                            <span className="text-[2rem] font-display font-bold text-gray-900 sm:text-[2.25rem]">Rs. {product.pricePerUnit ?? product.price}</span>
+                            <span className="text-[2rem] font-display font-bold text-gray-900 sm:text-[2.25rem]">Rs. {minQuantityPrice.toFixed(0)}</span>
                         )}
-                        <span className="pb-1 text-sm text-gray-500 sm:text-base">/{unitLabel}</span>
+                        <span className="pb-1 text-sm text-gray-500 sm:text-base">for {formatQuantity(product, minQty)}</span>
                     </div>
 
                     <div className="rounded-[1.15rem] bg-gray-50 px-4 py-3 text-xs text-gray-600 sm:text-sm">
