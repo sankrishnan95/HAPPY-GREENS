@@ -281,7 +281,7 @@ export const getOrderById = async (req: Request, res: Response) => {
         const order = orderResult.rows[0];
 
         const itemsResult = await pool.query(
-            `SELECT oi.*, p.image_url
+            `SELECT oi.*, p.image_url, p.images
              FROM order_items oi
              LEFT JOIN products p ON oi.product_id = p.id
              WHERE oi.order_id = $1`,
@@ -298,7 +298,10 @@ export const getOrderById = async (req: Request, res: Response) => {
 
         const items = itemsResult.rows.map((item) => ({
             ...item,
-            image_url: normalizeMediaUrl(item.image_url, baseUrl),
+            image_url: normalizeMediaUrl(
+                Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : item.image_url,
+                baseUrl
+            ),
             quantity: Number(item.quantity),
             price_at_purchase: Number(item.price_at_purchase || 0),
         }));
