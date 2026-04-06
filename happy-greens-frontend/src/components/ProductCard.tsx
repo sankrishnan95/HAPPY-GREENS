@@ -156,11 +156,6 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         <button type="button" onClick={handleIncrement} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><ShoppingCart className="h-4 w-4" /></button>
                     )}
                 </div>
-
-                <button type="button" onClick={handleIncrement} className="mt-auto inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[0.95rem] bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
-                    <ShoppingCart className="h-4 w-4" />
-                    {quantity > 0 ? 'Add step' : 'Add to cart'}
-                </button>
             </div>
         </div>
     );
