@@ -15,7 +15,7 @@ export default function Categories() {
 
     const fetchCategories = async () => {
         try {
-            const res = await api.get('/api/products/categories');
+            const res = await api.get('/products/categories');
             setCategories(res.data);
         } catch (err) {
             console.error('Failed to load categories', err);
@@ -45,9 +45,9 @@ export default function Categories() {
         setError('');
         try {
             if (editingId) {
-                await api.put(`/api/products/categories/${editingId}`, formData);
+                await api.put(`/products/categories/${editingId}`, formData);
             } else {
-                await api.post('/api/products/categories', formData);
+                await api.post('/products/categories', formData);
             }
             resetForm();
             fetchCategories();
@@ -61,7 +61,7 @@ export default function Categories() {
     const handleDelete = async (cat) => {
         if (!window.confirm(`Delete "${cat.name}"? This cannot be undone.`)) return;
         try {
-            await api.delete(`/api/products/categories/${cat.id}`);
+            await api.delete(`/products/categories/${cat.id}`);
             fetchCategories();
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to delete');
@@ -106,8 +106,8 @@ export default function Categories() {
                             <label className="block text-sm font-medium text-gray-700 mb-1.5">Parent Category (Optional)</label>
                             <select value={formData.parent_id || ''} onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none">
                                 <option value="">None (Top-level Category)</option>
-                                {categories.filter(c => (!editingId || c.id !== editingId) && !c.parent_id).map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                {categories.filter(c => (!editingId || c.id !== editingId)).map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name} {cat.parent_id ? '(Sub)' : ''}</option>
                                 ))}
                             </select>
                         </div>
@@ -136,56 +136,66 @@ export default function Categories() {
             ) : (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="divide-y divide-gray-100">
-                        {categories.filter(c => !c.parent_id).map((parentCat) => (
-                            <div key={parentCat.id}>
-                                <div className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-3">
-                                            <span className="font-semibold text-gray-900">{parentCat.name}</span>
-                                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md font-mono">{parentCat.slug}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            {parentCat.description && <span className="text-sm text-gray-500 truncate">{parentCat.description}</span>}
-                                            <span className="text-xs text-gray-400">{parentCat.product_count || 0} product{parentCat.product_count !== 1 ? 's' : ''}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                                        <button onClick={() => handleEdit(parentCat)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Edit">
-                                            <Pencil className="w-4 h-4" />
-                                        </button>
-                                        <button onClick={() => handleDelete(parentCat)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                                {categories.filter(c => c.parent_id === parentCat.id).map(subCat => (
-                                    <div key={subCat.id} className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors bg-gray-50/50 border-t border-gray-100 pl-12">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-3 h-3 rounded-bl-sm border-b-2 border-l-2 border-gray-300 opacity-50 absolute -ml-5 mt-[-10px]" />
-                                                <span className="font-semibold text-gray-800">{subCat.name}</span>
-                                                <span className="text-xs text-gray-400 bg-gray-200/60 px-2 py-0.5 rounded-md font-mono">{subCat.slug}</span>
-                                            </div>
-                                            <div className="flex items-center gap-3 mt-1 pl-4">
-                                                {subCat.description && <span className="text-sm text-gray-500 truncate">{subCat.description}</span>}
-                                                <span className="text-xs text-gray-400">{subCat.product_count || 0} product{subCat.product_count !== 1 ? 's' : ''}</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                                            <button onClick={() => handleEdit(subCat)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Edit">
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                            <button onClick={() => handleDelete(subCat)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                        {categories.filter(c => !c.parent_id).map((cat) => (
+                            <CategoryRow 
+                                key={cat.id} 
+                                category={cat} 
+                                allCategories={categories} 
+                                onEdit={handleEdit} 
+                                onDelete={handleDelete} 
+                                depth={0} 
+                            />
                         ))}
                     </div>
                 </div>
             )}
         </div>
+    );
+}
+
+function CategoryRow({ category, allCategories, onEdit, onDelete, depth = 0 }) {
+    const children = allCategories.filter(c => c.parent_id === category.id);
+    const hasChildren = children.length > 0;
+
+    return (
+        <>
+            <div className={`flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors ${depth > 0 ? 'bg-gray-50/30' : ''}`} style={{ paddingLeft: `${24 + depth * 32}px` }}>
+                <div className="min-w-0 flex-1 relative">
+                    {depth > 0 && (
+                        <div className="w-4 h-4 rounded-bl-sm border-b-2 border-l-2 border-gray-300 opacity-40 absolute -ml-6 mt-[-6px]" />
+                    )}
+                    <div className="flex items-center gap-3">
+                        <span className={`font-semibold ${depth === 0 ? 'text-gray-900' : 'text-gray-700'}`}>{category.name}</span>
+                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md font-mono">{category.slug}</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1">
+                        {category.description && <span className="text-sm text-gray-500 truncate">{category.description}</span>}
+                        <span className="text-xs text-gray-400">{category.product_count || 0} product{category.product_count !== 1 ? 's' : ''}</span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button onClick={() => onEdit(category)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Edit">
+                        <Pencil className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => onDelete(category)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+            {hasChildren && (
+                <div className="border-t border-gray-100">
+                    {children.map(child => (
+                        <CategoryRow 
+                            key={child.id} 
+                            category={child} 
+                            allCategories={allCategories} 
+                            onEdit={onEdit} 
+                            onDelete={onDelete} 
+                            depth={depth + 1} 
+                        />
+                    ))}
+                </div>
+            )}
+        </>
     );
 }

@@ -240,45 +240,40 @@ export default function ProductEdit() {
                         {categories.length > 0 && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-3">Categories & Tags *</label>
-                                <div className="space-y-5">
-                                    {categories.filter(c => !c.parent_id).map(parentCat => {
-                                        const subcats = categories.filter(c => c.parent_id === parentCat.id);
+                                <div className="flex flex-wrap gap-2.5">
+                                    {categories.sort((a, b) => a.name.localeCompare(b.name)).map(cat => {
+                                        const isSelected = formData.category_ids.includes(cat.id);
+                                        const isSub = !!cat.parent_id;
+                                        
+                                        // Find parent name for context if it's a sub
+                                        const parent = isSub ? categories.find(c => c.id === cat.parent_id) : null;
+                                        const label = parent ? `${parent.name} > ${cat.name}` : cat.name;
+
                                         return (
-                                            <div key={`group-${parentCat.id}`}>
-                                                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">{parentCat.name} Family</h4>
-                                                <div className="flex flex-wrap gap-2.5">
-                                                    {[parentCat, ...subcats].map(cat => {
-                                                        const isSelected = formData.category_ids.includes(cat.id);
-                                                        const isSub = !!cat.parent_id;
-                                                        return (
-                                                            <button
-                                                                key={cat.id}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setFormData(prev => {
-                                                                        const newIds = isSelected
-                                                                            ? prev.category_ids.filter(id => id !== cat.id)
-                                                                            : [...prev.category_ids, cat.id];
-                                                                        return {
-                                                                            ...prev,
-                                                                            category_ids: newIds,
-                                                                            category_id: newIds.length > 0 ? newIds[0] : ''
-                                                                        };
-                                                                    });
-                                                                }}
-                                                                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border flex items-center gap-1.5 ${
-                                                                    isSelected 
-                                                                    ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm' 
-                                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                                                                } ${isSub ? 'border-dashed' : ''}`}
-                                                            >
-                                                                {isSub && <div className="w-1.5 h-1.5 rounded-full bg-current opacity-40" />}
-                                                                {cat.name}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
+                                            <button
+                                                key={cat.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData(prev => {
+                                                        const newIds = isSelected
+                                                            ? prev.category_ids.filter(id => id !== cat.id)
+                                                            : [...prev.category_ids, cat.id];
+                                                        return {
+                                                            ...prev,
+                                                            category_ids: newIds,
+                                                            category_id: newIds.length > 0 ? newIds[0] : ''
+                                                        };
+                                                    });
+                                                }}
+                                                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border flex items-center gap-1.5 ${
+                                                    isSelected 
+                                                    ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm' 
+                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                } ${isSub ? 'border-dashed' : ''}`}
+                                            >
+                                                {isSub && <div className="w-1.5 h-1.5 rounded-full bg-current opacity-40" />}
+                                                {label}
+                                            </button>
                                         );
                                     })}
                                 </div>
