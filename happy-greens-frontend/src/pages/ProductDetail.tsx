@@ -184,9 +184,19 @@ const ProductDetail = () => {
 
                 <div className="space-y-4 sm:space-y-5">
                     <div>
-                        <Badge variant="primary" size="sm">
-                            {categoryName}
-                        </Badge>
+                        {product.category_tags && product.category_tags.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {product.category_tags.map((tag: any) => (
+                                    <Badge key={tag.id} variant="primary" size="sm">
+                                        {tag.name}
+                                    </Badge>
+                                ))}
+                            </div>
+                        ) : (
+                            <Badge variant="primary" size="sm">
+                                {categoryName}
+                            </Badge>
+                        )}
                         <h1 className="mt-3 mb-2 text-[1.7rem] font-display font-bold leading-tight text-gray-900 sm:text-[2rem] lg:text-[2.25rem]">{product.name}</h1>
                         <p className="max-w-2xl text-sm leading-6 text-gray-600 sm:text-[0.98rem]">{product.description}</p>
                     </div>

@@ -21,6 +21,7 @@ interface Product {
     image_url: string;
     images?: string[];
     category_name?: string;
+    category_tags?: Array<{ id: number; name: string; slug: string }>;
     stock?: number;
 }
 
@@ -123,7 +124,15 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
             </Link>
 
             <div className="flex flex-1 flex-col gap-2.5 p-3">
-                {product.category_name && (
+                {product.category_tags && product.category_tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 max-w-full">
+                        {product.category_tags.slice(0, 3).map(tag => (
+                            <span key={tag.id} className="rounded-full bg-[#eef7e6] px-2 py-0.5 text-[0.65rem] font-bold tracking-tight text-green-700 whitespace-nowrap border border-green-100 shadow-sm">
+                                {tag.name}
+                            </span>
+                        ))}
+                    </div>
+                ) : product.category_name && (
                     <span className="max-w-full self-start rounded-full bg-[#eef7e6] px-2.5 py-1 text-[0.68rem] font-semibold text-green-700 whitespace-nowrap">
                         {product.category_name}
                     </span>

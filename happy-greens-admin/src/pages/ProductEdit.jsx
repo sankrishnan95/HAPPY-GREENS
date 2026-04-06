@@ -39,6 +39,7 @@ export default function ProductEdit() {
         pricePerUnit: '',
         discountPrice: '',
         category_id: '',
+        category_ids: [],
         stock_quantity: '',
         unit: 'PIECE',
         minQty: '1',
@@ -65,7 +66,11 @@ export default function ProductEdit() {
             if (response.data) {
                 setCategories(response.data);
                 if (isNew && response.data.length > 0) {
-                    setFormData(prev => ({ ...prev, category_id: response.data[0].id }));
+                    setFormData(prev => ({ 
+                        ...prev, 
+                        category_id: response.data[0].id,
+                        category_ids: [response.data[0].id] 
+                    }));
                 }
             }
         } catch (error) {
@@ -83,6 +88,7 @@ export default function ProductEdit() {
                 pricePerUnit: String(product.pricePerUnit ?? product.price ?? ''),
                 discountPrice: product.discountPrice || '',
                 category_id: product.category_id || '',
+                category_ids: product.category_ids || (product.category_id ? [product.category_id] : []),
                 stock_quantity: product.stock_quantity || '',
                 unit: product.unit || 'PIECE',
                 minQty: String(product.minQty ?? 1),
@@ -147,6 +153,10 @@ export default function ProductEdit() {
         setSaving(true);
 
         try {
+            if (formData.category_ids.length === 0) {
+                throw new Error('Please select at least one category tag.');
+            }
+
             const minQty = Number(formData.minQty);
             const quantityError = validateQuantityRules(formData.unit, minQty);
             if (quantityError) {
@@ -159,7 +169,8 @@ export default function ProductEdit() {
                 price: parseFloat(formData.pricePerUnit),
                 discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
                 stock_quantity: parseInt(formData.stock_quantity),
-                category_id: parseInt(formData.category_id),
+                category_id: formData.category_ids[0],
+                category_ids: formData.category_ids,
                 minQty,
                 stepQty: minQty,
             };
@@ -228,11 +239,40 @@ export default function ProductEdit() {
                         </div>
                         {categories.length > 0 && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-                                <select value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none" required>
-                                    <option value="">Select a category...</option>
-                                    {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
-                                </select>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">Categories & Tags *</label>
+                                <div className="flex flex-wrap gap-2.5">
+                                    {categories.map(cat => {
+                                        const isSelected = formData.category_ids.includes(cat.id);
+                                        return (
+                                            <button
+                                                key={cat.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData(prev => {
+                                                        const newIds = isSelected
+                                                            ? prev.category_ids.filter(id => id !== cat.id)
+                                                            : [...prev.category_ids, cat.id];
+                                                        return {
+                                                            ...prev,
+                                                            category_ids: newIds,
+                                                            category_id: newIds.length > 0 ? newIds[0] : ''
+                                                        };
+                                                    });
+                                                }}
+                                                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border ${
+                                                    isSelected 
+                                                    ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm' 
+                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {cat.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {formData.category_ids.length === 0 && (
+                                    <p className="text-red-500 text-xs mt-2 font-medium">Select at least one category tag</p>
+                                )}
                             </div>
                         )}
                     </div>

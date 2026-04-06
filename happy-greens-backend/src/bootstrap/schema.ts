@@ -330,6 +330,22 @@ export const ensureAddressBookSchema = async (): Promise<void> => {
     console.log('[Schema Bootstrap] address book schema ensured');
 };
 
+export const ensureProductCategoriesSchema = async (): Promise<void> => {
+    await pool.query(`
+        ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS category_ids INTEGER[] DEFAULT '{}'::int[]
+    `);
+
+    await pool.query(`
+        UPDATE products
+        SET category_ids = ARRAY[category_id]
+        WHERE (category_ids IS NULL OR array_length(category_ids, 1) IS NULL)
+          AND category_id IS NOT NULL
+    `);
+
+    console.log('[Schema Bootstrap] products.category_ids ensured');
+};
+
 export const ensureCategoriesAndProductCategoryBackfill = async (): Promise<void> => {
     await pool.query(`
         INSERT INTO categories (name, slug, description)

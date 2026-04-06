@@ -64,7 +64,16 @@ export const getProducts = async (req: Request, res: Response) => {
         const { category, q, page = 1, limit = 10, sort, hasOffer } = req.query;
         const offset = (Number(page) - 1) * Number(limit);
 
-        let query = 'SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", p.price_per_unit as "pricePerUnit", p.min_qty as "minQty", p.step_qty as "stepQty", c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_deleted = false';
+        let query = `
+            SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", 
+                   p.price_per_unit as "pricePerUnit", p.min_qty as "minQty", p.step_qty as "stepQty", 
+                   c.name as category_name,
+                   (SELECT json_agg(json_build_object('id', cats.id, 'name', cats.name, 'slug', cats.slug)) 
+                    FROM categories cats WHERE cats.id = ANY(p.category_ids)) as category_tags
+            FROM products p 
+            LEFT JOIN categories c ON p.category_id = c.id 
+            WHERE p.is_deleted = false
+        `;
 
         if (req.query.admin !== 'true') {
             query += ' AND p.is_active = true';
@@ -75,10 +84,12 @@ export const getProducts = async (req: Request, res: Response) => {
 
         if (category) {
             const normalizedCategory = String(category).trim().toLowerCase();
-            query += ` AND (
-                LOWER(TRIM(c.slug)) = $${paramCount}
-                OR LOWER(TRIM(c.name)) = $${paramCount}
-                OR LOWER(REPLACE(TRIM(c.name), ' ', '-')) = $${paramCount}
+            query += ` AND EXISTS (
+                SELECT 1 FROM categories cat_match
+                WHERE (cat_match.id = p.category_id OR cat_match.id = ANY(p.category_ids))
+                  AND (LOWER(TRIM(cat_match.slug)) = $${paramCount}
+                       OR LOWER(TRIM(cat_match.name)) = $${paramCount}
+                       OR LOWER(REPLACE(TRIM(cat_match.name), ' ', '-')) = $${paramCount})
             )`;
             params.push(normalizedCategory);
             paramCount++;
@@ -109,7 +120,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
         const result = await pool.query(query, params);
 
-        let countQuery = 'SELECT COUNT(*) FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_deleted = false';
+        let countQuery = 'SELECT COUNT(*) FROM products p WHERE p.is_deleted = false';
         const countParams: any[] = [];
         let countParam = 1;
 
@@ -119,10 +130,12 @@ export const getProducts = async (req: Request, res: Response) => {
 
         if (category) {
             const normalizedCategory = String(category).trim().toLowerCase();
-            countQuery += ` AND (
-                LOWER(TRIM(c.slug)) = $${countParam}
-                OR LOWER(TRIM(c.name)) = $${countParam}
-                OR LOWER(REPLACE(TRIM(c.name), ' ', '-')) = $${countParam}
+            countQuery += ` AND EXISTS (
+                SELECT 1 FROM categories cat_match
+                WHERE (cat_match.id = p.category_id OR cat_match.id = ANY(p.category_ids))
+                  AND (LOWER(TRIM(cat_match.slug)) = $${countParam}
+                       OR LOWER(TRIM(cat_match.name)) = $${countParam}
+                       OR LOWER(REPLACE(TRIM(cat_match.name), ' ', '-')) = $${countParam})
             )`;
             countParams.push(normalizedCategory);
             countParam++;
@@ -155,7 +168,16 @@ export const getProducts = async (req: Request, res: Response) => {
 export const getProductById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const result = await pool.query('SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", p.price_per_unit as "pricePerUnit", p.min_qty as "minQty", p.step_qty as "stepQty", c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = $1 AND p.is_deleted = false', [id]);
+        const result = await pool.query(`
+            SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", 
+                   p.price_per_unit as "pricePerUnit", p.min_qty as "minQty", p.step_qty as "stepQty", 
+                   c.name as category_name,
+                   (SELECT json_agg(json_build_object('id', cats.id, 'name', cats.name, 'slug', cats.slug)) 
+                    FROM categories cats WHERE cats.id = ANY(p.category_ids)) as category_tags
+            FROM products p 
+            LEFT JOIN categories c ON p.category_id = c.id 
+            WHERE p.id = $1 AND p.is_deleted = false
+        `, [id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Product not found' });
@@ -170,7 +192,7 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        const { name, description, price, pricePerUnit, discountPrice, stock_quantity, category_id, image_url, images = [], unit, minQty, stepQty, isActive = true } = req.body;
+        const { name, description, price, pricePerUnit, discountPrice, stock_quantity, category_id, category_ids, image_url, images = [], unit, minQty, stepQty, isActive = true } = req.body;
         const safeName = sanitizeText(name, 150);
         const safeDescription = typeof description === 'string' ? description.trim().slice(0, 5000) : '';
         const safeUnit = sanitizeUnitPayload(unit);
@@ -185,6 +207,12 @@ export const createProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Invalid discount price' });
         }
         const finalCategoryId = parseOptionalInt(category_id);
+        const inputCategoryIds = Array.isArray(category_ids) ? category_ids : [];
+        const finalCategoryIds = [...new Set(inputCategoryIds.map(Number).filter(Number.isInteger))];
+        if (finalCategoryIds.length === 0 && finalCategoryId) {
+            finalCategoryIds.push(finalCategoryId);
+        }
+
         const finalStockQuantity = parseIntOrDefault(stock_quantity, 0);
         if (finalStockQuantity < 0 || finalStockQuantity > 100000) {
             return res.status(400).json({ message: 'Invalid stock quantity' });
@@ -206,8 +234,8 @@ export const createProduct = async (req: Request, res: Response) => {
         }
 
         const result = await pool.query(
-            'INSERT INTO products (name, description, price, price_per_unit, discount_price, stock_quantity, category_id, image_url, images, unit, min_qty, step_qty, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, $13) RETURNING *, discount_price as "discountPrice", is_active as "isActive", price_per_unit as "pricePerUnit", min_qty as "minQty", step_qty as "stepQty"',
-            [safeName, safeDescription, safePricePerUnit, safePricePerUnit, safeDiscountPrice, finalStockQuantity, finalCategoryId, image_url, JSON.stringify(initialImages), safeUnit, safeMinQty, safeStepQty, Boolean(isActive)]
+            'INSERT INTO products (name, description, price, price_per_unit, discount_price, stock_quantity, category_id, category_ids, image_url, images, unit, min_qty, step_qty, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::int[], $9, $10::jsonb, $11, $12, $13, $14) RETURNING *, discount_price as "discountPrice", is_active as "isActive", price_per_unit as "pricePerUnit", min_qty as "minQty", step_qty as "stepQty"',
+            [safeName, safeDescription, safePricePerUnit, safePricePerUnit, safeDiscountPrice, finalStockQuantity, finalCategoryId, finalCategoryIds, image_url, JSON.stringify(initialImages), safeUnit, safeMinQty, safeStepQty, Boolean(isActive)]
         );
         const baseUrl = getPublicBaseUrl(req);
         res.status(201).json(mapProductMedia(result.rows[0], baseUrl));
@@ -220,7 +248,7 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, description, price, pricePerUnit, discountPrice, stock_quantity, category_id, image_url, images, unit, minQty, stepQty, isActive } = req.body;
+        const { name, description, price, pricePerUnit, discountPrice, stock_quantity, category_id, category_ids, image_url, images, unit, minQty, stepQty, isActive } = req.body;
         const safeName = sanitizeText(name, 150);
         const safeDescription = typeof description === 'string' ? description.trim().slice(0, 5000) : '';
         const safeUnit = sanitizeUnitPayload(unit);
@@ -234,6 +262,13 @@ export const updateProduct = async (req: Request, res: Response) => {
         if (finalDiscountPrice !== null && safeDiscountPrice === null) {
             return res.status(400).json({ message: 'Invalid discount price' });
         }
+        const finalCategoryId = parseOptionalInt(category_id);
+        const inputCategoryIds = Array.isArray(category_ids) ? category_ids : [];
+        const finalCategoryIds = [...new Set(inputCategoryIds.map(Number).filter(Number.isInteger))];
+        if (finalCategoryIds.length === 0 && finalCategoryId) {
+            finalCategoryIds.push(finalCategoryId);
+        }
+
         const finalStockQuantity = parseIntOrDefault(stock_quantity, 0);
         if (finalStockQuantity < 0 || finalStockQuantity > 100000) {
             return res.status(400).json({ message: 'Invalid stock quantity' });
@@ -259,6 +294,11 @@ export const updateProduct = async (req: Request, res: Response) => {
             }
             query += `, category_id = $${params.length + 1}`;
             params.push(finalCategoryId);
+        }
+
+        if (category_ids !== undefined) {
+            query += `, category_ids = $${params.length + 1}::int[]`;
+            params.push(finalCategoryIds);
         }
 
         if (images !== undefined) {
