@@ -5,6 +5,24 @@ import ProductCard from '../components/ProductCard';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import RewardBanner from '../components/RewardBanner';
 
+const PRODUCTS_PER_PAGE = 25;
+
+const buildPagination = (currentPage: number, pageCount: number) => {
+    if (pageCount <= 7) {
+        return Array.from({ length: pageCount }, (_, index) => index + 1);
+    }
+
+    if (currentPage <= 4) {
+        return [1, 2, 3, 4, 5, 'ellipsis', pageCount];
+    }
+
+    if (currentPage >= pageCount - 3) {
+        return [1, 'ellipsis', pageCount - 4, pageCount - 3, pageCount - 2, pageCount - 1, pageCount];
+    }
+
+    return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', pageCount];
+};
+
 const Shop = () => {
     const [products, setProducts] = useState([]);
     const [allCategories, setAllCategories] = useState<any[]>([]);
@@ -41,7 +59,7 @@ const Shop = () => {
             }
 
             try {
-                const res = await getProducts({ category, q, page, sort, limit: 12 });
+                const res = await getProducts({ category, q, page, sort, limit: PRODUCTS_PER_PAGE });
                 setProducts(res.products);
                 setTotalPages(res.totalPages);
             } catch (error) {
@@ -118,6 +136,8 @@ const Shop = () => {
             params.set('page', String(newPage));
         });
     };
+
+    const paginationItems = buildPagination(page, totalPages);
 
     return (
         <div className="space-y-4">
@@ -222,20 +242,20 @@ const Shop = () => {
             </section>
 
             {loading ? (
-                <div className="app-grid">
-                    {[...Array(8)].map((_, i) => (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+                    {[...Array(PRODUCTS_PER_PAGE)].map((_, i) => (
                         <div key={i} className="h-64 animate-pulse rounded-[1.5rem] bg-[#eaf0e2]"></div>
                     ))}
                 </div>
             ) : (
                 <>
-                    <div className={`app-grid transition-opacity duration-200 ${fetching ? 'opacity-50' : 'opacity-100'}`}>
+                    <div className={`grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 lg:gap-4 transition-opacity duration-200 ${fetching ? 'opacity-50' : 'opacity-100'}`}>
                         {products.map((product: any) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
 
-                    <div className="mobile-app-card flex items-center justify-between rounded-[1.5rem] px-4 py-3">
+                    <div className="mobile-app-card flex flex-wrap items-center justify-center gap-2 rounded-[1.5rem] px-3 py-3">
                         <button
                             type="button"
                             disabled={page === 1}
@@ -244,7 +264,28 @@ const Shop = () => {
                         >
                             Previous
                         </button>
-                        <span className="text-sm font-semibold text-slate-600">Page {page} / {totalPages}</span>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                            {paginationItems.map((item, index) =>
+                                item === 'ellipsis' ? (
+                                    <span key={`ellipsis-${index}`} className="px-1 text-sm font-bold tracking-[0.2em] text-slate-400">
+                                        ...
+                                    </span>
+                                ) : (
+                                    <button
+                                        key={item}
+                                        type="button"
+                                        onClick={() => handlePageChange(Number(item))}
+                                        className={`min-h-[40px] min-w-[40px] rounded-full px-3 text-sm font-semibold transition-colors ${
+                                            page === item
+                                                ? 'bg-slate-900 text-white'
+                                                : 'border border-[#d7e4cc] bg-white text-slate-700 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        {item}
+                                    </button>
+                                )
+                            )}
+                        </div>
                         <button
                             type="button"
                             disabled={page === totalPages}
