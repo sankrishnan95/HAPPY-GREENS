@@ -23,6 +23,17 @@ const CATEGORY_IMAGES: Record<string, string> = {
 };
 const FALLBACK_CATEGORY_IMAGE = '/categories/apple.png';
 
+const normalizeCategoryImageKey = (value: unknown) =>
+    typeof value === 'string'
+        ? value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        : '';
+
+const getCategoryImage = (category: { slug?: string; name?: string }) => {
+    const slugKey = normalizeCategoryImageKey(category.slug);
+    const nameKey = normalizeCategoryImageKey(category.name);
+    return CATEGORY_IMAGES[slugKey] || CATEGORY_IMAGES[nameKey] || FALLBACK_CATEGORY_IMAGE;
+};
+
 const features = [
     { icon: Truck, title: 'Same day delivery', description: 'Fast slots in busy city zones', tone: 'bg-green-50 text-green-700' },
     { icon: Leaf, title: 'Farm fresh', description: 'Fresh stock with daily replenishment', tone: 'bg-lime-50 text-lime-700' },
@@ -149,7 +160,7 @@ const Home = () => {
                             <Link to={`/shop?category=${cat.slug}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
                                 <div className="relative flex h-20 w-20 rounded-[1.75rem] sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03]">
                                     <img
-                                        src={CATEGORY_IMAGES[cat.slug] || FALLBACK_CATEGORY_IMAGE}
+                                        src={getCategoryImage(cat)}
                                         alt={cat.name}
                                         loading="eager"
                                         decoding="async"
