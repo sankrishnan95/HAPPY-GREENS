@@ -69,6 +69,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [isImageHovered, setIsImageHovered] = useState(false);
     const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
+    const [sequenceDirection, setSequenceDirection] = useState<1 | -1>(1);
     const minimumQuantity = getInitialQuantity(product);
     const minimumQuantityLabel = formatQuantity(product, minimumQuantity);
     const minimumQuantityPrice = getMinimumQuantityPrice(product);
@@ -77,26 +78,34 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     useEffect(() => {
         setActiveImageIndex(0);
         setSlideDirection(1);
+        setSequenceDirection(1);
     }, [product.id]);
 
     useEffect(() => {
         if (productImages.length <= 1 || !isImageHovered) return;
 
         const intervalId = window.setInterval(() => {
-            setSlideDirection((currentDirection) => {
-                const nextDirection: 1 | -1 = currentDirection === 1 ? -1 : 1;
-                setActiveImageIndex((currentIndex) => {
-                    const nextIndex = currentDirection === 1
-                        ? (currentIndex + 1) % productImages.length
-                        : (currentIndex - 1 + productImages.length) % productImages.length;
-                    return nextIndex;
+            setActiveImageIndex((currentIndex) => {
+                const atStart = currentIndex === 0;
+                const atEnd = currentIndex === productImages.length - 1;
+
+                setSequenceDirection((currentSequenceDirection) => {
+                    let nextSequenceDirection = currentSequenceDirection;
+                    if (atEnd) nextSequenceDirection = -1;
+                    if (atStart) nextSequenceDirection = 1;
+
+                    setSlideDirection(nextSequenceDirection);
+                    return nextSequenceDirection;
                 });
-                return nextDirection;
+
+                if (atEnd) return currentIndex - 1;
+                if (atStart) return currentIndex + 1;
+                return currentIndex + sequenceDirection;
             });
         }, 1800);
 
         return () => window.clearInterval(intervalId);
-    }, [isImageHovered, productImages]);
+    }, [isImageHovered, productImages, sequenceDirection]);
 
     const trackAddToCart = () => {
         trackEvent('add_to_cart', {
@@ -166,6 +175,8 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                     onMouseLeave={() => {
                         setIsImageHovered(false);
                         setActiveImageIndex(0);
+                        setSlideDirection(1);
+                        setSequenceDirection(1);
                     }}
                 >
                     <AnimatePresence mode="sync" initial={false} custom={slideDirection}>
