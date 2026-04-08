@@ -11,6 +11,21 @@ import { trackEvent } from '../services/analytics.service';
 import { decrementQuantity, formatQuantity, getInitialQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, incrementQuantity } from '../utils/productUnits';
 import CartSummaryToast from './CartSummaryToast';
 
+const slideshowVariants = {
+    enter: (direction: 1 | -1) => ({
+        x: direction === 1 ? '100%' : '-100%',
+        opacity: 0.98,
+    }),
+    center: {
+        x: '0%',
+        opacity: 1,
+    },
+    exit: (direction: 1 | -1) => ({
+        x: direction === 1 ? '-100%' : '100%',
+        opacity: 0.98,
+    }),
+};
+
 interface Product {
     id: number;
     name: string;
@@ -53,6 +68,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     );
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [isImageHovered, setIsImageHovered] = useState(false);
+    const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
     const minimumQuantity = getInitialQuantity(product);
     const minimumQuantityLabel = formatQuantity(product, minimumQuantity);
     const minimumQuantityPrice = getMinimumQuantityPrice(product);
@@ -60,13 +76,23 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
 
     useEffect(() => {
         setActiveImageIndex(0);
+        setSlideDirection(1);
     }, [product.id]);
 
     useEffect(() => {
         if (productImages.length <= 1 || !isImageHovered) return;
 
         const intervalId = window.setInterval(() => {
-            setActiveImageIndex((current) => (current + 1) % productImages.length);
+            setSlideDirection((currentDirection) => {
+                const nextDirection: 1 | -1 = currentDirection === 1 ? -1 : 1;
+                setActiveImageIndex((currentIndex) => {
+                    const nextIndex = currentDirection === 1
+                        ? (currentIndex + 1) % productImages.length
+                        : (currentIndex - 1 + productImages.length) % productImages.length;
+                    return nextIndex;
+                });
+                return nextDirection;
+            });
         }, 1800);
 
         return () => window.clearInterval(intervalId);
@@ -142,16 +168,18 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         setActiveImageIndex(0);
                     }}
                 >
-                    <AnimatePresence mode="wait" initial={false}>
+                    <AnimatePresence mode="sync" initial={false} custom={slideDirection}>
                         <motion.img
                             key={`${product.id}-${activeImageIndex}`}
                             src={productImages[activeImageIndex]}
                             alt={product.name}
                             className="absolute inset-0 h-full w-full object-cover"
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '-20%' }}
-                            transition={{ duration: 0.35, ease: 'easeOut' }}
+                            custom={slideDirection}
+                            variants={slideshowVariants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
                         />
                     </AnimatePresence>
 
