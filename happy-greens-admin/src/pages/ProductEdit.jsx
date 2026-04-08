@@ -109,6 +109,13 @@ export default function ProductEdit() {
         const files = Array.from(e.target.files);
         if (!files.length) return;
 
+        // Validation for image types
+        const invalidFiles = files.filter(file => !file.type.startsWith('image/'));
+        if (invalidFiles.length > 0) {
+            alert('Please select only image files (JPEG, PNG, WebP).');
+            return;
+        }
+
         const maxUploads = 10 - formData.images.length;
         if (files.length > maxUploads) {
             alert(`You can only upload ${maxUploads} more images (max 10 total).`);
@@ -316,7 +323,7 @@ export default function ProductEdit() {
                         <label className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                             <UploadCloud className="w-5 h-5" />
                             {uploading ? 'Uploading...' : 'Upload Images'}
-                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                            <input type="file" multiple accept="image/*, .png, .jpg, .jpeg, .webp, application/octet-stream" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                         </label>
                     </div>
 

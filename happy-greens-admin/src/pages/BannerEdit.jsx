@@ -197,7 +197,7 @@ const BannerEdit = () => {
                                     type="file"
                                     ref={fileInputRef}
                                     className="hidden"
-                                    accept="image/*,video/mp4,video/webm"
+                                    accept="image/*,video/mp4,video/webm,.jpg,.jpeg,.png,.webp,application/octet-stream"
                                     onChange={handleImageUpload}
                                 />
                             </div>
