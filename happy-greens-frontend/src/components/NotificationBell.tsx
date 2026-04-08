@@ -105,7 +105,7 @@ const NotificationBell = () => {
             </button>
 
             {open ? (
-                <div className="absolute right-0 top-[calc(100%+0.65rem)] z-[80] w-[min(92vw,24rem)] overflow-hidden rounded-[1.5rem] border border-[#e4ecda] bg-white shadow-[0_18px_42px_rgba(15,23,42,0.16)]">
+                <div className="fixed inset-x-3 top-[6.25rem] z-[80] w-auto overflow-hidden rounded-[1.5rem] border border-[#e4ecda] bg-white shadow-[0_18px_42px_rgba(15,23,42,0.16)] md:absolute md:right-0 md:left-auto md:top-[calc(100%+0.65rem)] md:w-[24rem]">
                     <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-4 py-3.5">
                         <div>
                             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Inbox</p>
@@ -122,7 +122,7 @@ const NotificationBell = () => {
                         </button>
                     </div>
 
-                    <div className="max-h-[24rem] overflow-y-auto">
+                    <div className="max-h-[calc(100vh-12rem)] overflow-y-auto md:max-h-[24rem]">
                         {loading ? (
                             <div className="px-4 py-6 text-sm text-slate-500">Loading notifications...</div>
                         ) : sortedItems.length === 0 ? (
