@@ -125,12 +125,12 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
                     />
 
-                    <button type="button" onClick={(e) => { e.preventDefault(); handleWishlistToggle(); }} className={`safe-touch absolute left-2 top-2 inline-flex h-9 min-h-0 w-9 min-w-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur ${isWishlisted ? 'border-rose-500 bg-rose-500 text-white' : 'border-white/80 bg-white/90 text-slate-500'}`} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); handleWishlistToggle(); }} className={`safe-touch absolute right-2 top-2 inline-flex h-9 min-h-0 w-9 min-w-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur ${isWishlisted ? 'border-rose-500 bg-rose-500 text-white' : 'border-white/80 bg-white/90 text-slate-500'}`} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
                         <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-white' : ''}`} />
                     </button>
 
                     {product.stock !== undefined && product.stock < 10 && (
-                        <div className="absolute right-2 top-2">
+                        <div className="absolute left-2 top-2">
                             <Badge variant={product.stock === 0 ? 'error' : 'warning'} size="sm">
                                 {product.stock === 0 ? 'Sold out' : `${product.stock} left`}
                             </Badge>
