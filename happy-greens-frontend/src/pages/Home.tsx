@@ -170,10 +170,10 @@ const Home = () => {
                     <Link to="/shop" className="text-[0.85rem] font-bold text-green-700 hover:text-green-800 transition">View all</Link>
                 </div>
 
-                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="-mx-1 overflow-x-auto px-1 pb-6 pt-4 hide-scrollbar overscroll-x-contain">
+                <div className="-mx-1 overflow-x-auto px-1 pb-6 pt-4 hide-scrollbar overscroll-x-contain">
                     <div className="flex min-w-max gap-4 px-3 md:gap-8">
                     {categories.length > 0 ? categories.map((cat) => (
-                        <motion.div key={cat.id} variants={fadeInUp} className="flex-none snap-start">
+                        <div key={cat.id} className="flex-none snap-start">
                             <Link to={`/shop?category=${cat.slug}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
                                 <div className="relative flex h-20 w-20 rounded-[1.75rem] sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03]">
                                     <img
@@ -192,14 +192,14 @@ const Home = () => {
                                 </div>
                                 <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
                             </Link>
-                        </motion.div>
+                        </div>
                     )) : (
                         [1,2,3,4,5,6].map(i => (
                             <div key={i} className="flex-none w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-[1.75rem] bg-slate-100 animate-pulse" />
                         ))
                     )}
                     </div>
-                </motion.div>
+                </div>
             </motion.section>
 
             {offerProducts.length > 0 || loadingOffers ? (
