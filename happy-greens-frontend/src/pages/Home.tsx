@@ -34,6 +34,8 @@ const getCategoryImage = (category: { slug?: string; name?: string }) => {
     return CATEGORY_IMAGES[slugKey] || CATEGORY_IMAGES[nameKey] || FALLBACK_CATEGORY_IMAGE;
 };
 
+const CATEGORY_DISPLAY_ORDER = ['vegetables', 'fruits'];
+
 const features = [
     { icon: Truck, title: 'Same day delivery', description: 'Fast slots in busy city zones', tone: 'bg-green-50 text-green-700' },
     { icon: Leaf, title: 'Farm fresh', description: 'Fresh stock with daily replenishment', tone: 'bg-lime-50 text-lime-700' },
@@ -95,7 +97,22 @@ const Home = () => {
                 const { getCategories } = await import('../services/product.service');
                 const data = await getCategories(true);
                 if (data) {
-                    setCategories(data.filter((c: any) => !c.parent_id)); // Only top level on home page
+                    const topLevelCategories = data.filter((c: any) => !c.parent_id);
+                    const sortedCategories = [...topLevelCategories].sort((a: any, b: any) => {
+                        const aKey = normalizeCategoryImageKey(a.slug || a.name);
+                        const bKey = normalizeCategoryImageKey(b.slug || b.name);
+                        const aIndex = CATEGORY_DISPLAY_ORDER.indexOf(aKey);
+                        const bIndex = CATEGORY_DISPLAY_ORDER.indexOf(bKey);
+
+                        if (aIndex !== -1 || bIndex !== -1) {
+                            if (aIndex === -1) return 1;
+                            if (bIndex === -1) return -1;
+                            return aIndex - bIndex;
+                        }
+
+                        return String(a.name || '').localeCompare(String(b.name || ''));
+                    });
+                    setCategories(sortedCategories);
                 }
             } catch {
                 console.error('Failed to fetch categories');

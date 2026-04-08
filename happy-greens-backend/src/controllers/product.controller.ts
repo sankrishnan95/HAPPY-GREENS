@@ -368,7 +368,7 @@ export const getCategories = async (req: Request, res: Response) => {
         
         const params: any[] = [];
         if (activeOnly === 'true') {
-            query += ` WHERE c.is_active = true`;
+            query += ` WHERE COALESCE(c.is_active, true) = true`;
         }
         
         query += ` ORDER BY c.name ASC`;

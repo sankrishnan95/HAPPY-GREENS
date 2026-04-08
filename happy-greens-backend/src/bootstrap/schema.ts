@@ -419,5 +419,12 @@ export const ensureCategoryVisibilitySchema = async (): Promise<void> => {
         ALTER TABLE categories
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
     `);
+
+    await pool.query(`
+        UPDATE categories
+        SET is_active = TRUE
+        WHERE is_active IS NULL
+    `);
+
     console.log('[Schema Bootstrap] categories.is_active visibility ensured');
 };
