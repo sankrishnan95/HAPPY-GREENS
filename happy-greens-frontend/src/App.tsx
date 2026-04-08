@@ -109,6 +109,16 @@ const PageTracker = () => {
     return null;
 };
 
+const ScrollToTop = () => {
+    const location = useLocation();
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }, [location.pathname, location.search]);
+
+    return null;
+};
+
 const AuthRedirectHandler = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -135,6 +145,7 @@ function AppLayout() {
 
     return (
         <>
+            <ScrollToTop />
             <PageTracker />
             <AuthRedirectHandler />
             <div className="min-h-screen flex flex-col overflow-x-hidden">
