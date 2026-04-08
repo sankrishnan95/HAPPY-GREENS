@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Minus, ShoppingCart, Heart } from 'lucide-react';
 import { useStore } from '../store/useStore';
@@ -46,11 +47,30 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const cartItem = cart.find((item) => item.id === product.id);
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = wishlistIds.includes(product.id);
-    const primaryImage = normalizeImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.image_url);
+    const productImages = useMemo(
+        () => (product.images && product.images.length > 0 ? product.images : [product.image_url]).map((image) => normalizeImageUrl(image)),
+        [product.image_url, product.images]
+    );
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [isImageHovered, setIsImageHovered] = useState(false);
     const minimumQuantity = getInitialQuantity(product);
     const minimumQuantityLabel = formatQuantity(product, minimumQuantity);
     const minimumQuantityPrice = getMinimumQuantityPrice(product);
     const originalMinimumQuantityPrice = getOriginalMinimumQuantityPrice(product);
+
+    useEffect(() => {
+        setActiveImageIndex(0);
+    }, [product.id]);
+
+    useEffect(() => {
+        if (productImages.length <= 1 || !isImageHovered) return;
+
+        const intervalId = window.setInterval(() => {
+            setActiveImageIndex((current) => (current + 1) % productImages.length);
+        }, 1800);
+
+        return () => window.clearInterval(intervalId);
+    }, [isImageHovered, productImages]);
 
     const trackAddToCart = () => {
         trackEvent('add_to_cart', {
@@ -114,9 +134,16 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     return (
         <div className="mobile-app-card group flex h-full flex-col overflow-hidden rounded-[1.35rem]">
             <Link to={`/product/${product.id}`} className="relative block">
-                <div className="relative aspect-square overflow-hidden bg-[#f3f8ee]">
+                <div
+                    className="relative aspect-square overflow-hidden bg-[#f3f8ee]"
+                    onMouseEnter={() => setIsImageHovered(true)}
+                    onMouseLeave={() => {
+                        setIsImageHovered(false);
+                        setActiveImageIndex(0);
+                    }}
+                >
                     <OptimizedImage
-                        src={primaryImage}
+                        src={productImages[activeImageIndex]}
                         alt={product.name}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         width={320}
@@ -124,6 +151,19 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         aspectRatio="1 / 1"
                         sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
                     />
+
+                    {productImages.length > 1 && (
+                        <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-slate-900/45 px-2 py-1 backdrop-blur-sm">
+                            {productImages.map((_, index) => (
+                                <span
+                                    key={`${product.id}-dot-${index}`}
+                                    className={`h-1.5 w-1.5 rounded-full transition-all ${
+                                        index === activeImageIndex ? 'bg-white' : 'bg-white/45'
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                    )}
 
                     <button type="button" onClick={(e) => { e.preventDefault(); handleWishlistToggle(); }} className={`safe-touch absolute right-2 top-2 inline-flex h-9 min-h-0 w-9 min-w-0 items-center justify-center rounded-2xl border shadow-sm backdrop-blur ${isWishlisted ? 'border-rose-500 bg-rose-500 text-white' : 'border-white/80 bg-white/90 text-slate-500'}`} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
                         <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-white' : ''}`} />

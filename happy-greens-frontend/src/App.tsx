@@ -25,9 +25,35 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
 const RefundCancellationPolicy = lazy(() => import('./pages/RefundCancellationPolicy'));
 
+const StorefrontLoader = ({ label }: { label?: string }) => (
+    <div className="flex flex-col items-center justify-center text-center">
+        <div className="delivery-loader" aria-hidden="true">
+            <div className="delivery-loader__track" />
+            <div className="delivery-loader__scooter">
+                <div className="delivery-loader__crate">
+                    <span className="delivery-loader__veg delivery-loader__veg--leaf" />
+                    <span className="delivery-loader__veg delivery-loader__veg--orange" />
+                </div>
+                <div className="delivery-loader__rider">
+                    <span className="delivery-loader__head" />
+                    <span className="delivery-loader__body" />
+                </div>
+                <div className="delivery-loader__bike">
+                    <span className="delivery-loader__handle" />
+                    <span className="delivery-loader__seat" />
+                    <span className="delivery-loader__frame" />
+                    <span className="delivery-loader__wheel delivery-loader__wheel--front" />
+                    <span className="delivery-loader__wheel delivery-loader__wheel--back" />
+                </div>
+            </div>
+        </div>
+        {label ? <p className="mt-4 text-sm font-medium text-slate-600">{label}</p> : null}
+    </div>
+);
+
 const PageFallback = () => (
     <div className="page-shell flex min-h-[40vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
+        <StorefrontLoader label="Packing fresh picks..." />
     </div>
 );
 
@@ -87,7 +113,7 @@ const BackendReadinessGate = ({ children }: { children: ReactNode }) => {
 
     return (
         <div className="page-shell flex min-h-screen flex-col items-center justify-center px-6 text-center">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
+            <StorefrontLoader />
             <h1 className="mt-6 text-xl font-semibold text-slate-900">Starting storefront services</h1>
             <p className="mt-2 max-w-md text-sm text-slate-600">
                 The backend is waking up. We&apos;ll continue automatically as soon as it&apos;s ready.

@@ -115,6 +115,154 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  .delivery-loader {
+    position: relative;
+    width: 13rem;
+    height: 7rem;
+  }
+
+  .delivery-loader__track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.8rem;
+    height: 0.35rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.5), rgba(148, 163, 184, 0.2));
+  }
+
+  .delivery-loader__scooter {
+    position: absolute;
+    left: 0.5rem;
+    bottom: 0.95rem;
+    width: 7.5rem;
+    height: 4.8rem;
+    animation: delivery-scooter-move 2.2s ease-in-out infinite;
+  }
+
+  .delivery-loader__crate {
+    position: absolute;
+    left: 0.45rem;
+    top: 0.9rem;
+    width: 1.7rem;
+    height: 1.4rem;
+    border-radius: 0.45rem 0.45rem 0.35rem 0.35rem;
+    background: #d97706;
+    box-shadow: inset 0 -0.12rem 0 rgba(0, 0, 0, 0.15);
+  }
+
+  .delivery-loader__veg {
+    position: absolute;
+    display: block;
+    border-radius: 999px;
+  }
+
+  .delivery-loader__veg--leaf {
+    left: 0.18rem;
+    top: -0.28rem;
+    width: 0.65rem;
+    height: 0.65rem;
+    background: #22c55e;
+  }
+
+  .delivery-loader__veg--orange {
+    right: 0.18rem;
+    top: -0.22rem;
+    width: 0.62rem;
+    height: 0.62rem;
+    background: #fb923c;
+  }
+
+  .delivery-loader__rider {
+    position: absolute;
+    left: 2.6rem;
+    top: 0.15rem;
+    width: 1.7rem;
+    height: 2.2rem;
+    animation: delivery-rider-bob 0.9s ease-in-out infinite;
+  }
+
+  .delivery-loader__head {
+    position: absolute;
+    left: 0.55rem;
+    top: 0;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 999px;
+    background: #f6c9a2;
+  }
+
+  .delivery-loader__body {
+    position: absolute;
+    left: 0.35rem;
+    top: 0.6rem;
+    width: 1rem;
+    height: 1.35rem;
+    border-radius: 0.6rem 0.6rem 0.3rem 0.3rem;
+    background: #16a34a;
+    transform: skew(-8deg);
+  }
+
+  .delivery-loader__bike {
+    position: absolute;
+    left: 1.6rem;
+    bottom: 0;
+    width: 4.8rem;
+    height: 2.6rem;
+  }
+
+  .delivery-loader__handle {
+    position: absolute;
+    right: 0.85rem;
+    top: 0.2rem;
+    width: 0.9rem;
+    height: 0.14rem;
+    border-radius: 999px;
+    background: #1f2937;
+    transform: rotate(20deg);
+    transform-origin: right center;
+  }
+
+  .delivery-loader__seat {
+    position: absolute;
+    left: 1.1rem;
+    top: 0.7rem;
+    width: 1rem;
+    height: 0.22rem;
+    border-radius: 999px;
+    background: #1f2937;
+  }
+
+  .delivery-loader__frame {
+    position: absolute;
+    left: 0.45rem;
+    right: 0.55rem;
+    top: 0.85rem;
+    bottom: 0.7rem;
+    border-radius: 1rem 1rem 0.6rem 0.6rem;
+    background: linear-gradient(180deg, #22c55e, #15803d);
+    clip-path: polygon(10% 10%, 73% 10%, 100% 58%, 78% 88%, 28% 88%, 0% 58%);
+  }
+
+  .delivery-loader__wheel {
+    position: absolute;
+    bottom: 0;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 0.18rem solid #0f172a;
+    background: #fff;
+    animation: delivery-wheel-spin 0.7s linear infinite;
+  }
+
+  .delivery-loader__wheel--front {
+    right: 0.35rem;
+  }
+
+  .delivery-loader__wheel--back {
+    left: 0.55rem;
+  }
 }
 
 @layer utilities {
@@ -145,5 +293,32 @@
 @media (min-width: 1024px) {
   html {
     font-size: 16px;
+  }
+}
+
+@keyframes delivery-scooter-move {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4.4rem);
+  }
+}
+
+@keyframes delivery-rider-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(0.1rem);
+  }
+}
+
+@keyframes delivery-wheel-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
