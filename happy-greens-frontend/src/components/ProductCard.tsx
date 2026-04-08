@@ -64,8 +64,8 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
             ? cart.map((item) => (item.id === product.id ? { ...item, quantity: nextQuantity } : item))
             : [...cart, { ...product, quantity: nextQuantity }];
         toast.custom(
-            (t) => <div className={t.visible ? 'animate-enter' : 'animate-leave'}><CartSummaryToast items={nextCart} /></div>,
-            { id: `cart-${product.id}`, duration: 1800, position: 'top-right' }
+            (t) => <div className={t.visible ? 'animate-enter' : 'animate-leave'}><CartSummaryToast items={nextCart} toastId={`cart-${product.id}`} /></div>,
+            { id: `cart-${product.id}`, duration: Infinity, position: 'top-right' }
         );
     };
 

@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { normalizeImageUrl } from '../utils/image';
 import { calculateLineTotal, formatQuantity } from '../utils/productUnits';
 
@@ -17,13 +19,41 @@ type CartToastItem = {
 
 type CartSummaryToastProps = {
     items: CartToastItem[];
+    toastId: string;
 };
 
-const CartSummaryToast = ({ items }: CartSummaryToastProps) => {
+const CartSummaryToast = ({ items, toastId }: CartSummaryToastProps) => {
     const totalAmount = items.reduce((sum, item) => sum + calculateLineTotal(item, item.quantity), 0);
+    const dismissTimerRef = useRef<number | null>(null);
+
+    const clearDismissTimer = useCallback(() => {
+        if (dismissTimerRef.current) {
+            window.clearTimeout(dismissTimerRef.current);
+            dismissTimerRef.current = null;
+        }
+    }, []);
+
+    const scheduleDismiss = useCallback((delayMs: number) => {
+        clearDismissTimer();
+        dismissTimerRef.current = window.setTimeout(() => {
+            toast.dismiss(toastId);
+        }, delayMs);
+    }, [clearDismissTimer, toastId]);
+
+    useEffect(() => {
+        scheduleDismiss(4800);
+        return clearDismissTimer;
+    }, [clearDismissTimer, scheduleDismiss]);
 
     return (
-        <div className="pointer-events-auto relative w-[min(92vw,22rem)] overflow-visible">
+        <div
+            className="pointer-events-auto relative w-[min(92vw,22rem)] overflow-visible"
+            onMouseEnter={clearDismissTimer}
+            onMouseLeave={() => scheduleDismiss(5000)}
+            onTouchStart={clearDismissTimer}
+            onTouchEnd={() => scheduleDismiss(5000)}
+            onClick={() => scheduleDismiss(5000)}
+        >
             <div className="absolute -top-2 right-6 h-4 w-4 rotate-45 rounded-[0.25rem] border-l border-t border-slate-800 bg-slate-900" />
             <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 text-white shadow-[0_18px_36px_rgba(15,23,42,0.3)]">
             <div className="border-b border-white/10 px-4 py-3">
