@@ -41,7 +41,7 @@ const CartSummaryToast = ({ items, toastId }: CartSummaryToastProps) => {
     }, [clearDismissTimer, toastId]);
 
     useEffect(() => {
-        scheduleDismiss(4800);
+        scheduleDismiss(3000);
         return clearDismissTimer;
     }, [clearDismissTimer, scheduleDismiss]);
 
