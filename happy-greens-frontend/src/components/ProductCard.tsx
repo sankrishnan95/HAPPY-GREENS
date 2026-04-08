@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Minus, ShoppingCart, Heart } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import Badge from './Badge';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
 import { normalizeImageUrl } from '../utils/image';
-import OptimizedImage from './OptimizedImage';
 import { trackEvent } from '../services/analytics.service';
 import { decrementQuantity, formatQuantity, getInitialQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, incrementQuantity } from '../utils/productUnits';
 import CartSummaryToast from './CartSummaryToast';
@@ -142,15 +142,18 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         setActiveImageIndex(0);
                     }}
                 >
-                    <OptimizedImage
-                        src={productImages[activeImageIndex]}
-                        alt={product.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        width={320}
-                        height={320}
-                        aspectRatio="1 / 1"
-                        sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
-                    />
+                    <AnimatePresence mode="wait" initial={false}>
+                        <motion.img
+                            key={`${product.id}-${activeImageIndex}`}
+                            src={productImages[activeImageIndex]}
+                            alt={product.name}
+                            className="absolute inset-0 h-full w-full object-cover"
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-20%' }}
+                            transition={{ duration: 0.35, ease: 'easeOut' }}
+                        />
+                    </AnimatePresence>
 
                     {productImages.length > 1 && (
                         <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-slate-900/45 px-2 py-1 backdrop-blur-sm">
