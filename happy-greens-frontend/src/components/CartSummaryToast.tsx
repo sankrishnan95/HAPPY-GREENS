@@ -23,7 +23,9 @@ const CartSummaryToast = ({ items }: CartSummaryToastProps) => {
     const totalAmount = items.reduce((sum, item) => sum + calculateLineTotal(item, item.quantity), 0);
 
     return (
-        <div className="pointer-events-auto w-[min(92vw,22rem)] overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 text-white shadow-[0_18px_36px_rgba(15,23,42,0.3)]">
+        <div className="pointer-events-auto relative w-[min(92vw,22rem)] overflow-visible">
+            <div className="absolute -top-2 right-6 h-4 w-4 rotate-45 rounded-[0.25rem] border-l border-t border-slate-800 bg-slate-900" />
+            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 text-white shadow-[0_18px_36px_rgba(15,23,42,0.3)]">
             <div className="border-b border-white/10 px-4 py-3">
                 <p className="text-sm font-semibold">Cart updated</p>
                 <p className="mt-0.5 text-xs text-white/70">{items.length} items</p>
@@ -50,6 +52,7 @@ const CartSummaryToast = ({ items }: CartSummaryToastProps) => {
             <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
                 <span className="text-sm text-white/75">Total</span>
                 <span className="text-base font-bold">Rs. {totalAmount.toFixed(0)}</span>
+            </div>
             </div>
         </div>
     );
