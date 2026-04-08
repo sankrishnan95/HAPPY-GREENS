@@ -159,7 +159,7 @@ const Home = () => {
                                 {heroTitleBrand ? (
                                     <span className="flex flex-col gap-1">
                                         {heroTitlePrefix ? (
-                                            <span className="text-[0.92rem] font-semibold uppercase tracking-[0.18em] text-lime-200 sm:text-[1rem] md:text-[1.1rem]">
+                                            <span className="text-[0.92rem] font-semibold uppercase tracking-[0.18em] text-amber-200 sm:text-[1rem] md:text-[1.1rem]">
                                                 {heroTitlePrefix}
                                             </span>
                                         ) : null}
