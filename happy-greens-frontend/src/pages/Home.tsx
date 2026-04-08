@@ -21,6 +21,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
     'laundromat': '/categories/detergent.png',
     'personal-care': '/categories/shampoo.png',
 };
+const FALLBACK_CATEGORY_IMAGE = '/categories/apple.png';
 
 const features = [
     { icon: Truck, title: 'Same day delivery', description: 'Fast slots in busy city zones', tone: 'bg-green-50 text-green-700' },
@@ -148,9 +149,16 @@ const Home = () => {
                             <Link to={`/shop?category=${cat.slug}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
                                 <div className="relative flex h-20 w-20 rounded-[1.75rem] sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03]">
                                     <img
-                                        src={CATEGORY_IMAGES[cat.slug] || '/categories/apple.png'} // Fallback to apple if no custom image
+                                        src={CATEGORY_IMAGES[cat.slug] || FALLBACK_CATEGORY_IMAGE}
                                         alt={cat.name}
-                                        loading="lazy"
+                                        loading="eager"
+                                        decoding="async"
+                                        fetchPriority="high"
+                                        onError={(e) => {
+                                            if (e.currentTarget.src.endsWith(FALLBACK_CATEGORY_IMAGE)) return;
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = FALLBACK_CATEGORY_IMAGE;
+                                        }}
                                         className="h-full w-full object-contain p-0.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.05)] md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.05)]"
                                     />
                                 </div>
