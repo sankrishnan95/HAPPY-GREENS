@@ -25,6 +25,7 @@ type CartSummaryToastProps = {
 const CartSummaryToast = ({ items, toastId }: CartSummaryToastProps) => {
     const totalAmount = items.reduce((sum, item) => sum + calculateLineTotal(item, item.quantity), 0);
     const dismissTimerRef = useRef<number | null>(null);
+    const scrollerRef = useRef<HTMLDivElement | null>(null);
 
     const clearDismissTimer = useCallback(() => {
         if (dismissTimerRef.current) {
@@ -41,9 +42,13 @@ const CartSummaryToast = ({ items, toastId }: CartSummaryToastProps) => {
     }, [clearDismissTimer, toastId]);
 
     useEffect(() => {
-        scheduleDismiss(1000);
+        scheduleDismiss(500);
         return clearDismissTimer;
     }, [clearDismissTimer, scheduleDismiss]);
+
+    useEffect(() => {
+        scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: 'auto' });
+    }, [items]);
 
     return (
         <div
@@ -61,7 +66,7 @@ const CartSummaryToast = ({ items, toastId }: CartSummaryToastProps) => {
                 <p className="mt-0.5 text-xs text-white/70">{items.length} items</p>
             </div>
 
-            <div className="max-h-64 space-y-3 overflow-y-auto px-4 py-3">
+            <div ref={scrollerRef} className="max-h-64 space-y-3 overflow-y-auto px-4 py-3">
                 {items.map((item) => {
                     const image = item.images && item.images.length > 0 ? item.images[0] : item.image_url;
                     return (
