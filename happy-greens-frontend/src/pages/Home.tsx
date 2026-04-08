@@ -126,6 +126,11 @@ const Home = () => {
 
     const heroBanner = banners.length > 0 ? banners[0] : null;
     const dealBanner = banners.length > 1 ? banners[1] : null;
+    const heroTitle = heroBanner?.title || 'Fresh groceries delivered like an app, not a store.';
+    const happyGreensMatch = heroTitle.match(/happy greens/i);
+    const heroTitlePrefix = happyGreensMatch ? heroTitle.slice(0, happyGreensMatch.index).trim() : '';
+    const heroTitleBrand = happyGreensMatch ? heroTitle.slice(happyGreensMatch.index!, happyGreensMatch.index! + happyGreensMatch[0].length) : '';
+    const heroTitleSuffix = happyGreensMatch ? heroTitle.slice(happyGreensMatch.index! + happyGreensMatch[0].length).trim() : '';
 
     return (
         <div className="space-y-4 pb-4 md:space-y-6 lg:space-y-8">
@@ -150,7 +155,29 @@ const Home = () => {
                             <Badge variant="accent" size="sm" className="mb-3 w-fit border-white/20 bg-white/15 text-white backdrop-blur-sm">
                                 {heroBanner?.subheading || 'Express slots available today'}
                             </Badge>
-                            <h1 className="max-w-[14ch] text-[1.7rem] font-display font-bold text-white sm:text-[2rem] md:text-[2.7rem] lg:text-[3.5rem]">{heroBanner?.title || 'Fresh groceries delivered like an app, not a store.'}</h1>
+                            <h1 className="max-w-[14ch] font-display font-bold text-white">
+                                {heroTitleBrand ? (
+                                    <span className="flex flex-col gap-1">
+                                        {heroTitlePrefix ? (
+                                            <span className="text-[0.92rem] font-semibold uppercase tracking-[0.18em] text-lime-200 sm:text-[1rem] md:text-[1.1rem]">
+                                                {heroTitlePrefix}
+                                            </span>
+                                        ) : null}
+                                        <span className="text-[1.9rem] sm:text-[2.35rem] md:text-[3rem] lg:text-[3.7rem]">
+                                            {heroTitleBrand}
+                                        </span>
+                                        {heroTitleSuffix ? (
+                                            <span className="text-[0.98rem] font-medium tracking-[0.04em] text-white/88 sm:text-[1.05rem] md:text-[1.15rem]">
+                                                {heroTitleSuffix}
+                                            </span>
+                                        ) : null}
+                                    </span>
+                                ) : (
+                                    <span className="text-[1.7rem] sm:text-[2rem] md:text-[2.7rem] lg:text-[3.5rem]">
+                                        {heroTitle}
+                                    </span>
+                                )}
+                            </h1>
                             <p className="mt-3 max-w-[34ch] text-sm leading-6 text-white/90 sm:text-[0.95rem] md:text-base">{heroBanner?.description || 'Daily essentials, fruits, vegetables and dairy packed for fast doorstep delivery.'}</p>
                             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                                 <Link to={heroBanner?.link || '/shop'} className="w-full sm:w-auto"><Button variant="accent" size="lg" className="w-full sm:w-auto">Shop fresh<ArrowRight className="h-4 w-4" /></Button></Link>
