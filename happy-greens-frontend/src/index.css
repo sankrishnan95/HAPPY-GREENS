@@ -120,6 +120,7 @@
     position: relative;
     width: 14rem;
     height: 7.5rem;
+    filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
   }
 
   .delivery-loader__track {
@@ -129,7 +130,7 @@
     bottom: 0.8rem;
     height: 0.35rem;
     border-radius: 999px;
-    background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.5), rgba(148, 163, 184, 0.2));
+    background: linear-gradient(90deg, rgba(190, 242, 100, 0.08), rgba(148, 163, 184, 0.38), rgba(190, 242, 100, 0.08));
   }
 
   .delivery-loader__scene {
@@ -143,34 +144,35 @@
 
   .delivery-loader__pole {
     position: absolute;
-    left: 1.2rem;
-    top: 0.6rem;
-    width: 0.16rem;
-    height: 2.6rem;
+    left: 1.3rem;
+    top: 0.55rem;
+    width: 0.2rem;
+    height: 2.85rem;
     border-radius: 999px;
-    background: #8b5a2b;
-    transform: rotate(-18deg);
+    background: linear-gradient(180deg, #b9854f, #8b5a2b);
+    box-shadow: inset -0.04rem 0 0 rgba(255, 255, 255, 0.25);
+    transform: rotate(-14deg);
     transform-origin: bottom center;
   }
 
   .delivery-loader__rope {
     position: absolute;
-    left: 3.28rem;
-    top: 0.72rem;
-    width: 1.55rem;
+    left: 3.35rem;
+    top: 0.82rem;
+    width: 1.8rem;
     height: 0.1rem;
     background: #cbd5e1;
-    transform: rotate(10deg);
+    transform: rotate(6deg);
     transform-origin: left center;
   }
 
   .delivery-loader__carrot {
     position: absolute;
-    left: 4.6rem;
-    top: 0.68rem;
+    left: 5rem;
+    top: 0.7rem;
     width: 0.95rem;
-    height: 1.7rem;
-    border-radius: 0.55rem 0.55rem 0.7rem 0.7rem;
+    height: 1.55rem;
+    border-radius: 0.55rem 0.55rem 0.85rem 0.85rem;
     background: linear-gradient(180deg, #fb923c, #ea580c);
     clip-path: polygon(50% 0%, 95% 25%, 75% 100%, 25% 100%, 5% 25%);
     transform-origin: top center;
@@ -207,34 +209,55 @@
 
   .delivery-loader__tail {
     position: absolute;
-    left: 0.2rem;
-    top: 1.65rem;
-    width: 0.95rem;
-    height: 0.12rem;
+    left: 0.28rem;
+    top: 1.45rem;
+    width: 0.9rem;
+    height: 0.16rem;
     border-radius: 999px;
     background: #5b6470;
     transform-origin: left center;
     animation: delivery-tail-flick 0.8s ease-in-out infinite;
   }
 
+  .delivery-loader__tail::after {
+    content: '';
+    position: absolute;
+    right: -0.08rem;
+    top: -0.14rem;
+    width: 0.34rem;
+    height: 0.34rem;
+    border-radius: 999px;
+    background: #374151;
+  }
+
   .delivery-loader__body {
     position: absolute;
     left: 1rem;
-    top: 1.05rem;
-    width: 4rem;
-    height: 2rem;
-    border-radius: 1.2rem 1.2rem 0.95rem 0.95rem;
-    background: linear-gradient(180deg, #8f97a4, #6b7280);
-    box-shadow: inset 0 -0.12rem 0 rgba(15, 23, 42, 0.12);
+    top: 1rem;
+    width: 4.25rem;
+    height: 2.15rem;
+    border-radius: 1.5rem 1.55rem 1.1rem 1.1rem;
+    background: linear-gradient(180deg, #b7bec8, #8b95a3 55%, #737c89);
+    box-shadow: inset 0 0.16rem 0 rgba(255, 255, 255, 0.26), inset 0 -0.16rem 0 rgba(15, 23, 42, 0.08);
+  }
+
+  .delivery-loader__belly {
+    position: absolute;
+    left: 1.72rem;
+    top: 1.82rem;
+    width: 2.65rem;
+    height: 1.02rem;
+    border-radius: 999px;
+    background: rgba(244, 244, 245, 0.72);
   }
 
   .delivery-loader__leg {
     position: absolute;
     bottom: 0;
-    width: 0.24rem;
-    height: 1.7rem;
+    width: 0.28rem;
+    height: 1.65rem;
     border-radius: 999px;
-    background: #525b66;
+    background: linear-gradient(180deg, #737c89, #4b5563);
     transform-origin: top center;
     animation: delivery-leg-step 0.48s ease-in-out infinite alternate;
   }
@@ -270,63 +293,96 @@
 
   .delivery-loader__neck {
     position: absolute;
-    left: 4.62rem;
-    top: 0.9rem;
-    width: 1.2rem;
-    height: 0.8rem;
-    border-radius: 0.9rem;
-    background: linear-gradient(180deg, #8f97a4, #6b7280);
-    transform: rotate(-28deg);
+    left: 4.78rem;
+    top: 0.88rem;
+    width: 1.28rem;
+    height: 0.92rem;
+    border-radius: 0.95rem;
+    background: linear-gradient(180deg, #a9b1bc, #7b8592);
+    transform: rotate(-22deg);
     transform-origin: left bottom;
+  }
+
+  .delivery-loader__mane {
+    position: absolute;
+    left: 4.98rem;
+    top: 0.82rem;
+    width: 0.28rem;
+    height: 1.08rem;
+    border-radius: 999px;
+    background: #4b5563;
+    transform: rotate(-22deg);
+    transform-origin: center;
   }
 
   .delivery-loader__head {
     position: absolute;
-    left: 5.48rem;
-    top: 0.52rem;
-    width: 1.45rem;
-    height: 1rem;
-    border-radius: 0.8rem 0.9rem 0.7rem 0.7rem;
-    background: linear-gradient(180deg, #959eab, #6b7280);
+    left: 5.72rem;
+    top: 0.42rem;
+    width: 1.55rem;
+    height: 1.18rem;
+    border-radius: 0.9rem 1rem 0.78rem 0.82rem;
+    background: linear-gradient(180deg, #b9c0ca, #848d9a);
   }
 
   .delivery-loader__ear {
     position: absolute;
-    top: 0.03rem;
-    width: 0.34rem;
-    height: 0.78rem;
+    top: -0.02rem;
+    width: 0.36rem;
+    height: 0.84rem;
     border-radius: 999px 999px 0.2rem 0.2rem;
     background: #6b7280;
   }
 
   .delivery-loader__ear--left {
-    left: 5.7rem;
+    left: 5.94rem;
     transform: rotate(-18deg);
   }
 
   .delivery-loader__ear--right {
-    left: 6.15rem;
+    left: 6.42rem;
     transform: rotate(10deg);
   }
 
   .delivery-loader__snout {
     position: absolute;
-    left: 6.52rem;
-    top: 0.76rem;
+    left: 6.76rem;
+    top: 0.78rem;
     width: 0.92rem;
-    height: 0.52rem;
+    height: 0.56rem;
     border-radius: 0.65rem;
-    background: #d1d5db;
+    background: #e5e7eb;
   }
 
   .delivery-loader__eye {
     position: absolute;
-    left: 6.18rem;
-    top: 0.84rem;
+    left: 6.34rem;
+    top: 0.82rem;
     width: 0.12rem;
     height: 0.12rem;
     border-radius: 999px;
     background: #1f2937;
+  }
+
+  .delivery-loader__smile {
+    position: absolute;
+    left: 7.02rem;
+    top: 1.08rem;
+    width: 0.26rem;
+    height: 0.12rem;
+    border-bottom: 0.08rem solid #7c2d12;
+    border-radius: 0 0 999px 999px;
+    transform: rotate(8deg);
+  }
+
+  .delivery-loader__cheek {
+    position: absolute;
+    left: 6.78rem;
+    top: 0.98rem;
+    width: 0.2rem;
+    height: 0.2rem;
+    border-radius: 999px;
+    background: rgba(251, 146, 60, 0.35);
   }
 }
 

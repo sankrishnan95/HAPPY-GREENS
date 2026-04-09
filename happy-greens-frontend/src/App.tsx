@@ -39,16 +39,20 @@ const StorefrontLoader = ({ label }: { label?: string }) => (
                 <div className="delivery-loader__donkey">
                     <span className="delivery-loader__tail" />
                     <span className="delivery-loader__body" />
+                    <span className="delivery-loader__belly" />
                     <span className="delivery-loader__leg delivery-loader__leg--front" />
                     <span className="delivery-loader__leg delivery-loader__leg--front-back" />
                     <span className="delivery-loader__leg delivery-loader__leg--rear" />
                     <span className="delivery-loader__leg delivery-loader__leg--rear-back" />
                     <span className="delivery-loader__neck" />
+                    <span className="delivery-loader__mane" />
                     <span className="delivery-loader__head" />
                     <span className="delivery-loader__ear delivery-loader__ear--left" />
                     <span className="delivery-loader__ear delivery-loader__ear--right" />
                     <span className="delivery-loader__snout" />
                     <span className="delivery-loader__eye" />
+                    <span className="delivery-loader__smile" />
+                    <span className="delivery-loader__cheek" />
                 </div>
             </div>
         </div>
