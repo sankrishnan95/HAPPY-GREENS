@@ -29,30 +29,32 @@ const StorefrontLoader = ({ label }: { label?: string }) => (
     <div className="flex flex-col items-center justify-center text-center">
         <div className="delivery-loader" aria-hidden="true">
             <div className="delivery-loader__track" />
-            <div className="delivery-loader__scene">
-                <div className="delivery-loader__pole" />
-                <div className="delivery-loader__rope" />
-                <div className="delivery-loader__carrot">
-                    <span className="delivery-loader__carrot-leaf delivery-loader__carrot-leaf--one" />
-                    <span className="delivery-loader__carrot-leaf delivery-loader__carrot-leaf--two" />
+            <div className="delivery-loader__spark delivery-loader__spark--one" />
+            <div className="delivery-loader__spark delivery-loader__spark--two" />
+            <div className="delivery-loader__spark delivery-loader__spark--three" />
+            <div className="delivery-loader__scooter">
+                <div className="delivery-loader__crate">
+                    <span className="delivery-loader__veg delivery-loader__veg--leaf" />
+                    <span className="delivery-loader__veg delivery-loader__veg--orange" />
                 </div>
-                <div className="delivery-loader__donkey">
-                    <span className="delivery-loader__tail" />
+                <div className="delivery-loader__rider">
+                    <span className="delivery-loader__helmet" />
+                    <span className="delivery-loader__face" />
                     <span className="delivery-loader__body" />
-                    <span className="delivery-loader__belly" />
-                    <span className="delivery-loader__leg delivery-loader__leg--front" />
-                    <span className="delivery-loader__leg delivery-loader__leg--front-back" />
-                    <span className="delivery-loader__leg delivery-loader__leg--rear" />
-                    <span className="delivery-loader__leg delivery-loader__leg--rear-back" />
-                    <span className="delivery-loader__neck" />
-                    <span className="delivery-loader__mane" />
-                    <span className="delivery-loader__head" />
-                    <span className="delivery-loader__ear delivery-loader__ear--left" />
-                    <span className="delivery-loader__ear delivery-loader__ear--right" />
-                    <span className="delivery-loader__snout" />
-                    <span className="delivery-loader__eye" />
-                    <span className="delivery-loader__smile" />
-                    <span className="delivery-loader__cheek" />
+                    <span className="delivery-loader__arm" />
+                    <span className="delivery-loader__scarf" />
+                </div>
+                <div className="delivery-loader__bike">
+                    <span className="delivery-loader__handle" />
+                    <span className="delivery-loader__mirror" />
+                    <span className="delivery-loader__seat" />
+                    <span className="delivery-loader__frame" />
+                    <span className="delivery-loader__panel" />
+                    <span className="delivery-loader__headlight" />
+                    <span className="delivery-loader__fender" />
+                    <span className="delivery-loader__exhaust" />
+                    <span className="delivery-loader__wheel delivery-loader__wheel--front" />
+                    <span className="delivery-loader__wheel delivery-loader__wheel--back" />
                 </div>
             </div>
         </div>
