@@ -71,7 +71,7 @@ export default function ProductAnalytics() {
             <MetricCard title="Active Products" value={data.metrics.inventoryLevels.activeProducts} helper="Tracked in analytics" tone="emerald" />
             <MetricCard title="Low Stock Items" value={data.metrics.inventoryLevels.lowStockCount} helper="Stock below 10" tone="amber" />
             <MetricCard title="Out of Stock" value={data.metrics.inventoryLevels.outOfStockCount} helper="Requires replenishment" tone="rose" />
-            <MetricCard title="Top Seller" value={data.topSelling[0]?.name || 'N/A'} helper={data.topSelling[0] ? `${data.topSelling[0].unitsSold} units sold` : 'No orders yet'} tone="blue" />
+            <MetricCard title="Top Seller" value={data.topSelling[0]?.name || 'N/A'} helper={data.topSelling[0] ? `${data.topSelling[0].unitsSoldLabel || data.topSelling[0].unitsSold} sold` : 'No orders yet'} tone="blue" />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
@@ -96,7 +96,7 @@ export default function ProductAnalytics() {
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="font-semibold text-slate-900">{product.name}</p>
-                        <p className="text-sm text-slate-500">{product.unitsSold} units sold</p>
+                        <p className="text-sm text-slate-500">{product.unitsSoldLabel || product.unitsSold} sold</p>
                       </div>
                       <span className="text-sm font-semibold text-slate-700">{formatCurrency(product.revenue)}</span>
                     </div>
@@ -110,6 +110,7 @@ export default function ProductAnalytics() {
             columns={[
               { key: 'name', label: 'Product' },
               { key: 'orders', label: 'Orders' },
+              { key: 'unitsSoldLabel', label: 'Qty Sold', render: (value, row) => value || row.unitsSold },
               { key: 'revenue', label: 'Revenue', render: (value) => formatCurrency(value) },
               { key: 'stock', label: 'Stock' },
               {

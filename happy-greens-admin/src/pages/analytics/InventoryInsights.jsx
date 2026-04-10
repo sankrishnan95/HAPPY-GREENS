@@ -77,7 +77,7 @@ export default function InventoryInsights() {
             <AnalyticsTable
               columns={[
                 { key: 'name', label: 'Fast Selling Product' },
-                { key: 'unitsSold', label: 'Units Sold' },
+                { key: 'unitsSoldLabel', label: 'Qty Sold', render: (value, row) => value || row.unitsSold },
                 { key: 'stock', label: 'Current Stock' },
               ]}
               rows={data.fastSellingProducts}
@@ -88,7 +88,7 @@ export default function InventoryInsights() {
           <AnalyticsTable
             columns={[
               { key: 'name', label: 'Slow Moving Product' },
-              { key: 'unitsSold', label: 'Units Sold' },
+              { key: 'unitsSoldLabel', label: 'Qty Sold', render: (value, row) => value || row.unitsSold },
               { key: 'stock', label: 'Current Stock' },
             ]}
             rows={data.slowMovingProducts}

@@ -1,4 +1,5 @@
 import { pool } from '../db';
+import { normalizeUnit } from './unit-pricing.service';
 
 interface AnalyticsEventPayload {
     eventType: string;
@@ -17,6 +18,29 @@ const ACTIVE_ORDER_FILTER = "o.status <> 'cancelled'";
 const ACTIVE_ORDER_FILTER_NO_ALIAS = "status <> 'cancelled'";
 
 const toNumber = (value: unknown): number => Number(value || 0);
+
+const formatAnalyticsQuantity = (quantity: unknown, unit: unknown): string => {
+    const numericQuantity = toNumber(quantity);
+    const normalizedUnit = normalizeUnit(unit);
+
+    if (normalizedUnit === 'GRAM') {
+        if (numericQuantity >= 1000) {
+            const kg = numericQuantity / 1000;
+            return `${kg % 1 === 0 ? kg.toFixed(0) : kg.toFixed(2)} kg`;
+        }
+        return `${Math.round(numericQuantity)} g`;
+    }
+
+    if (normalizedUnit === 'LITRE') {
+        return `${numericQuantity % 1 === 0 ? numericQuantity.toFixed(0) : numericQuantity.toFixed(2)} L`;
+    }
+
+    if (normalizedUnit === 'DOZEN') {
+        return `${Math.round(numericQuantity)} dozen`;
+    }
+
+    return `${Math.round(numericQuantity)} pc`;
+};
 
 const getRangeStart = ({ range = '7d', from, to }: AnalyticsRange): Date => {
     if (range === 'custom' && from) {
@@ -179,6 +203,7 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
             `SELECT
                 p.id,
                 p.name,
+                p.unit,
                 COUNT(DISTINCT o.id) FILTER (WHERE ${ACTIVE_ORDER_FILTER} AND o.created_at >= $1 AND o.created_at <= $2) AS orders,
                 COALESCE(SUM(oi.price_at_purchase) FILTER (WHERE ${ACTIVE_ORDER_FILTER} AND o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue,
                 COALESCE(p.stock_quantity, 0) AS stock,
@@ -192,7 +217,7 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id
              WHERE COALESCE(p.is_deleted, false) = false
-             GROUP BY p.id, p.name, p.stock_quantity
+             GROUP BY p.id, p.name, p.unit, p.stock_quantity
              ORDER BY revenue DESC, orders DESC, p.name ASC`,
             [start, end]
         ),
@@ -200,13 +225,14 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
             `SELECT
                 p.id,
                 p.name,
+                p.unit,
                 COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
                 COALESCE(SUM(oi.price_at_purchase) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id AND ${ACTIVE_ORDER_FILTER}
              WHERE COALESCE(p.is_deleted, false) = false
-             GROUP BY p.id, p.name
+             GROUP BY p.id, p.name, p.unit
              ORDER BY units_sold DESC, revenue DESC
              LIMIT 5`,
             [start, end]
@@ -215,13 +241,14 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
             `SELECT
                 p.id,
                 p.name,
+                p.unit,
                 COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
                 COALESCE(SUM(oi.price_at_purchase) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id AND ${ACTIVE_ORDER_FILTER}
              WHERE COALESCE(p.is_deleted, false) = false
-             GROUP BY p.id, p.name
+             GROUP BY p.id, p.name, p.unit
              ORDER BY units_sold ASC, revenue ASC, p.name ASC
              LIMIT 5`,
             [start, end]
@@ -231,11 +258,13 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
     const products = tableResult.rows.map((row) => ({
         productId: toNumber(row.id),
         name: row.name,
+        unit: row.unit,
         orders: toNumber(row.orders),
         revenue: toNumber(row.revenue),
         stock: toNumber(row.stock),
         status: row.status,
         unitsSold: toNumber(row.units_sold),
+        unitsSoldLabel: formatAnalyticsQuantity(row.units_sold, row.unit),
     }));
 
     return {
@@ -244,7 +273,9 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
             lowPerformingProducts: lowResult.rows.map((row) => ({
                 productId: toNumber(row.id),
                 name: row.name,
+                unit: row.unit,
                 unitsSold: toNumber(row.units_sold),
+                unitsSoldLabel: formatAnalyticsQuantity(row.units_sold, row.unit),
                 revenue: toNumber(row.revenue),
             })),
             revenuePerProduct: products.slice(0, 8).map((row) => ({
@@ -260,7 +291,9 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
         topSelling: topResult.rows.map((row) => ({
             productId: toNumber(row.id),
             name: row.name,
+            unit: row.unit,
             unitsSold: toNumber(row.units_sold),
+            unitsSoldLabel: formatAnalyticsQuantity(row.units_sold, row.unit),
             revenue: toNumber(row.revenue),
         })),
         table: products,
@@ -408,13 +441,14 @@ export const getInventoryInsightsData = async (range: AnalyticsRange = {}) => {
             `SELECT
                 p.id,
                 p.name,
+                p.unit,
                 COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
                 COALESCE(p.stock_quantity, 0) AS stock
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id AND ${ACTIVE_ORDER_FILTER}
              WHERE COALESCE(p.is_deleted, false) = false
-             GROUP BY p.id, p.name, p.stock_quantity
+             GROUP BY p.id, p.name, p.unit, p.stock_quantity
              ORDER BY units_sold DESC, p.name ASC
              LIMIT 10`,
             [start, end]
@@ -423,13 +457,14 @@ export const getInventoryInsightsData = async (range: AnalyticsRange = {}) => {
             `SELECT
                 p.id,
                 p.name,
+                p.unit,
                 COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
                 COALESCE(p.stock_quantity, 0) AS stock
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id AND ${ACTIVE_ORDER_FILTER}
              WHERE COALESCE(p.is_deleted, false) = false
-             GROUP BY p.id, p.name, p.stock_quantity
+             GROUP BY p.id, p.name, p.unit, p.stock_quantity
              ORDER BY units_sold ASC, p.name ASC
              LIMIT 10`,
             [start, end]
@@ -450,13 +485,17 @@ export const getInventoryInsightsData = async (range: AnalyticsRange = {}) => {
         fastSellingProducts: fastSellingResult.rows.map((row) => ({
             productId: toNumber(row.id),
             name: row.name,
+            unit: row.unit,
             unitsSold: toNumber(row.units_sold),
+            unitsSoldLabel: formatAnalyticsQuantity(row.units_sold, row.unit),
             stock: toNumber(row.stock),
         })),
         slowMovingProducts: slowMovingResult.rows.map((row) => ({
             productId: toNumber(row.id),
             name: row.name,
+            unit: row.unit,
             unitsSold: toNumber(row.units_sold),
+            unitsSoldLabel: formatAnalyticsQuantity(row.units_sold, row.unit),
             stock: toNumber(row.stock),
         })),
     };
