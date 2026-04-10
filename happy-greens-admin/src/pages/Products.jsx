@@ -68,7 +68,11 @@ export default function Products() {
     let filtered = products;
 
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(product => product.category_id === parseInt(categoryFilter));
+      const selectedCategoryId = parseInt(categoryFilter);
+      filtered = filtered.filter((product) => {
+        const categoryIds = Array.isArray(product.category_ids) ? product.category_ids.map(Number) : [];
+        return product.category_id === selectedCategoryId || categoryIds.includes(selectedCategoryId);
+      });
     }
 
     if (searchTerm) {

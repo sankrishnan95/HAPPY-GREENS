@@ -414,7 +414,15 @@ export const getCategories = async (req: Request, res: Response) => {
         const { activeOnly } = req.query;
         let query = `
             SELECT c.id, c.name, c.slug, c.description, c.image_url, c.parent_id, c.is_active,
-                   (SELECT COUNT(*)::int FROM products p WHERE p.category_id = c.id AND p.is_deleted = false) as product_count
+                   (
+                       SELECT COUNT(*)::int
+                       FROM products p
+                       WHERE p.is_deleted = false
+                         AND (
+                             p.category_id = c.id
+                             OR c.id = ANY(COALESCE(p.category_ids, ARRAY[]::int[]))
+                         )
+                   ) as product_count
             FROM categories c
         `;
         
@@ -508,7 +516,16 @@ export const deleteCategory = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const productCheck = await pool.query(
-            'SELECT COUNT(*)::int as count FROM products WHERE category_id = $1 AND is_deleted = false', [id]
+            `
+                SELECT COUNT(*)::int as count
+                FROM products
+                WHERE is_deleted = false
+                  AND (
+                      category_id = $1
+                      OR $1 = ANY(COALESCE(category_ids, ARRAY[]::int[]))
+                  )
+            `,
+            [id]
         );
         if (productCheck.rows[0].count > 0) {
             return res.status(400).json({ message: `Cannot delete: ${productCheck.rows[0].count} product(s) still assigned to this category` });
