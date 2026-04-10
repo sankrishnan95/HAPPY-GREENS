@@ -129,7 +129,7 @@ export const getSalesAnalyticsData = async (range: AnalyticsRange = {}) => {
         pool.query(
             `SELECT
                 COALESCE(c.name, 'Uncategorized') AS category,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) AS revenue
+                COALESCE(SUM(oi.price_at_purchase), 0) AS revenue
              FROM order_items oi
              JOIN orders o ON o.id = oi.order_id
              LEFT JOIN products p ON p.id = oi.product_id
@@ -180,7 +180,7 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
                 p.id,
                 p.name,
                 COUNT(DISTINCT o.id) FILTER (WHERE ${ACTIVE_ORDER_FILTER} AND o.created_at >= $1 AND o.created_at <= $2) AS orders,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase) FILTER (WHERE ${ACTIVE_ORDER_FILTER} AND o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue,
+                COALESCE(SUM(oi.price_at_purchase) FILTER (WHERE ${ACTIVE_ORDER_FILTER} AND o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue,
                 COALESCE(p.stock_quantity, 0) AS stock,
                 CASE
                     WHEN COALESCE(p.stock_quantity, 0) = 0 THEN 'Out of stock'
@@ -201,7 +201,7 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
                 p.id,
                 p.name,
                 COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue
+                COALESCE(SUM(oi.price_at_purchase) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id AND ${ACTIVE_ORDER_FILTER}
@@ -216,7 +216,7 @@ export const getProductAnalyticsData = async (range: AnalyticsRange = {}) => {
                 p.id,
                 p.name,
                 COALESCE(SUM(oi.quantity) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS units_sold,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue
+                COALESCE(SUM(oi.price_at_purchase) FILTER (WHERE o.created_at >= $1 AND o.created_at <= $2), 0) AS revenue
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.id
              LEFT JOIN orders o ON o.id = oi.order_id AND ${ACTIVE_ORDER_FILTER}

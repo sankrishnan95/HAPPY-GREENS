@@ -279,7 +279,7 @@ export const getProductAnalytics = async (req: Request, res: Response) => {
                 p.name,
                 p.price,
                 c.name as category_name,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) as total_revenue,
+                COALESCE(SUM(oi.price_at_purchase), 0) as total_revenue,
                 COALESCE(SUM(oi.quantity), 0) as total_sold
              FROM products p
              LEFT JOIN categories c ON p.category_id = c.id
@@ -313,7 +313,7 @@ export const getProductAnalytics = async (req: Request, res: Response) => {
                 c.name as category_name,
                 COUNT(DISTINCT p.id) as product_count,
                 COALESCE(SUM(oi.quantity), 0) as total_items_sold,
-                COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) as total_revenue
+                COALESCE(SUM(oi.price_at_purchase), 0) as total_revenue
              FROM categories c
              LEFT JOIN products p ON c.id = p.category_id AND p.is_deleted = false
              LEFT JOIN order_items oi ON p.id = oi.product_id
