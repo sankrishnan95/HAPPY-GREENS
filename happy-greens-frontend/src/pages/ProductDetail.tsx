@@ -304,10 +304,6 @@ const ProductDetail = () => {
                             <span className="font-semibold text-gray-900">Free delivery on orders above Rs. 500</span>
                         </div>
                         <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
-                            <span className="text-gray-600">Return Policy</span>
-                            <span className="font-semibold text-gray-900">7-day return policy</span>
-                        </div>
-                        <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
                             <span className="text-gray-600">Category</span>
                             {product.category_name ? (
                                 <Link to={`/shop?category=${product.category_name.toLowerCase()}`} className="font-semibold text-primary-600 hover:text-primary-700">
