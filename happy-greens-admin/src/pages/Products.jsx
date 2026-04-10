@@ -26,12 +26,32 @@ export default function Products() {
 
   const loadProductsAndCategories = async () => {
     try {
+      const fetchAllProducts = async () => {
+        const pageSize = 100;
+        const firstPage = await getProducts({ limit: pageSize, page: 1 });
+        const totalPages = firstPage.data.totalPages || 1;
+        const allProducts = [...(firstPage.data.products || [])];
+
+        if (totalPages > 1) {
+          const remainingPages = await Promise.all(
+            Array.from({ length: totalPages - 1 }, (_, index) =>
+              getProducts({ limit: pageSize, page: index + 2 })
+            )
+          );
+          remainingPages.forEach((response) => {
+            allProducts.push(...(response.data.products || []));
+          });
+        }
+
+        return allProducts;
+      };
+
       const [productsResponse, categoriesResponse] = await Promise.all([
-        getProducts({ limit: 100 }),
+        fetchAllProducts(),
         getCategories()
       ]);
 
-      setProducts(productsResponse.data.products || []);
+      setProducts(productsResponse);
       setCategories((categoriesResponse.data || []).map((category) => ({
         id: category.id,
         name: category.name
