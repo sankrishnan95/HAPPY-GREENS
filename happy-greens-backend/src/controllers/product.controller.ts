@@ -361,7 +361,7 @@ export const getCategories = async (req: Request, res: Response) => {
     try {
         const { activeOnly } = req.query;
         let query = `
-            SELECT c.id, c.name, c.slug, c.description, c.parent_id, c.is_active,
+            SELECT c.id, c.name, c.slug, c.description, c.image_url, c.parent_id, c.is_active,
                    (SELECT COUNT(*)::int FROM products p WHERE p.category_id = c.id AND p.is_deleted = false) as product_count
             FROM categories c
         `;
@@ -374,7 +374,11 @@ export const getCategories = async (req: Request, res: Response) => {
         query += ` ORDER BY c.name ASC`;
         
         const result = await pool.query(query, params);
-        res.json(result.rows);
+        const baseUrl = getPublicBaseUrl(req);
+        res.json(result.rows.map((category) => ({
+            ...category,
+            image_url: normalizeMediaUrl(category.image_url, baseUrl),
+        })));
     } catch (error) {
         console.error('Error fetching categories:', error);
         res.status(500).json({ message: 'Server error' });
@@ -383,13 +387,14 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
     try {
-        const { name, description, parent_id, is_active } = req.body;
+        const { name, description, image_url, parent_id, is_active } = req.body;
         if (!name || typeof name !== 'string' || !name.trim()) {
             return res.status(400).json({ message: 'Category name is required' });
         }
         const safeName = name.trim().slice(0, 100);
         const slug = safeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         const safeDescription = typeof description === 'string' ? description.trim().slice(0, 500) : '';
+        const safeImageUrl = typeof image_url === 'string' ? image_url.trim().slice(0, 1000) : '';
 
         const existing = await pool.query('SELECT id FROM categories WHERE slug = $1', [slug]);
         if (existing.rows.length > 0) {
@@ -400,8 +405,8 @@ export const createCategory = async (req: Request, res: Response) => {
         const safeIsActive = is_active === undefined ? true : !!is_active;
 
         const result = await pool.query(
-            'INSERT INTO categories (name, slug, description, parent_id, is_active) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [safeName, slug, safeDescription, safeParentId, safeIsActive]
+            'INSERT INTO categories (name, slug, description, image_url, parent_id, is_active) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [safeName, slug, safeDescription, safeImageUrl, safeParentId, safeIsActive]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -413,13 +418,14 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, description, parent_id, is_active } = req.body;
+        const { name, description, image_url, parent_id, is_active } = req.body;
         if (!name || typeof name !== 'string' || !name.trim()) {
             return res.status(400).json({ message: 'Category name is required' });
         }
         const safeName = name.trim().slice(0, 100);
         const slug = safeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         const safeDescription = typeof description === 'string' ? description.trim().slice(0, 500) : '';
+        const safeImageUrl = typeof image_url === 'string' ? image_url.trim().slice(0, 1000) : '';
 
         const conflict = await pool.query('SELECT id FROM categories WHERE slug = $1 AND id != $2', [slug, id]);
         if (conflict.rows.length > 0) {
@@ -433,8 +439,8 @@ export const updateCategory = async (req: Request, res: Response) => {
         const safeIsActive = is_active === undefined ? true : !!is_active;
 
         const result = await pool.query(
-            'UPDATE categories SET name = $1, slug = $2, description = $3, parent_id = $4, is_active = $5 WHERE id = $6 RETURNING *',
-            [safeName, slug, safeDescription, safeParentId, safeIsActive, id]
+            'UPDATE categories SET name = $1, slug = $2, description = $3, image_url = $4, parent_id = $5, is_active = $6 WHERE id = $7 RETURNING *',
+            [safeName, slug, safeDescription, safeImageUrl, safeParentId, safeIsActive, id]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Category not found' });

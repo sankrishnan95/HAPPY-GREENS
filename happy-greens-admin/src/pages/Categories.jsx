@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, X, Check, FolderTree } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Check, FolderTree, ImagePlus } from 'lucide-react';
 import api from '../services/api';
+import { uploadImages } from '../services/upload.service';
+import { API_BASE_URL } from '../services/api';
 
 export default function Categories() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [formData, setFormData] = useState({ name: '', description: '', parent_id: '', is_active: true });
+    const [formData, setFormData] = useState({ name: '', description: '', image_url: '', parent_id: '', is_active: true });
     const [saving, setSaving] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => { fetchCategories(); }, []);
@@ -25,14 +28,14 @@ export default function Categories() {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', description: '', parent_id: '', is_active: true });
+        setFormData({ name: '', description: '', image_url: '', parent_id: '', is_active: true });
         setEditingId(null);
         setShowForm(false);
         setError('');
     };
 
     const handleEdit = (cat) => {
-        setFormData({ name: cat.name, description: cat.description || '', parent_id: cat.parent_id || '', is_active: cat.is_active !== false });
+        setFormData({ name: cat.name, description: cat.description || '', image_url: cat.image_url || '', parent_id: cat.parent_id || '', is_active: cat.is_active !== false });
         setEditingId(cat.id);
         setShowForm(true);
         setError('');
@@ -55,6 +58,27 @@ export default function Categories() {
             setError(err.response?.data?.message || 'Failed to save');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploadingImage(true);
+        setError('');
+        try {
+            const payload = new FormData();
+            payload.append('images', file);
+            const data = await uploadImages(payload);
+            const uploaded = data.images?.[0];
+            if (!uploaded) throw new Error('Upload failed');
+            const imageUrl = /^https?:\/\//i.test(uploaded) ? uploaded : `${API_BASE_URL}${uploaded}`;
+            setFormData((prev) => ({ ...prev, image_url: imageUrl }));
+        } catch (err) {
+            setError(err.response?.data?.message || 'Image upload failed');
+        } finally {
+            setUploadingImage(false);
+            e.target.value = '';
         }
     };
 
@@ -114,6 +138,32 @@ export default function Categories() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                             <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="Short description (optional)" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Category Image</label>
+                            <div className="flex flex-col gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 sm:flex-row sm:items-center">
+                                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200">
+                                    {formData.image_url ? (
+                                        <img src={formData.image_url} alt="Category preview" className="h-full w-full object-contain p-2" />
+                                    ) : (
+                                        <ImagePlus className="h-7 w-7 text-gray-400" />
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-700">Used on the storefront homepage.</p>
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        <label className="inline-flex cursor-pointer items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
+                                            {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                                            <input type="file" accept="image/*,.png,.jpg,.jpeg,.webp" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+                                        </label>
+                                        {formData.image_url && (
+                                            <button type="button" onClick={() => setFormData({ ...formData, image_url: '' })} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-600 ring-1 ring-gray-200 hover:bg-gray-100">
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <input 
@@ -183,6 +233,13 @@ function CategoryRow({ category, allCategories, onEdit, onDelete, depth = 0 }) {
     return (
         <>
             <div className={`flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50 transition-colors ${depth > 0 ? 'bg-gray-50/30' : ''} ${!category.is_active ? 'opacity-60' : ''}`} style={{ paddingLeft: `${24 + depth * 32}px` }}>
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200">
+                    {category.image_url ? (
+                        <img src={category.image_url} alt={category.name} className="h-full w-full object-contain p-1.5" />
+                    ) : (
+                        <FolderTree className="h-5 w-5 text-gray-400" />
+                    )}
+                </div>
                 <div className="min-w-0 flex-1 relative">
                     {depth > 0 && (
                         <div className="w-4 h-4 rounded-bl-sm border-b-2 border-l-2 border-gray-300 opacity-40 absolute -ml-6 mt-[-6px]" />
