@@ -223,7 +223,7 @@ export default function Products() {
                 onChange={(e) => setBulkCategoryId(e.target.value)}
                 className="min-h-[40px] rounded-lg border border-green-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">Move to category</option>
+                <option value="">Add category</option>
                 {categories.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}

@@ -381,8 +381,17 @@ export const bulkUpdateProductCategory = async (req: Request, res: Response) => 
         const result = await pool.query(
             `
                 UPDATE products
-                SET category_id = $1,
-                    category_ids = ARRAY[$1]::int[]
+                SET category_ids = (
+                    SELECT ARRAY(
+                        SELECT DISTINCT category_id
+                        FROM unnest(
+                            COALESCE(products.category_ids, ARRAY[]::int[])
+                            || CASE WHEN products.category_id IS NULL THEN ARRAY[]::int[] ELSE ARRAY[products.category_id] END
+                            || ARRAY[$1]::int[]
+                        ) AS category_id
+                        WHERE category_id IS NOT NULL
+                    )
+                )
                 WHERE id = ANY($2::int[])
                   AND is_deleted = false
                 RETURNING id
@@ -391,7 +400,7 @@ export const bulkUpdateProductCategory = async (req: Request, res: Response) => 
         );
 
         res.json({
-            message: `Updated ${result.rowCount} product${result.rowCount === 1 ? '' : 's'}`,
+            message: `Added category to ${result.rowCount} product${result.rowCount === 1 ? '' : 's'}`,
             updatedCount: result.rowCount,
         });
     } catch (error) {
