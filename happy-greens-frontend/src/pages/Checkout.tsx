@@ -109,7 +109,7 @@ const Checkout = () => {
     const couponDiscountAmount = coupon ? coupon.discount : 0;
     const finalTotalDiscount = loyaltyDiscount + couponDiscountAmount;
     const totalAfterDiscounts = Math.max(0, subtotal - finalTotalDiscount);
-    const deliveryFee = totalAfterDiscounts >= 500 ? 0 : 30;
+    const deliveryFee = totalAfterDiscounts >= 300 ? 0 : 30;
     const total = totalAfterDiscounts + deliveryFee;
     const draftStorageKey = getCheckoutDraftStorageKey(user);
 
@@ -770,8 +770,8 @@ const Checkout = () => {
                                 <div className="flex justify-between text-gray-600">
                                     <div>
                                         <span>Delivery fee</span>
-                                        {subtotal >= 500 && (
-                                            <p className="text-xs text-green-600">Free delivery on orders above ₹500</p>
+                                        {totalAfterDiscounts >= 300 && (
+                                            <p className="text-xs text-green-600">Free delivery on orders above ₹300</p>
                                         )}
                                     </div>
                                     {deliveryFee === 0 ? (
@@ -804,10 +804,10 @@ const Checkout = () => {
                                 <span>Average delivery time: <strong>6-24 hours</strong></span>
                             </div>
 
-                            {totalAfterDiscounts < 500 && (
+                            {totalAfterDiscounts < 300 && (
                                 <div className="mt-3 rounded-lg bg-green-50 border border-green-200 p-3">
                                     <p className="text-xs text-green-700 font-medium">
-                                        🎉 Save ₹{deliveryFee} on delivery fee by adding ₹{(500 - totalAfterDiscounts).toFixed(0)} more to cart
+                                        🎉 Save ₹{deliveryFee} on delivery fee by adding ₹{(300 - totalAfterDiscounts).toFixed(0)} more to cart
                                     </p>
                                 </div>
                             )}

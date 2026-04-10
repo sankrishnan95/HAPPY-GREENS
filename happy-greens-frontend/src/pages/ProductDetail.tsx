@@ -301,7 +301,7 @@ const ProductDetail = () => {
                     <div className="space-y-3 border-t border-gray-200 pt-4">
                         <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
                             <span className="text-gray-600">Delivery</span>
-                            <span className="font-semibold text-gray-900">Free delivery on orders above Rs. 500</span>
+                            <span className="font-semibold text-gray-900">Free delivery on orders above Rs. 300</span>
                         </div>
                         <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
                             <span className="text-gray-600">Category</span>

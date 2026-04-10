@@ -29,7 +29,7 @@ const Cart = () => {
     const subtotal = cart.reduce((acc, item) => acc + calculateLineTotal(item, item.quantity), 0);
     const discount = coupon ? Number(coupon.discount) || 0 : 0;
     const totalAfterDiscount = Math.max(0, subtotal - discount);
-    const deliveryFee = totalAfterDiscount >= 500 ? 0 : 30;
+    const deliveryFee = totalAfterDiscount >= 300 ? 0 : 30;
     const finalTotal = totalAfterDiscount + deliveryFee;
 
     const handleApplyCoupon = async () => {
@@ -180,11 +180,11 @@ const Cart = () => {
                             <div className="flex justify-between text-gray-700">
                                 <div>
                                     <span>Delivery</span>
-                                    {totalAfterDiscount >= 500 && (
-                                        <p className="text-xs text-green-600">Free delivery on orders above Rs. 500</p>
+                                    {totalAfterDiscount >= 300 && (
+                                        <p className="text-xs text-green-600">Free delivery on orders above Rs. 300</p>
                                     )}
                                 </div>
-                                {totalAfterDiscount >= 500 ? (
+                                {totalAfterDiscount >= 300 ? (
                                     <span className="font-semibold text-green-600">Free</span>
                                 ) : (
                                     <span className="font-semibold">Rs. 30</span>
@@ -279,13 +279,13 @@ const Cart = () => {
                                 Proceed to Checkout
                             </button>
                         </Link>
-                        {totalAfterDiscount < 500 && (
+                        {totalAfterDiscount < 300 && (
                             <p className="mt-4 text-center text-sm text-green-600 font-medium">
-                                🎉 Add Rs. {(500 - totalAfterDiscount).toFixed(0)} more for free delivery!
+                                🎉 Add Rs. {(300 - totalAfterDiscount).toFixed(0)} more for free delivery!
                             </p>
                         )}
-                        {totalAfterDiscount >= 500 && (
-                            <p className="mt-4 text-center text-sm text-gray-500">Free delivery on all orders above Rs. 500</p>
+                        {totalAfterDiscount >= 300 && (
+                            <p className="mt-4 text-center text-sm text-gray-500">Free delivery on all orders above Rs. 300</p>
                         )}
                     </div>
                 </div>

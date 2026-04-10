@@ -143,8 +143,8 @@ export const calculateOrderTotals = async (
 
     const totalAfterDiscounts = Math.max(0, subtotal - validatedPointsUsed - couponDiscount);
     
-    // Delivery fee: free for orders with total >= 500, otherwise 30
-    const FREE_DELIVERY_THRESHOLD = 500;
+    // Delivery fee: free for orders with total >= 300, otherwise 30
+    const FREE_DELIVERY_THRESHOLD = 300;
     const DELIVERY_FEE = 30;
     const deliveryFee = totalAfterDiscounts >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
 
