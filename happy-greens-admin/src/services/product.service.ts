@@ -5,7 +5,7 @@ export const getProducts = (params?: any): Promise<AxiosResponse> =>
     api.get('/products', { params: { ...params, admin: true } });
 
 export const getProductById = (id: string | number): Promise<AxiosResponse> =>
-    api.get(`/products/${id}`);
+    api.get(`/products/${id}`, { params: { admin: true } });
 
 export const createProduct = (productData: any): Promise<AxiosResponse> =>
     api.post('/products', productData);

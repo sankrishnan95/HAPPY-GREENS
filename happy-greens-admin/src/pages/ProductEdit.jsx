@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, UploadCloud, X, Image as ImageIcon, Check } from 'lucide-react';
-import { getProductById, createProduct, updateProduct, getCategories } from '../services/product.service';
+import { getProductById, getProducts, createProduct, updateProduct, getCategories } from '../services/product.service';
 import { uploadImages } from '../services/upload.service';
 import { API_BASE_URL } from '../services/api';
 
@@ -80,8 +80,35 @@ export default function ProductEdit() {
 
     const fetchProduct = async () => {
         try {
-            const response = await getProductById(id);
-            const product = response.data;
+            let product;
+
+            try {
+                const response = await getProductById(id);
+                product = response.data;
+            } catch (directError) {
+                const pageSize = 100;
+                const firstPage = await getProducts({ limit: pageSize, page: 1 });
+                const totalPages = firstPage.data.totalPages || 1;
+                const allProducts = [...(firstPage.data.products || [])];
+
+                if (totalPages > 1) {
+                    const remainingPages = await Promise.all(
+                        Array.from({ length: totalPages - 1 }, (_, index) =>
+                            getProducts({ limit: pageSize, page: index + 2 })
+                        )
+                    );
+                    remainingPages.forEach((response) => {
+                        allProducts.push(...(response.data.products || []));
+                    });
+                }
+
+                product = allProducts.find((item) => String(item.id) === String(id));
+
+                if (!product) {
+                    throw directError;
+                }
+            }
+
             setFormData({
                 name: product.name || '',
                 description: product.description || '',
