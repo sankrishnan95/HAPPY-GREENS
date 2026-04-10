@@ -63,6 +63,11 @@ export const getProducts = async (req: Request, res: Response) => {
     try {
         const { category, q, page = 1, limit = 10, sort, hasOffer } = req.query;
         const offset = (Number(page) - 1) * Number(limit);
+        const debugProducts = process.env.DEBUG_PRODUCTS === 'true';
+
+        if (debugProducts) {
+            console.log(`[products] start page=${page} limit=${limit} admin=${req.query.admin} category=${category ?? 'n/a'} q=${q ?? 'n/a'} sort=${sort ?? 'n/a'} hasOffer=${hasOffer ?? 'n/a'}`);
+        }
 
         let query = `
             SELECT p.*, p.discount_price as "discountPrice", p.is_active as "isActive", 
@@ -118,7 +123,13 @@ export const getProducts = async (req: Request, res: Response) => {
         query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
         params.push(limit, offset);
 
+        if (debugProducts) {
+            console.log(`[products] running main query params=${JSON.stringify(params)}`);
+        }
         const result = await pool.query(query, params);
+        if (debugProducts) {
+            console.log(`[products] main query done rows=${result.rows.length}`);
+        }
 
         let countQuery = 'SELECT COUNT(*) FROM products p WHERE p.is_deleted = false';
         const countParams: any[] = [];
@@ -150,7 +161,13 @@ export const getProducts = async (req: Request, res: Response) => {
             countParams.push(`%${q}%`);
         }
 
+        if (debugProducts) {
+            console.log(`[products] running count query params=${JSON.stringify(countParams)}`);
+        }
         const totalResult = await pool.query(countQuery, countParams);
+        if (debugProducts) {
+            console.log(`[products] count query done total=${totalResult.rows[0]?.count}`);
+        }
         const baseUrl = getPublicBaseUrl(req);
 
         res.json({
@@ -160,7 +177,7 @@ export const getProducts = async (req: Request, res: Response) => {
             totalPages: Math.ceil(Number(totalResult.rows[0].count) / Number(limit))
         });
     } catch (error) {
-        console.error(error);
+        console.error('[products] handler error', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
