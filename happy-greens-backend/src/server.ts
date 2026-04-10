@@ -29,6 +29,7 @@ import { applySecurityHeaders, enforceHttps } from './middleware/security';
 const app = express();
 const port = process.env.PORT || 3000;
 const debugHealthChecks = process.env.DEBUG_HEALTHCHECKS === 'true';
+const debugRequestLogs = process.env.DEBUG_REQUEST_LOGS === 'true';
 
 const normalizeOrigin = (origin: string) => origin.trim().replace(/\/+$/, '');
 
@@ -83,6 +84,21 @@ app.disable('x-powered-by');
 app.use(applySecurityHeaders);
 app.use(enforceHttps);
 app.use(globalRateLimiter);
+if (debugRequestLogs) {
+  app.use((req: Request, res: Response, next) => {
+    const startedAt = Date.now();
+    const origin = req.headers.origin || 'n/a';
+    const userAgent = req.headers['user-agent'] || 'n/a';
+
+    res.on('finish', () => {
+      console.log(
+        `[request] ${req.method} ${req.originalUrl} origin=${origin} status=${res.statusCode} duration_ms=${Date.now() - startedAt} ua=${userAgent}`
+      );
+    });
+
+    next();
+  });
+}
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use('/api/auth', authRateLimiter);
