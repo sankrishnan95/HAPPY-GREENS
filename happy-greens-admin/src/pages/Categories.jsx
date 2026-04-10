@@ -4,6 +4,12 @@ import api from '../services/api';
 import { uploadImages } from '../services/upload.service';
 import { API_BASE_URL } from '../services/api';
 
+const normalizeParentId = (value) => {
+    if (value === '' || value === null || value === undefined) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
 export default function Categories() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,7 +25,12 @@ export default function Categories() {
     const fetchCategories = async () => {
         try {
             const res = await api.get('/products/categories');
-            setCategories(res.data);
+            const normalizedCategories = (res.data || []).map((category) => ({
+                ...category,
+                id: Number(category.id),
+                parent_id: normalizeParentId(category.parent_id),
+            }));
+            setCategories(normalizedCategories);
         } catch (err) {
             console.error('Failed to load categories', err);
         } finally {
@@ -196,7 +207,10 @@ export default function Categories() {
             ) : (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="divide-y divide-gray-100">
-                        {categories.filter(c => !c.parent_id).map((cat) => (
+                        {categories.filter((category) => {
+                            if (category.parent_id === null) return true;
+                            return !categories.some((candidate) => candidate.id === category.parent_id);
+                        }).map((cat) => (
                             <CategoryRow 
                                 key={cat.id} 
                                 category={cat} 
@@ -214,7 +228,7 @@ export default function Categories() {
 }
 
 function CategoryRow({ category, allCategories, onEdit, onDelete, depth = 0 }) {
-    const children = allCategories.filter(c => c.parent_id === category.id);
+    const children = allCategories.filter((candidate) => candidate.parent_id === category.id);
     const hasChildren = children.length > 0;
 
     const toggleActive = async (e) => {
