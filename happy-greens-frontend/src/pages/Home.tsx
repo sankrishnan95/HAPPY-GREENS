@@ -28,7 +28,11 @@ const normalizeCategoryImageKey = (value: unknown) =>
         ? value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
         : '';
 
-const getCategoryImage = (category: { slug?: string; name?: string }) => {
+const getCategoryImage = (category: { slug?: string; name?: string; image_url?: string | null }) => {
+    if (category.image_url) {
+        return normalizeImageUrl(category.image_url);
+    }
+
     const slugKey = normalizeCategoryImageKey(category.slug);
     const nameKey = normalizeCategoryImageKey(category.name);
     return CATEGORY_IMAGES[slugKey] || CATEGORY_IMAGES[nameKey] || FALLBACK_CATEGORY_IMAGE;
@@ -202,7 +206,8 @@ const Home = () => {
                     {categories.length > 0 ? categories.map((cat) => (
                         <div key={cat.id} className="flex-none snap-start">
                             <Link to={`/shop?category=${cat.slug}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
-                                <div className="relative flex h-20 w-20 rounded-[1.75rem] sm:h-24 sm:w-24 md:h-28 md:w-28 items-center justify-center transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03]">
+                                <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-white via-lime-50/70 to-green-50 shadow-[0_10px_24px_rgba(22,101,52,0.08)] ring-1 ring-green-100/80 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03] sm:h-24 sm:w-24 md:h-28 md:w-28">
+                                    <span className="absolute inset-2 rounded-[1.3rem] bg-white/70" />
                                     <img
                                         src={getCategoryImage(cat)}
                                         alt={cat.name}
@@ -214,7 +219,7 @@ const Home = () => {
                                             e.currentTarget.onerror = null;
                                             e.currentTarget.src = FALLBACK_CATEGORY_IMAGE;
                                         }}
-                                        className="h-full w-full object-contain p-0.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.05)] md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.05)]"
+                                        className="relative z-10 h-full w-full object-contain p-2.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.08)] md:p-3 md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.08)]"
                                     />
                                 </div>
                                 <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
