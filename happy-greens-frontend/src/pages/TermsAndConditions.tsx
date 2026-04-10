@@ -91,7 +91,7 @@ const TermsAndConditions = () => {
 
             <h2>13. Contact</h2>
             <p>
-                For legal or service-related questions, contact <strong>happygreens80@gmail.com</strong>.
+                For legal or service-related questions, contact <strong>happygreenspy@gmail.com</strong>.
             </p>
         </LegalPageLayout>
     );

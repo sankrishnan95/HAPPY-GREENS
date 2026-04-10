@@ -231,7 +231,7 @@ function AppLayout() {
                                     </div>
                                 </Link>
                                 <div className="text-sm text-white/80 space-y-1 mt-2">
-                                    <p>Contact: <a href="mailto:happygreens80@gmail.com" className="hover:text-white transition-colors">happygreens80@gmail.com</a></p>
+                                    <p>Contact: <a href="mailto:happygreenspy@gmail.com" className="hover:text-white transition-colors">happygreenspy@gmail.com</a></p>
                                     <p className="leading-relaxed">Address: No 89, Point Care St, Nellithoppe, Puducherry, 605005.</p>
                                 </div>
                             </div>

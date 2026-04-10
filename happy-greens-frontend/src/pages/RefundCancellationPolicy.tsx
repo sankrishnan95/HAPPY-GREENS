@@ -76,7 +76,7 @@ const RefundCancellationPolicy = () => {
 
             <h2>9. Contact</h2>
             <p>
-                For refund or cancellation support, contact <strong>happygreens80@gmail.com</strong>.
+                For refund or cancellation support, contact <strong>happygreenspy@gmail.com</strong>.
             </p>
         </LegalPageLayout>
     );
