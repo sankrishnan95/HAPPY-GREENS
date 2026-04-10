@@ -19,5 +19,8 @@ export const deleteProduct = (id: string | number): Promise<AxiosResponse> =>
 export const updateProductStatus = (id: string | number, isActive: boolean): Promise<AxiosResponse> =>
     api.patch(`/products/${id}/status`, { isActive });
 
+export const bulkUpdateProductCategory = (productIds: Array<string | number>, categoryId: string | number): Promise<AxiosResponse> =>
+    api.patch('/products/bulk-category', { productIds, categoryId });
+
 export const getCategories = (): Promise<AxiosResponse> =>
     api.get('/products/categories');

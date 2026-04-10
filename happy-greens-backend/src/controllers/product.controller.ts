@@ -357,6 +357,49 @@ export const updateProductStatus = async (req: Request, res: Response) => {
     }
 };
 
+export const bulkUpdateProductCategory = async (req: Request, res: Response) => {
+    try {
+        const { productIds, categoryId } = req.body;
+        const ids = Array.isArray(productIds)
+            ? [...new Set(productIds.map(Number).filter(Number.isInteger))]
+            : [];
+        const nextCategoryId = Number(categoryId);
+
+        if (ids.length === 0) {
+            return res.status(400).json({ message: 'Select at least one product' });
+        }
+
+        if (!Number.isInteger(nextCategoryId)) {
+            return res.status(400).json({ message: 'Select a valid category' });
+        }
+
+        const categoryCheck = await pool.query('SELECT id FROM categories WHERE id = $1', [nextCategoryId]);
+        if (categoryCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+
+        const result = await pool.query(
+            `
+                UPDATE products
+                SET category_id = $1,
+                    category_ids = ARRAY[$1]::int[]
+                WHERE id = ANY($2::int[])
+                  AND is_deleted = false
+                RETURNING id
+            `,
+            [nextCategoryId, ids]
+        );
+
+        res.json({
+            message: `Updated ${result.rowCount} product${result.rowCount === 1 ? '' : 's'}`,
+            updatedCount: result.rowCount,
+        });
+    } catch (error) {
+        console.error('Error bulk updating product categories:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 export const getCategories = async (req: Request, res: Response) => {
     try {
         const { activeOnly } = req.query;

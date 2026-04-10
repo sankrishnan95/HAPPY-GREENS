@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/format';
 import { Search, Plus, Edit2, Trash2, Package } from 'lucide-react';
-import { getProducts, deleteProduct, updateProductStatus, updateProduct, getCategories } from '../services/product.service';
+import { getProducts, deleteProduct, updateProductStatus, updateProduct, getCategories, bulkUpdateProductCategory } from '../services/product.service';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -11,6 +11,9 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [bulkCategoryId, setBulkCategoryId] = useState('');
+  const [bulkUpdating, setBulkUpdating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -58,6 +61,10 @@ export default function Products() {
     setFilteredProducts(filtered);
   };
 
+  useEffect(() => {
+    setSelectedProductIds((current) => current.filter((id) => filteredProducts.some((product) => product.id === id)));
+  }, [filteredProducts]);
+
   const handleCreateProduct = () => {
     navigate('/products/edit/new');
   };
@@ -90,6 +97,45 @@ export default function Products() {
     } catch (error) {
       console.error('Error updating stock:', error);
       alert('Failed to update stock');
+    }
+  };
+
+  const toggleProductSelection = (productId) => {
+    setSelectedProductIds((current) =>
+      current.includes(productId)
+        ? current.filter((id) => id !== productId)
+        : [...current, productId]
+    );
+  };
+
+  const toggleSelectAllVisible = () => {
+    const visibleIds = filteredProducts.map((product) => product.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedProductIds.includes(id));
+    setSelectedProductIds(allSelected ? [] : visibleIds);
+  };
+
+  const handleBulkCategoryUpdate = async () => {
+    if (selectedProductIds.length === 0) {
+      alert('Select products first');
+      return;
+    }
+    if (!bulkCategoryId) {
+      alert('Select a category');
+      return;
+    }
+
+    setBulkUpdating(true);
+    try {
+      await bulkUpdateProductCategory(selectedProductIds, bulkCategoryId);
+      setSelectedProductIds([]);
+      setBulkCategoryId('');
+      await loadProductsAndCategories();
+      alert('Category updated successfully');
+    } catch (error) {
+      console.error('Error updating product categories:', error);
+      alert(error.response?.data?.message || 'Failed to update categories');
+    } finally {
+      setBulkUpdating(false);
     }
   };
 
@@ -166,6 +212,33 @@ export default function Products() {
             ))}
           </select>
         </div>
+        {selectedProductIds.length > 0 && (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-green-100 bg-green-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-green-800">
+              {selectedProductIds.length} product{selectedProductIds.length === 1 ? '' : 's'} selected
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <select
+                value={bulkCategoryId}
+                onChange={(e) => setBulkCategoryId(e.target.value)}
+                className="min-h-[40px] rounded-lg border border-green-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Move to category</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleBulkCategoryUpdate}
+                disabled={bulkUpdating || !bulkCategoryId}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+              >
+                {bulkUpdating ? 'Updating...' : 'Apply'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-lg bg-white shadow">
@@ -173,6 +246,14 @@ export default function Products() {
           <table className="min-w-[960px] divide-y divide-gray-200 lg:min-w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="w-12 px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={filteredProducts.length > 0 && filteredProducts.every((product) => selectedProductIds.includes(product.id))}
+                    onChange={toggleSelectAllVisible}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Product</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Price</th>
@@ -186,6 +267,14 @@ export default function Products() {
                 const stockStatus = getStockStatus(product.stock_quantity);
                 return (
                   <tr key={product.id} className="transition-colors hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedProductIds.includes(product.id)}
+                        onChange={() => toggleProductSelection(product.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded bg-gray-100">
