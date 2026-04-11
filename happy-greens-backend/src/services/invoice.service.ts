@@ -203,8 +203,9 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
 
     y += 12;
     const totalAmount = parseFloat(orderData.total_amount as any);
-    const totalSaved = Math.max(0, totalOriginal - subtotal + orderLevelSavings);
-    const deliveryFee = Math.max(0, totalAmount - subtotal + orderLevelSavings);
+    const pointsUsed = Number(orderData.points_used ?? 0);
+    const totalSaved = Math.max(0, totalOriginal - subtotal + orderLevelSavings + pointsUsed);
+    const deliveryFee = Math.max(0, totalAmount - subtotal + orderLevelSavings + pointsUsed);
     const totLabelX = MARGIN + 335;
     const totValW = 65;
 
@@ -217,9 +218,11 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
 
     totRow('Subtotal', `Rs. ${subtotal.toFixed(2)}`);
     totRow('Delivery charge', `Rs. ${deliveryFee.toFixed(2)}`);
-    const pointsUsed = Number(orderData.points_used ?? 0);
     if (pointsUsed > 0) {
         totRow('Loyalty points', `- Rs. ${pointsUsed.toFixed(2)}`);
+    }
+    if (orderLevelSavings > 0) {
+        totRow('Coupon discount', `- Rs. ${orderLevelSavings.toFixed(2)}`);
     }
     if (totalSaved > 0) {
         totRow('You saved', `Rs. ${totalSaved.toFixed(2)}`, false, GREEN);
@@ -229,6 +232,7 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
 
     let rowCount = 3; // subtotal + delivery + total
     if (pointsUsed > 0) rowCount++;
+    if (orderLevelSavings > 0) rowCount++;
     if (totalSaved > 0) rowCount++;
     const payY = y - 16 * rowCount;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY)
