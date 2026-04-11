@@ -353,8 +353,10 @@ export const getOrderById = async (req: Request, res: Response) => {
             0
         );
         const pointsUsed = Number(order.points_used || 0);
+        const couponDiscount = Number(order.discount_amount || 0);
+        const totalDiscount = pointsUsed + couponDiscount;
         const totalAmount = Number(order.total_amount || 0);
-        const deliveryFee = Math.max(0, totalAmount - subtotal + pointsUsed);
+        const deliveryFee = Math.max(0, totalAmount - subtotal + totalDiscount);
 
         const placedEvent = {
             id: 0,
@@ -369,7 +371,9 @@ export const getOrderById = async (req: Request, res: Response) => {
             total_amount: totalAmount,
             subtotal,
             delivery_fee: deliveryFee,
-            discount_amount: pointsUsed,
+            points_used: pointsUsed,
+            coupon_discount: couponDiscount,
+            discount_amount: totalDiscount,
             items,
             timeline: [...timelineResult.rows, placedEvent]
         });

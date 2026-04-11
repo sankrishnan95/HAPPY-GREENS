@@ -55,7 +55,10 @@ export default function OrderDetail() {
     const subtotal = Number(order.subtotal ?? order.items?.reduce(
         (sum: number, item: any) => sum + parseFloat(item.price_at_purchase), 0
     ) ?? order.total_amount);
-    const deliveryFee = Number(order.delivery_fee ?? Math.max(0, Number(order.total_amount) - subtotal + Number(order.points_used || 0)));
+    const discountAmount = Number(order.discount_amount ?? 0);
+    const pointsUsed = Number(order.points_used ?? 0);
+    const couponDiscount = Number(order.coupon_discount ?? Math.max(0, discountAmount - pointsUsed));
+    const deliveryFee = Number(order.delivery_fee ?? Math.max(0, Number(order.total_amount) - subtotal + discountAmount));
 
     const handleCancelOrder = async () => {
         if (!order || !canCancelOrder(order.status) || cancelling) return;
@@ -223,6 +226,24 @@ export default function OrderDetail() {
                             <span>Subtotal</span>
                             <span className="font-medium text-gray-900">₹{subtotal.toFixed(2)}</span>
                         </div>
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between text-green-700">
+                                <span>You saved</span>
+                                <span className="font-semibold">-₹{discountAmount.toFixed(2)}</span>
+                            </div>
+                        )}
+                        {pointsUsed > 0 && (
+                            <div className="flex justify-between text-xs text-gray-500">
+                                <span>Loyalty points</span>
+                                <span>-₹{pointsUsed.toFixed(2)}</span>
+                            </div>
+                        )}
+                        {couponDiscount > 0 && (
+                            <div className="flex justify-between text-xs text-gray-500">
+                                <span>Coupon discount</span>
+                                <span>-₹{couponDiscount.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between text-gray-500 pb-3 border-b border-gray-100">
                             <span>Delivery Fee</span>
                             <span className="font-medium text-gray-900">₹{deliveryFee.toFixed(2)}</span>

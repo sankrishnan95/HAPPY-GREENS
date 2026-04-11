@@ -139,7 +139,10 @@ export default function OrderDetails() {
     if (!order) return null;
 
     const subtotal = Number(order.subtotal ?? order.items?.reduce((sum, item) => sum + Number(item.price_at_purchase || 0), 0) ?? order.total_amount ?? 0);
-    const deliveryFee = Number(order.delivery_fee ?? Math.max(0, Number(order.total_amount || 0) - subtotal + Number(order.points_used || 0)));
+    const discountAmount = Number(order.discount_amount || 0);
+    const pointsUsed = Number(order.points_used || 0);
+    const couponDiscount = Number(order.coupon_discount || Math.max(0, discountAmount - pointsUsed));
+    const deliveryFee = Number(order.delivery_fee ?? Math.max(0, Number(order.total_amount || 0) - subtotal + discountAmount));
 
     return (
         <div className="space-y-6 pb-12">
@@ -221,6 +224,24 @@ export default function OrderDetails() {
                                     <span className="text-gray-500">Subtotal</span>
                                     <span className="text-gray-900 font-medium">{RUPEE}{subtotal.toFixed(2)}</span>
                                 </div>
+                                {discountAmount > 0 && (
+                                    <div className="flex justify-between text-sm text-green-700">
+                                        <span>You saved</span>
+                                        <span className="font-semibold">-{RUPEE}{discountAmount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {pointsUsed > 0 && (
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                        <span>Loyalty points</span>
+                                        <span>-{RUPEE}{pointsUsed.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {couponDiscount > 0 && (
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                        <span>Coupon discount</span>
+                                        <span>-{RUPEE}{couponDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Delivery Fee</span>
                                     <span className="text-gray-900 font-medium">

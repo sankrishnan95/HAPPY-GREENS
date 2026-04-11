@@ -314,8 +314,10 @@ export const getOrderById = async (req: Request, res: Response) => {
         }));
         const subtotal = items.reduce((sum, item) => sum + Number(item.price_at_purchase || 0), 0);
         const pointsUsed = Number(order.points_used || 0);
+        const couponDiscount = Number(order.discount_amount || 0);
+        const totalDiscount = pointsUsed + couponDiscount;
         const totalAmount = parseFloat(order.total_amount) || 0;
-        const deliveryFee = Math.max(0, totalAmount - subtotal + pointsUsed);
+        const deliveryFee = Math.max(0, totalAmount - subtotal + totalDiscount);
         const timeline = [...timelineResult.rows, placedEvent];
 
         res.json({
@@ -323,7 +325,9 @@ export const getOrderById = async (req: Request, res: Response) => {
             total_amount: totalAmount,
             subtotal,
             delivery_fee: deliveryFee,
-            discount_amount: pointsUsed,
+            points_used: pointsUsed,
+            coupon_discount: couponDiscount,
+            discount_amount: totalDiscount,
             items,
             timeline,
         });
