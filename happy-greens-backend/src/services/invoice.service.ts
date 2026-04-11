@@ -100,54 +100,54 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     doc.fontSize(20).font('Helvetica-Bold').fillColor(DARK)
         .text('INVOICE', MARGIN, y, { align: 'right', width: COL_W });
 
-    y += 28;
+    y += 32;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY)
         .text('Fresh & Organic Groceries', MARGIN + logoW, y)
         .text(`Invoice No: ${invNum}`, MARGIN, y, { align: 'right', width: COL_W });
 
-    y += 13;
+    y += 16;
     doc.text('Puducherry, India', MARGIN + logoW, y)
         .text(`Date: ${invDate}`, MARGIN, y, { align: 'right', width: COL_W });
 
-    y += 13;
+    y += 16;
     doc.text('happygreenspy@gmail.com', MARGIN + logoW, y)
         .text(`Order Status: ${orderData.status.toUpperCase()}`, MARGIN, y, { align: 'right', width: COL_W });
 
-    y += 20;
+    y += 25;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(1).strokeColor(DARK).stroke();
 
-    y += 14;
+    y += 18;
     const halfW = (COL_W - 20) / 2;
     const addrStartY = y;
 
     doc.fontSize(7.5).font('Helvetica-Bold').fillColor(DARK).text('BILL TO', MARGIN, y);
-    y += 12;
+    y += 15;
     doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK).text(orderData.full_name || '-', MARGIN, y);
-    y += 13;
+    y += 16;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY);
-    if (orderData.email) { doc.text(orderData.email, MARGIN, y); y += 12; }
-    if (orderData.phone) { doc.text(orderData.phone, MARGIN, y); y += 12; }
+    if (orderData.email) { doc.text(orderData.email, MARGIN, y); y += 14; }
+    if (orderData.phone) { doc.text(orderData.phone, MARGIN, y); y += 14; }
 
     const shipX = MARGIN + halfW + 20;
     let sy = addrStartY;
     doc.fontSize(7.5).font('Helvetica-Bold').fillColor(DARK).text('SHIP TO', shipX, sy);
-    sy += 12;
+    sy += 15;
     doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK).text(ship.name || orderData.full_name || '-', shipX, sy);
-    sy += 13;
+    sy += 16;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY);
     const addressLine = [ship.address_line, ship.address, ship.street].filter(Boolean).join(', ');
-    if (addressLine) { doc.text(addressLine, shipX, sy); sy += 12; }
-    if (ship.locality) { doc.text(ship.locality, shipX, sy); sy += 12; }
-    if (ship.landmark) { doc.text(`Landmark: ${ship.landmark}`, shipX, sy); sy += 12; }
+    if (addressLine) { doc.text(addressLine, shipX, sy); sy += 14; }
+    if (ship.locality) { doc.text(ship.locality, shipX, sy); sy += 14; }
+    if (ship.landmark) { doc.text(`Landmark: ${ship.landmark}`, shipX, sy); sy += 14; }
     const cityLine = [ship.city, ship.state].filter(Boolean).join(', ');
-    if (cityLine) { doc.text(cityLine, shipX, sy); sy += 12; }
-    if (ship.zip || ship.zipCode) { doc.text(`PIN: ${ship.zip || ship.zipCode}`, shipX, sy); sy += 12; }
-    if (ship.phone) { doc.text(`Phone: ${ship.phone}`, shipX, sy); sy += 12; }
+    if (cityLine) { doc.text(cityLine, shipX, sy); sy += 14; }
+    if (ship.zip || ship.zipCode) { doc.text(`PIN: ${ship.zip || ship.zipCode}`, shipX, sy); sy += 14; }
+    if (ship.phone) { doc.text(`Phone: ${ship.phone}`, shipX, sy); sy += 14; }
 
-    y = Math.max(y, sy) + 12;
+    y = Math.max(y, sy) + 20;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.4).strokeColor(XLGRAY).stroke();
 
-    y += 12;
+    y += 18;
     const C_ITEM = MARGIN;
     const C_QTY = MARGIN + 300;
     const C_PRICE = MARGIN + 360;
@@ -159,9 +159,9 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
         .text('Quantity', C_QTY, y, { width: 52, align: 'center' })
         .text('MRP', C_PRICE, y, { width: 78, align: 'right' })
         .text('Amount', C_SUB, y, { width: SUB_W, align: 'right' });
-    y += 14;
+    y += 16;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.75).strokeColor(DARK).stroke();
-    y += 7;
+    y += 10;
 
     let subtotal = 0;
     let totalOriginal = 0;
@@ -196,12 +196,12 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
                 .stroke();
         }
 
-        y += 20;
+        y += 24;
     });
 
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.75).strokeColor(DARK).stroke();
 
-    y += 12;
+    y += 18;
     const totalAmount = parseFloat(orderData.total_amount as any);
     const pointsUsed = Number(orderData.points_used ?? 0);
     const totalSaved = Math.max(0, totalOriginal - subtotal + orderLevelSavings + pointsUsed);
@@ -213,7 +213,7 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
         doc.fontSize(9).font(bold ? 'Helvetica-Bold' : 'Helvetica').fillColor(color)
             .text(label, totLabelX, y, { width: 100 })
             .text(val, PAGE_W - MARGIN - totValW, y, { width: totValW, align: 'right' });
-        y += 16;
+        y += 18;
     };
 
     totRow('Subtotal', `Rs. ${subtotal.toFixed(2)}`);
@@ -234,7 +234,7 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     if (pointsUsed > 0) rowCount++;
     if (orderLevelSavings > 0) rowCount++;
     if (totalSaved > 0) rowCount++;
-    const payY = y - 16 * rowCount;
+    const payY = y - 18 * rowCount;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY)
         .text('Payment Method:', MARGIN, payY)
         .text('Order Reference:', MARGIN, payY + 16);
