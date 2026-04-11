@@ -1,6 +1,8 @@
 export interface OrderData {
     id: number;
     total_amount: number;
+    discount_amount?: number;
+    points_used?: number;
     status: string;
     payment_method: string;
     created_at: Date;
@@ -19,5 +21,6 @@ export interface OrderItem {
     quantity: number;
     unit?: string;
     price_at_purchase: number;
+    original_price_at_purchase?: number;
     line_total: number;
 }

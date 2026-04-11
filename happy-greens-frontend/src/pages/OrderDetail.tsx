@@ -15,6 +15,38 @@ const STATUS_STYLES: Record<string, string> = {
     cancelled: 'bg-red-100 text-red-800',
 };
 
+const formatQuantity = (quantity: number, unit?: string) => {
+    const normalizedUnit = String(unit || '').toUpperCase();
+    const numericQuantity = Number(quantity);
+
+    if (!Number.isFinite(numericQuantity)) return String(quantity ?? '');
+
+    if (normalizedUnit === 'GRAM' || normalizedUnit === 'G' || normalizedUnit === 'KG') {
+        if (numericQuantity >= 1000) {
+            const kilograms = numericQuantity / 1000;
+            return `${Number(kilograms).toFixed(kilograms % 1 === 0 ? 0 : 2)} kg`;
+        }
+        return `${Math.round(numericQuantity)} g`;
+    }
+
+    if (normalizedUnit === 'LITRE' || normalizedUnit === 'L') {
+        return `${numericQuantity.toFixed(numericQuantity % 1 === 0 ? 0 : 2)} L`;
+    }
+
+    if (normalizedUnit === 'DOZEN') {
+        return `${Math.round(numericQuantity)} dozen`;
+    }
+
+    return `x ${Math.round(numericQuantity)}`;
+};
+
+const getLineTotal = (item: any) => Number(item.price_at_purchase || 0);
+const getOriginalLineTotal = (item: any) => {
+    const original = Number(item.original_price_at_purchase || 0);
+    const paid = getLineTotal(item);
+    return Number.isFinite(original) && original > paid ? original : paid;
+};
+
 export default function OrderDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -32,7 +64,7 @@ export default function OrderDetail() {
             .then(data => setOrder(data))
             .catch(() => setError('Order not found'))
             .finally(() => setLoading(false));
-    }, [id, user]);
+    }, [id, user, navigate]);
 
     if (loading) {
         return (
@@ -47,17 +79,22 @@ export default function OrderDetail() {
             <div className="max-w-3xl mx-auto text-center py-16">
                 <Package className="w-16 h-16 text-gray-200 mx-auto mb-4" />
                 <p className="text-gray-500 text-lg">{error || 'Order not found'}</p>
-                <Link to="/orders" className="mt-4 inline-block text-green-600 font-semibold hover:underline">← Back to Orders</Link>
+                <Link to="/orders" className="mt-4 inline-block text-green-600 font-semibold hover:underline">Back to Orders</Link>
             </div>
         );
     }
 
     const subtotal = Number(order.subtotal ?? order.items?.reduce(
-        (sum: number, item: any) => sum + parseFloat(item.price_at_purchase), 0
+        (sum: number, item: any) => sum + Number(item.price_at_purchase || 0), 0
     ) ?? order.total_amount);
     const discountAmount = Number(order.discount_amount ?? 0);
     const pointsUsed = Number(order.points_used ?? 0);
     const couponDiscount = Number(order.coupon_discount ?? Math.max(0, discountAmount - pointsUsed));
+    const itemSavings = Number(order.items?.reduce(
+        (sum: number, item: any) => sum + Math.max(0, getOriginalLineTotal(item) - getLineTotal(item)),
+        0,
+    ) ?? 0);
+    const totalSavings = itemSavings + discountAmount;
     const deliveryFee = Number(order.delivery_fee ?? Math.max(0, Number(order.total_amount) - subtotal + discountAmount));
 
     const handleCancelOrder = async () => {
@@ -90,7 +127,6 @@ export default function OrderDetail() {
 
     return (
         <div className="max-w-3xl mx-auto space-y-6 pb-12">
-            {/* Header */}
             <div className="flex items-center gap-4">
                 <button onClick={() => navigate('/orders')} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
                     <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -116,7 +152,6 @@ export default function OrderDetail() {
                 )}
             </div>
 
-            {/* Order Information */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                 <h2 className="font-semibold text-base text-gray-900 mb-4 flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-gray-400" />
@@ -137,12 +172,11 @@ export default function OrderDetail() {
                     </div>
                     <div>
                         <p className="text-gray-500">Total Amount</p>
-                        <p className="font-bold text-green-700 text-base">₹{parseFloat(order.total_amount).toFixed(2)}</p>
+                        <p className="font-bold text-green-700 text-base">?{parseFloat(order.total_amount).toFixed(2)}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Delivery Address */}
             {order.shipping_address && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                     <h2 className="font-semibold text-base text-gray-900 mb-4 flex items-center gap-2">
@@ -160,7 +194,6 @@ export default function OrderDetail() {
                 </div>
             )}
 
-            {/* Ordered Products */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-gray-100">
                     <h2 className="font-semibold text-base text-gray-900 flex items-center gap-2">
@@ -173,90 +206,97 @@ export default function OrderDetail() {
                         <thead>
                             <tr className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 <th className="px-6 py-3">Product</th>
-                                <th className="px-6 py-3">Price</th>
+                                <th className="px-6 py-3">MRP</th>
                                 <th className="px-6 py-3">Qty</th>
                                 <th className="px-6 py-3 text-right">Total</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {order.items?.map((item: any) => (
-                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
-                                                {item.image_url ? (
-                                                    <img src={normalizeImageUrl(item.image_url)} alt={item.product_name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }} />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                        <Package className="w-5 h-5" />
-                                                    </div>
-                                                )}
+                            {order.items?.map((item: any) => {
+                                const originalLineTotal = getOriginalLineTotal(item);
+                                const lineTotal = getLineTotal(item);
+                                const lineSaving = Math.max(0, originalLineTotal - lineTotal);
+
+                                return (
+                                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
+                                                    {item.image_url ? (
+                                                        <img src={normalizeImageUrl(item.image_url)} alt={item.product_name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = normalizeImageUrl(null); }} />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                            <Package className="w-5 h-5" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-900 text-sm">{item.product_name}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900 text-sm">{item.product_name}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">
-                                        {item.unit && (item.unit.toUpperCase() === 'GRAM' || item.unit.toUpperCase() === 'G' || item.unit.toUpperCase() === 'KG')
-                                            ? `₹${(parseFloat(item.price_at_purchase) / (item.quantity / 1000)).toFixed(2)}/kg`
-                                            : `₹${(parseFloat(item.price_at_purchase) / item.quantity).toFixed(2)}/pc`
-                                        }
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">
-                                        {item.unit && (item.unit.toUpperCase() === 'GRAM' || item.unit.toUpperCase() === 'G' || item.unit.toUpperCase() === 'KG')
-                                            ? (item.quantity >= 1000 ? `${(item.quantity / 1000).toFixed(item.quantity % 1000 === 0 ? 0 : 2)} kg` : `${Math.round(item.quantity)} g`)
-                                            : item.unit && (item.unit.toUpperCase() === 'LITRE' || item.unit.toUpperCase() === 'L')
-                                                ? `${Number(item.quantity).toFixed(item.quantity % 1 === 0 ? 0 : 2)} L`
-                                                : `× ${Math.round(item.quantity)}`
-                                        }
-                                    </td>
-                                    <td className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
-                                        ₹{parseFloat(item.price_at_purchase).toFixed(2)}
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            {originalLineTotal > lineTotal ? (
+                                                <span className="text-gray-400 line-through">?{originalLineTotal.toFixed(2)}</span>
+                                            ) : (
+                                                <span className="text-gray-700">?{lineTotal.toFixed(2)}</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">{formatQuantity(Number(item.quantity), item.unit)}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className="text-sm font-semibold text-gray-900">?{lineTotal.toFixed(2)}</span>
+                                            {lineSaving > 0 && (
+                                                <p className="text-xs text-green-600 font-medium">Saved ?{lineSaving.toFixed(2)}</p>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
-                {/* Summary */}
                 <div className="p-6 border-t border-gray-100 flex justify-end">
                     <div className="w-full sm:w-56 space-y-2 text-sm">
                         <div className="flex justify-between text-gray-500">
                             <span>Subtotal</span>
-                            <span className="font-medium text-gray-900">₹{subtotal.toFixed(2)}</span>
+                            <span className="font-medium text-gray-900">?{subtotal.toFixed(2)}</span>
                         </div>
-                        {discountAmount > 0 && (
+                        {totalSavings > 0 && (
                             <div className="flex justify-between text-green-700">
                                 <span>You saved</span>
-                                <span className="font-semibold">-₹{discountAmount.toFixed(2)}</span>
+                                <span className="font-semibold">-?{totalSavings.toFixed(2)}</span>
+                            </div>
+                        )}
+                        {itemSavings > 0 && (
+                            <div className="flex justify-between text-xs text-gray-500">
+                                <span>Product savings</span>
+                                <span>-?{itemSavings.toFixed(2)}</span>
                             </div>
                         )}
                         {pointsUsed > 0 && (
                             <div className="flex justify-between text-xs text-gray-500">
                                 <span>Loyalty points</span>
-                                <span>-₹{pointsUsed.toFixed(2)}</span>
+                                <span>-?{pointsUsed.toFixed(2)}</span>
                             </div>
                         )}
                         {couponDiscount > 0 && (
                             <div className="flex justify-between text-xs text-gray-500">
                                 <span>Coupon discount</span>
-                                <span>-₹{couponDiscount.toFixed(2)}</span>
+                                <span>-?{couponDiscount.toFixed(2)}</span>
                             </div>
                         )}
                         <div className="flex justify-between text-gray-500 pb-3 border-b border-gray-100">
                             <span>Delivery Fee</span>
-                            <span className="font-medium text-gray-900">₹{deliveryFee.toFixed(2)}</span>
+                            <span className="font-medium text-gray-900">?{deliveryFee.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-base font-bold text-gray-900 pt-1">
                             <span>Total</span>
-                            <span className="text-green-700">₹{parseFloat(order.total_amount).toFixed(2)}</span>
+                            <span className="text-green-700">?{parseFloat(order.total_amount).toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Order Timeline */}
             {order.timeline?.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                     <h2 className="font-semibold text-base text-gray-900 mb-6 flex items-center gap-2">
@@ -275,12 +315,10 @@ export default function OrderDetail() {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="font-semibold text-gray-900 capitalize text-sm">{event.new_status?.replace(/_/g, ' ')}</h3>
                                             {event.old_status && (
-                                                <span className="text-xs text-gray-400">← {event.old_status}</span>
+                                                <span className="text-xs text-gray-400">? {event.old_status}</span>
                                             )}
                                         </div>
-                                        {event.notes && (
-                                            <p className="text-sm text-gray-500 mt-0.5">{event.notes}</p>
-                                        )}
+                                        {event.notes && <p className="text-sm text-gray-500 mt-0.5">{event.notes}</p>}
                                         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
                                             {new Date(event.changed_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -295,6 +333,3 @@ export default function OrderDetail() {
         </div>
     );
 }
-
-
-

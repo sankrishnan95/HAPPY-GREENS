@@ -22,7 +22,7 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
         // Fetch order data with user, address, and payment information
         const orderResult = await pool.query<OrderData>(
             `SELECT 
-                o.id, o.total_amount, o.status, o.payment_method, o.created_at,
+                o.id, o.total_amount, o.discount_amount, o.points_used, o.status, o.payment_method, o.created_at,
                 o.shipping_address,
                 u.full_name, u.email, u.phone,
                 p.amount as payment_amount, p.payment_gateway, p.payment_method_type,
@@ -49,9 +49,11 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
         // Fetch order items
         const itemsResult = await pool.query<OrderItem>(
             `SELECT 
-                oi.product_name, oi.quantity, oi.unit, oi.price_at_purchase,
+                oi.product_name, oi.quantity, oi.unit, oi.price_at_purchase, oi.original_price_at_purchase,
+                p.price, p.price_per_unit, p.discount_price,
                 oi.price_at_purchase as line_total
              FROM order_items oi
+             LEFT JOIN products p ON oi.product_id = p.id
              WHERE oi.order_id = $1
              ORDER BY oi.id`,
             [id]

@@ -206,6 +206,9 @@ export default function OrderDetails() {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-bold text-gray-900">{RUPEE}{getLineTotal(item).toFixed(2)}</p>
+                                        {Number(item.original_price_at_purchase) > getLineTotal(item) && (
+                                            <p className="text-xs text-gray-400 mt-0.5 line-through">{RUPEE}{Number(item.original_price_at_purchase).toFixed(2)}</p>
+                                        )}
                                         <p className="text-xs text-gray-500 mt-0.5">{RUPEE}{getUnitPrice(item).toFixed(2)}/{formatPriceUnitLabel(item.unit)}</p>
                                     </div>
                                 </div>

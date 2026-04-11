@@ -4,6 +4,7 @@ import { calculateOrderTotals, COUPON_ERROR_CODES } from '../services/order-pric
 import { createAdminNotifications, createUserNotification } from '../services/notification.service';
 import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 import { isPondicherryPincode } from '../config/pondicherry-pincodes';
+import { buildUnitConfig, calculateLineTotal } from '../services/unit-pricing.service';
 
 const CUSTOMER_CANCELLABLE_STATUSES = new Set(['pending', 'placed', 'accepted', 'paid']);
 
@@ -18,6 +19,30 @@ const normalizePhone = (phone: unknown): string | null => {
 const normalizeText = (value: unknown, maxLength: number): string => {
     if (typeof value !== 'string') return '';
     return value.trim().slice(0, maxLength);
+};
+
+const resolveOriginalLineTotal = (item: any): number => {
+    const storedOriginal = Number(item.original_price_at_purchase);
+    if (Number.isFinite(storedOriginal) && storedOriginal > 0) return storedOriginal;
+
+    const paidLineTotal = Number(item.price_at_purchase || 0);
+    const quantity = Number(item.quantity || 0);
+    if (!Number.isFinite(quantity) || quantity <= 0) return paidLineTotal;
+
+    const discountPrice = Number(item.discount_price);
+    const currentUnitPrice = Number.isFinite(discountPrice) && discountPrice >= 0
+        ? discountPrice
+        : Number(item.price_per_unit ?? item.price ?? 0);
+    const basePrice = Number(item.price_per_unit ?? item.price ?? currentUnitPrice);
+
+    if (!Number.isFinite(basePrice) || basePrice <= currentUnitPrice) return paidLineTotal;
+
+    return calculateLineTotal(quantity, buildUnitConfig({
+        unit: item.unit,
+        price_per_unit: basePrice,
+        min_qty: quantity,
+        step_qty: quantity,
+    }));
 };
 
 const getExistingOrderByToken = async (userId: number, clientOrderToken: string) => {
@@ -140,8 +165,10 @@ export const createOrder = async (req: Request, res: Response) => {
 
         for (const item of pricedItems) {
             await client.query(
-                'INSERT INTO order_items (order_id, product_id, product_name, quantity, unit, price_at_purchase) VALUES ($1, $2, $3, $4, $5, $6)',
-                [orderId, item.product_id, item.product_name, item.quantity, item.unit, item.price]
+                `INSERT INTO order_items
+                    (order_id, product_id, product_name, quantity, unit, price_at_purchase, original_price_at_purchase)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [orderId, item.product_id, item.product_name, item.quantity, item.unit, item.price, item.originalPrice]
             );
         }
         
@@ -323,7 +350,13 @@ export const getOrderById = async (req: Request, res: Response) => {
         const order = orderResult.rows[0];
 
         const itemsResult = await pool.query(
-            `SELECT oi.*, p.image_url, p.images
+            `SELECT
+                oi.*,
+                p.image_url,
+                p.images,
+                p.price,
+                p.price_per_unit,
+                p.discount_price
              FROM order_items oi
              LEFT JOIN products p ON oi.product_id = p.id
              WHERE oi.order_id = $1`,
@@ -346,6 +379,7 @@ export const getOrderById = async (req: Request, res: Response) => {
             ),
             quantity: Number(item.quantity),
             price_at_purchase: Number(item.price_at_purchase || 0),
+            original_price_at_purchase: resolveOriginalLineTotal(item),
         }));
 
         const subtotal = items.reduce(

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { pool } from '../db';
 import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 import { createUserNotification } from '../services/notification.service';
+import { buildUnitConfig, calculateLineTotal } from '../services/unit-pricing.service';
 
 const safelyRunNotificationTask = async (task: () => Promise<void>) => {
     try {
@@ -9,6 +10,30 @@ const safelyRunNotificationTask = async (task: () => Promise<void>) => {
     } catch (error) {
         console.warn('[Notifications] Skipping admin status notification due to error:', error);
     }
+};
+
+const resolveOriginalLineTotal = (item: any): number => {
+    const storedOriginal = Number(item.original_price_at_purchase);
+    if (Number.isFinite(storedOriginal) && storedOriginal > 0) return storedOriginal;
+
+    const paidLineTotal = Number(item.price_at_purchase || 0);
+    const quantity = Number(item.quantity || 0);
+    if (!Number.isFinite(quantity) || quantity <= 0) return paidLineTotal;
+
+    const discountPrice = Number(item.discount_price);
+    const currentUnitPrice = Number.isFinite(discountPrice) && discountPrice >= 0
+        ? discountPrice
+        : Number(item.price_per_unit ?? item.price ?? 0);
+    const basePrice = Number(item.price_per_unit ?? item.price ?? currentUnitPrice);
+
+    if (!Number.isFinite(basePrice) || basePrice <= currentUnitPrice) return paidLineTotal;
+
+    return calculateLineTotal(quantity, buildUnitConfig({
+        unit: item.unit,
+        price_per_unit: basePrice,
+        min_qty: quantity,
+        step_qty: quantity,
+    }));
 };
 
 /**
@@ -271,7 +296,10 @@ export const getOrderById = async (req: Request, res: Response) => {
             `SELECT
                 oi.*,
                 p.image_url,
-                p.images
+                p.images,
+                p.price,
+                p.price_per_unit,
+                p.discount_price
              FROM order_items oi
              LEFT JOIN products p ON oi.product_id = p.id
              WHERE oi.order_id = $1`,
@@ -311,6 +339,7 @@ export const getOrderById = async (req: Request, res: Response) => {
             quantity: Number(item.quantity),
             price: parseFloat(item.price_at_purchase) || 0,
             price_at_purchase: parseFloat(item.price_at_purchase) || 0,
+            original_price_at_purchase: resolveOriginalLineTotal(item),
         }));
         const subtotal = items.reduce((sum, item) => sum + Number(item.price_at_purchase || 0), 0);
         const pointsUsed = Number(order.points_used || 0);

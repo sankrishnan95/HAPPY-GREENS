@@ -14,7 +14,9 @@ export interface CalculatedOrderItem {
     quantity: number;
     unit: string;
     price: number;
+    originalPrice: number;
     pricePerUnit: number;
+    originalPricePerUnit: number;
     minQty: number;
     stepQty: number;
     category_id: number;
@@ -95,7 +97,9 @@ export const prepareCalculatedOrderItems = async (
             quantity: normalizedQuantity,
             unit: config.unit,
             price: calculateLineTotal(normalizedQuantity, config),
+            originalPrice: calculateLineTotal(normalizedQuantity, baseConfig),
             pricePerUnit: config.pricePerUnit,
+            originalPricePerUnit: baseConfig.pricePerUnit,
             minQty: config.minQty,
             stepQty: config.stepQty,
             category_id: product.category_id,

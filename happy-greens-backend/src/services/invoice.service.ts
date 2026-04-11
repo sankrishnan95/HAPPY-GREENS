@@ -3,8 +3,30 @@ import PDFDocument from 'pdfkit';
 import path from 'path';
 import fs from 'fs';
 import { OrderData, OrderItem } from '../models/order.model';
+import { buildUnitConfig, calculateLineTotal } from './unit-pricing.service';
 
 const getLineTotal = (item: OrderItem) => Number(item.line_total ?? item.price_at_purchase ?? 0);
+
+const getOriginalLineTotal = (item: OrderItem) => {
+    const storedOriginal = Number(item.original_price_at_purchase ?? 0);
+    const paidLineTotal = getLineTotal(item);
+    if (Number.isFinite(storedOriginal) && storedOriginal > paidLineTotal) return storedOriginal;
+
+    const quantity = Number(item.quantity || 0);
+    const currentUnitPrice = Number((item as any).discount_price);
+    const basePrice = Number((item as any).price_per_unit ?? (item as any).price ?? currentUnitPrice);
+
+    if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(basePrice) || basePrice <= currentUnitPrice) {
+        return paidLineTotal;
+    }
+
+    return calculateLineTotal(quantity, buildUnitConfig({
+        unit: item.unit,
+        price_per_unit: basePrice,
+        min_qty: quantity,
+        step_qty: quantity,
+    }));
+};
 
 const getUnitPrice = (item: OrderItem) => {
     const normalizedUnit = String(item.unit || '').toUpperCase();
@@ -12,9 +34,7 @@ const getUnitPrice = (item: OrderItem) => {
     const lineTotal = getLineTotal(item);
 
     if (!Number.isFinite(quantity) || quantity <= 0) return lineTotal;
-    if (normalizedUnit === 'GRAM') {
-        return lineTotal / (quantity / 1000);
-    }
+    if (normalizedUnit === 'GRAM') return lineTotal / (quantity / 1000);
     return lineTotal / quantity;
 };
 
@@ -43,9 +63,6 @@ const formatQuantity = (item: OrderItem) => {
     return `${Math.round(quantity)} pc`;
 };
 
-/**
- * Generate A4 PDF Invoice — Clean Monochrome Layout
- */
 export function generateA4Invoice(res: Response, orderData: OrderData, items: OrderItem[]) {
     const PAGE_W = 595.28;
     const MARGIN = 50;
@@ -55,6 +72,7 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     const GRAY = '#555555';
     const LGRAY = '#999999';
     const XLGRAY = '#dddddd';
+    const GREEN = '#1a7a3a';
 
     const doc = new PDFDocument({ size: 'A4', margin: MARGIN });
     res.setHeader('Content-Type', 'application/pdf');
@@ -64,55 +82,47 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     const invNum = `INV-${String(orderData.id).padStart(5, '0')}`;
     const invDate = new Date(orderData.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
     const rawAddr = orderData.shipping_address;
-    const ship = rawAddr
-        ? (typeof rawAddr === 'string' ? JSON.parse(rawAddr) : rawAddr)
-        : {};
+    const ship = rawAddr ? (typeof rawAddr === 'string' ? JSON.parse(rawAddr) : rawAddr) : {};
+    const orderLevelSavings = Number(orderData.discount_amount || 0);
 
-    // SECTION 1: Header
     let y = MARGIN;
 
-    // Logo — resolve relative to backend project root, pointing at frontend/public
     const logoPath = path.resolve(__dirname, '../../../happy-greens-frontend/public/logo.png');
     let logoW = 0;
     if (fs.existsSync(logoPath)) {
         doc.image(logoPath, MARGIN, y, { height: 50 });
-        logoW = 60; // Space for logo + padding
+        logoW = 60;
     }
 
-    // Left Column: Brand & Tagline
     doc.fontSize(18).font('Helvetica-Bold').fillColor(DARK)
         .text('Happy Greens', MARGIN + logoW, y + 6, { lineBreak: false });
 
-    // Right Column: INVOICE Title
     doc.fontSize(20).font('Helvetica-Bold').fillColor(DARK)
         .text('INVOICE', MARGIN, y, { align: 'right', width: COL_W });
 
     y += 28;
-    // Left side: Sub-info
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY)
-        .text('Fresh & Organic Groceries', MARGIN + logoW, y);
-    // Right side: Sub-info
-    doc.text(`Invoice No: ${invNum}`, MARGIN, y, { align: 'right', width: COL_W });
+        .text('Fresh & Organic Groceries', MARGIN + logoW, y)
+        .text(`Invoice No: ${invNum}`, MARGIN, y, { align: 'right', width: COL_W });
 
     y += 13;
-    doc.text('Puducherry, India', MARGIN + logoW, y);
-    doc.text(`Date: ${invDate}`, MARGIN, y, { align: 'right', width: COL_W });
+    doc.text('Puducherry, India', MARGIN + logoW, y)
+        .text(`Date: ${invDate}`, MARGIN, y, { align: 'right', width: COL_W });
 
     y += 13;
-    doc.text('happygreenspy@gmail.com', MARGIN + logoW, y);
-    doc.text(`Order Status: ${orderData.status.toUpperCase()}`, MARGIN, y, { align: 'right', width: COL_W });
+    doc.text('happygreenspy@gmail.com', MARGIN + logoW, y)
+        .text(`Order Status: ${orderData.status.toUpperCase()}`, MARGIN, y, { align: 'right', width: COL_W });
 
-    y += 20; // Advanced PAST the logo height (50) and our 3 lines of text
+    y += 20;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(1).strokeColor(DARK).stroke();
 
-    // SECTION 2: Billing & Shipping
     y += 14;
     const halfW = (COL_W - 20) / 2;
     const addrStartY = y;
 
     doc.fontSize(7.5).font('Helvetica-Bold').fillColor(DARK).text('BILL TO', MARGIN, y);
     y += 12;
-    doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK).text(orderData.full_name || '—', MARGIN, y);
+    doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK).text(orderData.full_name || '-', MARGIN, y);
     y += 13;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY);
     if (orderData.email) { doc.text(orderData.email, MARGIN, y); y += 12; }
@@ -122,22 +132,21 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     let sy = addrStartY;
     doc.fontSize(7.5).font('Helvetica-Bold').fillColor(DARK).text('SHIP TO', shipX, sy);
     sy += 12;
-    doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK).text(ship.name || orderData.full_name || '—', shipX, sy);
+    doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK).text(ship.name || orderData.full_name || '-', shipX, sy);
     sy += 13;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY);
     const addressLine = [ship.address_line, ship.address, ship.street].filter(Boolean).join(', ');
     if (addressLine) { doc.text(addressLine, shipX, sy); sy += 12; }
     if (ship.locality) { doc.text(ship.locality, shipX, sy); sy += 12; }
-    if (ship.landmark) { doc.text('Landmark: ' + ship.landmark, shipX, sy); sy += 12; }
+    if (ship.landmark) { doc.text(`Landmark: ${ship.landmark}`, shipX, sy); sy += 12; }
     const cityLine = [ship.city, ship.state].filter(Boolean).join(', ');
     if (cityLine) { doc.text(cityLine, shipX, sy); sy += 12; }
-    if (ship.zip || ship.zipCode) { doc.text('PIN: ' + (ship.zip || ship.zipCode), shipX, sy); sy += 12; }
-    if (ship.phone) { doc.text('Phone: ' + ship.phone, shipX, sy); sy += 12; }
+    if (ship.zip || ship.zipCode) { doc.text(`PIN: ${ship.zip || ship.zipCode}`, shipX, sy); sy += 12; }
+    if (ship.phone) { doc.text(`Phone: ${ship.phone}`, shipX, sy); sy += 12; }
 
     y = Math.max(y, sy) + 12;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.4).strokeColor(XLGRAY).stroke();
 
-    // SECTION 3: Products Table
     y += 12;
     const C_ITEM = MARGIN;
     const C_QTY = MARGIN + 300;
@@ -148,50 +157,73 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
         .text('Product', C_ITEM, y, { width: 290 })
         .text('Quantity', C_QTY, y, { width: 52, align: 'center' })
-        .text('Price/Unit', C_PRICE, y, { width: 78, align: 'right' })
+        .text('Striked Price', C_PRICE, y, { width: 78, align: 'right' })
         .text('Amount', C_SUB, y, { width: SUB_W, align: 'right' });
     y += 14;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.75).strokeColor(DARK).stroke();
     y += 7;
 
     let subtotal = 0;
+    let totalOriginal = 0;
     items.forEach((item, idx) => {
         if (y > 670) { doc.addPage(); y = MARGIN; }
-        const price = getUnitPrice(item);
         const lineTotal = getLineTotal(item);
+        const originalTotal = getOriginalLineTotal(item);
         subtotal += lineTotal;
+        totalOriginal += originalTotal;
+
         if (idx > 0) {
             doc.moveTo(MARGIN, y - 4).lineTo(PAGE_W - MARGIN, y - 4).lineWidth(0.3).strokeColor(XLGRAY).stroke();
         }
+
         doc.fontSize(9).font('Helvetica').fillColor(DARK)
             .text(item.product_name, C_ITEM, y, { width: 290 })
             .text(formatQuantity(item), C_QTY, y, { width: 52, align: 'center' })
-            .text(`Rs. ${price.toFixed(2)}`, C_PRICE, y, { width: 78, align: 'right' })
             .text(`Rs. ${lineTotal.toFixed(2)}`, C_SUB, y, { width: SUB_W, align: 'right' });
+
+        const originalText = `Rs. ${originalTotal.toFixed(2)}`;
+        const originalWidth = doc.widthOfString(originalText);
+        const originalX = C_PRICE + 78 - originalWidth;
+        doc.fontSize(9).font('Helvetica').fillColor(originalTotal > lineTotal ? GRAY : DARK)
+            .text(originalText, originalX, y, { lineBreak: false });
+
+        if (originalTotal > lineTotal) {
+            const strikeY = y + 6;
+            doc.moveTo(originalX, strikeY)
+                .lineTo(originalX + originalWidth, strikeY)
+                .lineWidth(0.8)
+                .strokeColor(GRAY)
+                .stroke();
+        }
+
         y += 20;
     });
+
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.75).strokeColor(DARK).stroke();
 
-    // SECTION 4: Totals + Payment Info
     y += 12;
     const totalAmount = parseFloat(orderData.total_amount as any);
+    const totalSaved = Math.max(0, totalOriginal - subtotal + orderLevelSavings);
+    const deliveryFee = Math.max(0, totalAmount - subtotal + orderLevelSavings);
     const totLabelX = MARGIN + 335;
     const totValW = 65;
 
-    const totRow = (label: string, val: string, bold = false) => {
-        doc.fontSize(9).font(bold ? 'Helvetica-Bold' : 'Helvetica').fillColor(bold ? DARK : GRAY)
+    const totRow = (label: string, val: string, bold = false, color = bold ? DARK : GRAY) => {
+        doc.fontSize(9).font(bold ? 'Helvetica-Bold' : 'Helvetica').fillColor(color)
             .text(label, totLabelX, y, { width: 100 })
             .text(val, PAGE_W - MARGIN - totValW, y, { width: totValW, align: 'right' });
         y += 16;
     };
 
     totRow('Subtotal', `Rs. ${subtotal.toFixed(2)}`);
-    totRow('Delivery charge', 'Rs. 0.00');
-    totRow('Discount', 'Rs. 0.00');
+    totRow('Delivery charge', `Rs. ${deliveryFee.toFixed(2)}`);
+    if (totalSaved > 0) {
+        totRow('You saved', `Rs. ${totalSaved.toFixed(2)}`, false, GREEN);
+    }
     doc.moveTo(totLabelX, y - 2).lineTo(PAGE_W - MARGIN, y - 2).lineWidth(0.5).strokeColor(DARK).stroke();
     totRow('TOTAL', `Rs. ${totalAmount.toFixed(2)}`, true);
 
-    const payY = y - 16 * 4;
+    const payY = y - 16 * (totalSaved > 0 ? 4 : 3);
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY)
         .text('Payment Method:', MARGIN, payY)
         .text('Order Reference:', MARGIN, payY + 16);
@@ -199,7 +231,6 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
         .text((orderData.payment_method || 'COD').toUpperCase(), MARGIN + 110, payY)
         .text(`#${orderData.id}`, MARGIN + 110, payY + 16);
 
-    // SECTION 5: Footer
     const footerY = 805;
     doc.moveTo(MARGIN, footerY).lineTo(PAGE_W - MARGIN, footerY).lineWidth(0.4).strokeColor(XLGRAY).stroke();
     doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
@@ -210,38 +241,26 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     doc.end();
 }
 
-/**
- * Generate 80mm Thermal Receipt
- * POS-style receipt for thermal printers
- */
 export function generateThermalReceipt(res: Response, orderData: OrderData, items: OrderItem[]) {
-    // 80mm = ~227 pixels at 72 DPI
     const doc = new PDFDocument({ size: [227, 841], margin: 10 });
 
-    // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="receipt-${orderData.id}.pdf"`);
-
-    // Pipe PDF to response
     doc.pipe(res);
 
-    // Header
     doc.fontSize(14)
         .font('Helvetica-Bold')
-        .text('🥬 HAPPY GREENS 🥬', { align: 'center' });
+        .text('HAPPY GREENS', { align: 'center' });
 
     doc.fontSize(8)
         .font('Helvetica')
         .text('Fresh Organic Groceries', { align: 'center' })
-        .text('123 Green Street, Mumbai', { align: 'center' })
-        .text('Phone: +91 98765 43210', { align: 'center' })
+        .text('Puducherry, India', { align: 'center' })
+        .text('Email: happygreenspy@gmail.com', { align: 'center' })
         .moveDown(0.5);
 
-    // Separator
-    doc.text('--------------------------------', { align: 'center' })
-        .moveDown(0.5);
+    doc.text('--------------------------------', { align: 'center' }).moveDown(0.5);
 
-    // Order Info
     const invoiceNumber = `HG-${orderData.id}`;
     const orderDate = new Date(orderData.created_at).toLocaleString('en-IN', {
         dateStyle: 'short',
@@ -254,12 +273,9 @@ export function generateThermalReceipt(res: Response, orderData: OrderData, item
         .text(`Customer: ${orderData.full_name}`, { align: 'center' })
         .moveDown(0.5);
 
-    doc.text('--------------------------------', { align: 'center' })
-        .moveDown(0.5);
+    doc.text('--------------------------------', { align: 'center' }).moveDown(0.5);
 
-    // Items
     items.forEach((item) => {
-        // Parse numeric values from database
         const price = getUnitPrice(item);
         const lineTotal = getLineTotal(item);
 
@@ -273,11 +289,8 @@ export function generateThermalReceipt(res: Response, orderData: OrderData, item
         doc.moveDown(0.3);
     });
 
-    // Separator
-    doc.text('--------------------------------', { align: 'center' })
-        .moveDown(0.3);
+    doc.text('--------------------------------', { align: 'center' }).moveDown(0.3);
 
-    // Total
     const totalAmount = parseFloat(orderData.total_amount as any);
 
     doc.fontSize(10)
@@ -286,19 +299,16 @@ export function generateThermalReceipt(res: Response, orderData: OrderData, item
         .text(`Rs. ${totalAmount.toFixed(2)}`, { align: 'right' });
 
     doc.moveDown(0.5);
-    doc.text('--------------------------------', { align: 'center' })
-        .moveDown(0.3);
+    doc.text('--------------------------------', { align: 'center' }).moveDown(0.3);
 
-    // Payment Info
     doc.fontSize(7)
         .font('Helvetica')
         .text(`Payment: ${orderData.payment_gateway || 'Razorpay'}`, { align: 'center' })
         .text(`Method: ${orderData.payment_method_type || 'UPI'}`, { align: 'center' })
-        .text(`Status: PAID`, { align: 'center' })
+        .text('Status: PAID', { align: 'center' })
         .text(`Txn: ${orderData.gateway_payment_id || 'N/A'}`, { align: 'center' })
         .moveDown(0.5);
 
-    // Footer
     doc.fontSize(8)
         .text('Thank you!', { align: 'center' })
         .text('Visit: www.happygreens.com', { align: 'center' });

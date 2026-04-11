@@ -38,7 +38,8 @@ export const ensureMultiUnitSchema = async (): Promise<void> => {
 
     await pool.query(`
         ALTER TABLE order_items
-        ADD COLUMN IF NOT EXISTS unit VARCHAR(20)
+        ADD COLUMN IF NOT EXISTS unit VARCHAR(20),
+        ADD COLUMN IF NOT EXISTS original_price_at_purchase DECIMAL(10, 2)
     `);
 
     await pool.query(`
