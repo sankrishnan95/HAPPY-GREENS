@@ -181,7 +181,10 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
             .text(formatQuantity(item), C_QTY, y, { width: 52, align: 'center' })
             .text(`Rs. ${lineTotal.toFixed(2)}`, C_SUB, y, { width: SUB_W, align: 'right' });
 
-        const originalText = `Rs. ${originalTotal.toFixed(2)}`;
+        const qty = item.unit?.match(/^(gram|g|kg)$/i) ? Number(item.quantity) / 1000 : Number(item.quantity) || 1;
+        const originalPerUnit = originalTotal / qty;
+
+        const originalText = `Rs. ${originalPerUnit.toFixed(2)}`;
         const originalWidth = doc.widthOfString(originalText);
         const originalX = C_PRICE + 78 - originalWidth;
         doc.fontSize(9).font('Helvetica').fillColor(originalTotal > lineTotal ? GRAY : DARK)
