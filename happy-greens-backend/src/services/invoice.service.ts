@@ -217,13 +217,20 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
 
     totRow('Subtotal', `Rs. ${subtotal.toFixed(2)}`);
     totRow('Delivery charge', `Rs. ${deliveryFee.toFixed(2)}`);
+    const pointsUsed = Number(orderData.points_used ?? 0);
+    if (pointsUsed > 0) {
+        totRow('Loyalty points', `- Rs. ${pointsUsed.toFixed(2)}`);
+    }
     if (totalSaved > 0) {
         totRow('You saved', `Rs. ${totalSaved.toFixed(2)}`, false, GREEN);
     }
     doc.moveTo(totLabelX, y - 2).lineTo(PAGE_W - MARGIN, y - 2).lineWidth(0.5).strokeColor(DARK).stroke();
     totRow('TOTAL', `Rs. ${totalAmount.toFixed(2)}`, true);
 
-    const payY = y - 16 * (totalSaved > 0 ? 4 : 3);
+    let rowCount = 3; // subtotal + delivery + total
+    if (pointsUsed > 0) rowCount++;
+    if (totalSaved > 0) rowCount++;
+    const payY = y - 16 * rowCount;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY)
         .text('Payment Method:', MARGIN, payY)
         .text('Order Reference:', MARGIN, payY + 16);
