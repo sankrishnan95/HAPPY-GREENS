@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
-import { calculateOrderTotals } from '../services/order-pricing.service';
+import { calculateOrderTotals, COUPON_ERROR_CODES } from '../services/order-pricing.service';
 import { createAdminNotifications, createUserNotification } from '../services/notification.service';
 import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 import { isPondicherryPincode } from '../config/pondicherry-pincodes';
@@ -151,6 +151,11 @@ export const createOrder = async (req: Request, res: Response) => {
                  VALUES ($1, $2, $3, $4)`,
                 [validatedCouponId, userId, orderId, couponDiscount]
             );
+
+            await client.query(
+                'UPDATE coupons SET used_count = COALESCE(used_count, 0) + 1 WHERE id = $1',
+                [validatedCouponId]
+            );
         }
 
         await client.query(
@@ -248,6 +253,9 @@ export const createOrder = async (req: Request, res: Response) => {
     } catch (error: any) {
         await client.query('ROLLBACK');
 
+        if (error?.message && COUPON_ERROR_CODES.has(error.message)) {
+            return res.status(400).json({ message: 'Invalid or unavailable coupon' });
+        }
         if (error?.message === 'INVALID_SHIPPING') {
             return res.status(400).json({ message: 'Valid shipping address is required' });
         }

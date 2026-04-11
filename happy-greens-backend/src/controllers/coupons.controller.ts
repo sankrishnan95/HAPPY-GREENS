@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import {pool} from '../db';
+import { applyCouponToCalculatedItems, COUPON_ERROR_CODES, prepareCalculatedOrderItems } from '../services/order-pricing.service';
 
 /**
  * Create Coupon
@@ -254,7 +255,6 @@ export const deleteCoupon = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
 /**
  * Validate Coupon (Public API for customers)
  * POST /api/coupons/validate
@@ -270,90 +270,24 @@ export const validateCoupon = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Code and valid cart_items array are required' });
         }
 
-        // Get coupon
-        const couponResult = await pool.query(
-            `SELECT * FROM coupons 
-             WHERE UPPER(code) = UPPER($1) 
-             AND is_active = true 
-             AND valid_from <= NOW() 
-             AND valid_until >= NOW()`,
-            [code]
+        const calculatedItems = await prepareCalculatedOrderItems(pool, cart_items);
+        const subtotal = calculatedItems.reduce((sum, item) => sum + item.price, 0);
+
+        const { couponDiscount, validatedCouponId } = await applyCouponToCalculatedItems(
+            pool,
+            calculatedItems,
+            code,
+            userId ? Number(userId) : null
         );
 
+        const couponResult = await pool.query('SELECT id, code, discount_type, discount_value FROM coupons WHERE id = $1', [validatedCouponId]);
+
         if (couponResult.rows.length === 0) {
-            return res.status(404).json({ 
-                valid: false,
-                message: 'Invalid or expired coupon code' 
-            });
+            return res.status(404).json({ valid: false, message: 'Invalid or expired coupon code' });
         }
 
         const coupon = couponResult.rows[0];
-
-        let applicable_subtotal = 0;
-        let total_order_amount = 0;
-
-        for (const item of cart_items) {
-            const itemTotal = Number(item.price) * Number(item.quantity || 1);
-            total_order_amount += itemTotal;
-
-            let isApplicable = true;
-            if (coupon.applicable_category_id && Number(item.category_id) !== Number(coupon.applicable_category_id)) isApplicable = false;
-            if (coupon.applicable_product_id && Number(item.product_id) !== Number(coupon.applicable_product_id)) isApplicable = false;
-
-            if (isApplicable) applicable_subtotal += itemTotal;
-        }
-
-        if (applicable_subtotal === 0) {
-            return res.status(400).json({ valid: false, message: 'This coupon is not applicable to any items in your cart' });
-        }
-
-        // Check minimum order amount
-        if (applicable_subtotal < parseFloat(coupon.min_order_amount)) {
-            return res.status(400).json({
-                valid: false,
-                message: `Minimum applicable item amount is ₹${coupon.min_order_amount}`
-            });
-        }
-
-        // Check usage limit
-        if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
-            return res.status(400).json({
-                valid: false,
-                message: 'Coupon usage limit reached'
-            });
-        }
-
-        // Check if user already used this coupon (if logged in)
-        if (userId) {
-            const usageResult = await pool.query(
-                'SELECT id FROM coupon_usage WHERE coupon_id = $1 AND user_id = $2',
-                [coupon.id, userId]
-            );
-
-            if (usageResult.rows.length > 0) {
-                return res.status(400).json({
-                    valid: false,
-                    message: 'You have already used this coupon'
-                });
-            }
-        }
-
-        // Calculate discount
-        let discount_amount = 0;
-        if (coupon.discount_type === 'flat') {
-            discount_amount = parseFloat(coupon.discount_value);
-        } else { // percentage
-            discount_amount = (applicable_subtotal * parseFloat(coupon.discount_value)) / 100;
-            
-            // Apply max discount cap if set
-            if (coupon.max_discount_amount) {
-                discount_amount = Math.min(discount_amount, parseFloat(coupon.max_discount_amount));
-            }
-        }
-
-        // discount cannot be greater than the applicable subtotal
-        discount_amount = Math.min(discount_amount, applicable_subtotal);
-        const final_amount = Math.max(0, total_order_amount - discount_amount);
+        const final_amount = Math.max(0, subtotal - couponDiscount);
 
         res.json({
             valid: true,
@@ -361,15 +295,26 @@ export const validateCoupon = async (req: Request, res: Response) => {
             code: coupon.code,
             discount_type: coupon.discount_type,
             discount_value: coupon.discount_value,
-            discount_amount: discount_amount.toFixed(2),
+            discount_amount: couponDiscount.toFixed(2),
             final_amount: final_amount.toFixed(2),
-            message: `Coupon applied! You saved ₹${discount_amount.toFixed(2)}`
+            message: `Coupon applied! You saved Rs. ${couponDiscount.toFixed(2)}`
         });
     } catch (error) {
         console.error('Error validating coupon:', error);
+
+        if (error instanceof Error) {
+            if (error.message === 'INVALID_COUPON') return res.status(404).json({ valid: false, message: 'Invalid or expired coupon code' });
+            if (error.message === 'COUPON_NOT_APPLICABLE') return res.status(400).json({ valid: false, message: 'This coupon is not applicable to any items in your cart' });
+            if (error.message === 'COUPON_MIN_ORDER') return res.status(400).json({ valid: false, message: 'Minimum applicable item amount was not met' });
+            if (error.message === 'COUPON_USAGE_LIMIT') return res.status(400).json({ valid: false, message: 'Coupon usage limit reached' });
+            if (error.message === 'COUPON_ALREADY_USED') return res.status(400).json({ valid: false, message: 'You have already used this coupon' });
+            if (error.message === 'INVALID_ITEMS' || error.message === 'INVALID_PRODUCT' || COUPON_ERROR_CODES.has(error.message)) return res.status(400).json({ valid: false, message: 'Invalid cart items for coupon validation' });
+        }
+
         res.status(500).json({ message: 'Server error' });
     }
 };
+
 
 /**
  * Get Coupon Usage Stats

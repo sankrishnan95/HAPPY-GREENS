@@ -3,12 +3,12 @@ import { buildUnitConfig, calculateLineTotal, isValidQuantityForConfig, normaliz
 
 type DbClient = Pool | PoolClient;
 
-interface OrderItemInput {
+export interface OrderItemInput {
     product_id?: unknown;
     quantity?: unknown;
 }
 
-interface CalculatedOrderItem {
+export interface CalculatedOrderItem {
     product_id: number;
     product_name: string;
     quantity: number;
@@ -18,6 +18,11 @@ interface CalculatedOrderItem {
     minQty: number;
     stepQty: number;
     category_id: number;
+}
+
+interface AppliedCouponResult {
+    couponDiscount: number;
+    validatedCouponId: number | null;
 }
 
 export interface CalculatedOrderTotals {
@@ -30,13 +35,18 @@ export interface CalculatedOrderTotals {
     finalTotal: number;
 }
 
-export const calculateOrderTotals = async (
+export const COUPON_ERROR_CODES = new Set([
+    'INVALID_COUPON',
+    'COUPON_NOT_APPLICABLE',
+    'COUPON_MIN_ORDER',
+    'COUPON_USAGE_LIMIT',
+    'COUPON_ALREADY_USED',
+]);
+
+export const prepareCalculatedOrderItems = async (
     dbClient: DbClient,
-    rawItems: OrderItemInput[],
-    requestedPointsUsed: unknown,
-    couponCode: unknown,
-    userId: number
-): Promise<CalculatedOrderTotals> => {
+    rawItems: OrderItemInput[]
+): Promise<CalculatedOrderItem[]> => {
     if (!Array.isArray(rawItems) || rawItems.length === 0) {
         throw new Error('INVALID_ITEMS');
     }
@@ -62,7 +72,7 @@ export const calculateOrderTotals = async (
         productsResult.rows.map((row: any) => [Number(row.id), row])
     );
 
-    const calculatedItems: CalculatedOrderItem[] = normalizedItems.map((item) => {
+    return normalizedItems.map((item) => {
         const product = productMap.get(item.productId);
         if (!product || product.is_deleted || product.is_active === false) {
             throw new Error('INVALID_PRODUCT');
@@ -92,6 +102,95 @@ export const calculateOrderTotals = async (
             category_id: product.category_id,
         };
     });
+};
+
+export const applyCouponToCalculatedItems = async (
+    dbClient: DbClient,
+    calculatedItems: CalculatedOrderItem[],
+    couponCode: unknown,
+    userId?: number | null
+): Promise<AppliedCouponResult> => {
+    if (typeof couponCode !== 'string' || !couponCode.trim()) {
+        return {
+            couponDiscount: 0,
+            validatedCouponId: null,
+        };
+    }
+
+    const couponResult = await dbClient.query(
+        `SELECT * FROM coupons WHERE UPPER(code) = UPPER($1) AND is_active = true AND valid_from <= NOW() AND valid_until >= NOW()`,
+        [couponCode.trim()]
+    );
+
+    if (couponResult.rows.length === 0) {
+        throw new Error('INVALID_COUPON');
+    }
+
+    const coupon = couponResult.rows[0];
+    let applicableSubtotal = 0;
+
+    calculatedItems.forEach((item) => {
+        let isApplicable = true;
+        if (coupon.applicable_category_id && Number(item.category_id) !== Number(coupon.applicable_category_id)) isApplicable = false;
+        if (coupon.applicable_product_id && Number(item.product_id) !== Number(coupon.applicable_product_id)) isApplicable = false;
+        if (isApplicable) applicableSubtotal += item.price;
+    });
+
+    if (applicableSubtotal <= 0) {
+        throw new Error('COUPON_NOT_APPLICABLE');
+    }
+
+    if (applicableSubtotal < Number(coupon.min_order_amount || 0)) {
+        throw new Error('COUPON_MIN_ORDER');
+    }
+
+    if (coupon.usage_limit) {
+        const usageCountResult = await dbClient.query(
+            'SELECT COUNT(*)::int AS count FROM coupon_usage WHERE coupon_id = $1',
+            [coupon.id]
+        );
+        const usedCount = Number(usageCountResult.rows[0]?.count || 0);
+        if (usedCount >= Number(coupon.usage_limit)) {
+            throw new Error('COUPON_USAGE_LIMIT');
+        }
+    }
+
+    if (userId && Number.isInteger(Number(userId))) {
+        const usageResult = await dbClient.query(
+            'SELECT id FROM coupon_usage WHERE coupon_id = $1 AND user_id = $2 LIMIT 1',
+            [coupon.id, Number(userId)]
+        );
+        if (usageResult.rows.length > 0) {
+            throw new Error('COUPON_ALREADY_USED');
+        }
+    }
+
+    let couponDiscount = 0;
+    if (coupon.discount_type === 'flat') {
+        couponDiscount = Number(coupon.discount_value);
+    } else {
+        couponDiscount = (applicableSubtotal * Number(coupon.discount_value)) / 100;
+        if (coupon.max_discount_amount) {
+            couponDiscount = Math.min(couponDiscount, Number(coupon.max_discount_amount));
+        }
+    }
+
+    couponDiscount = Math.min(couponDiscount, applicableSubtotal);
+
+    return {
+        couponDiscount: roundCurrency(couponDiscount),
+        validatedCouponId: Number(coupon.id),
+    };
+};
+
+export const calculateOrderTotals = async (
+    dbClient: DbClient,
+    rawItems: OrderItemInput[],
+    requestedPointsUsed: unknown,
+    couponCode: unknown,
+    userId: number
+): Promise<CalculatedOrderTotals> => {
+    const calculatedItems = await prepareCalculatedOrderItems(dbClient, rawItems);
 
     const subtotal = roundCurrency(
         calculatedItems.reduce((sum, item) => sum + item.price, 0)
@@ -100,46 +199,24 @@ export const calculateOrderTotals = async (
     const requested = Number(requestedPointsUsed || 0);
     const safeRequested = Number.isFinite(requested) && requested > 0 ? Math.floor(requested) : 0;
 
-    const loyaltyResult = await dbClient.query(
-        'SELECT loyalty_points FROM users WHERE id = $1',
-        [userId]
-    );
-    const availablePoints = Number(loyaltyResult.rows[0]?.loyalty_points || 0);
+    const safeUserId = Number(userId);
+    let availablePoints = 0;
+    if (Number.isInteger(safeUserId) && safeUserId > 0) {
+        const loyaltyResult = await dbClient.query(
+            'SELECT loyalty_points FROM users WHERE id = $1',
+            [safeUserId]
+        );
+        availablePoints = Number(loyaltyResult.rows[0]?.loyalty_points || 0);
+    }
     const maxRedeemable = Math.floor(subtotal * 0.5);
     const validatedPointsUsed = Math.max(0, Math.min(safeRequested, availablePoints, maxRedeemable));
 
-    let couponDiscount = 0;
-    let validatedCouponId: number | null = null;
-    
-    if (typeof couponCode === 'string' && couponCode.trim()) {
-        const couponResult = await dbClient.query(
-            `SELECT * FROM coupons WHERE UPPER(code) = UPPER($1) AND is_active = true AND valid_from <= NOW() AND valid_until >= NOW()`, 
-            [couponCode.trim()]
-        );
-        if (couponResult.rows.length > 0) {
-            const coupon = couponResult.rows[0];
-            let applicableSubtotal = 0;
-            calculatedItems.forEach(item => {
-                let isValid = true;
-                if (coupon.applicable_category_id && Number(item.category_id) !== Number(coupon.applicable_category_id)) isValid = false;
-                if (coupon.applicable_product_id && Number(item.product_id) !== Number(coupon.applicable_product_id)) isValid = false;
-                if (isValid) applicableSubtotal += item.price;
-            });
-            
-            if (applicableSubtotal >= Number(coupon.min_order_amount)) {
-                if (coupon.discount_type === 'flat') {
-                    couponDiscount = Number(coupon.discount_value);
-                } else {
-                    couponDiscount = (applicableSubtotal * Number(coupon.discount_value)) / 100;
-                    if (coupon.max_discount_amount) {
-                        couponDiscount = Math.min(couponDiscount, Number(coupon.max_discount_amount));
-                    }
-                }
-                couponDiscount = Math.min(couponDiscount, applicableSubtotal);
-                validatedCouponId = coupon.id;
-            }
-        }
-    }
+    const { couponDiscount, validatedCouponId } = await applyCouponToCalculatedItems(
+        dbClient,
+        calculatedItems,
+        couponCode,
+        Number.isInteger(safeUserId) && safeUserId > 0 ? safeUserId : null
+    );
 
     const totalAfterDiscounts = Math.max(0, subtotal - validatedPointsUsed - couponDiscount);
     

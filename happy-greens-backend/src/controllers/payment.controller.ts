@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import { calculateOrderTotals } from '../services/order-pricing.service';
+import { calculateOrderTotals, COUPON_ERROR_CODES } from '../services/order-pricing.service';
 import { pool } from '../db';
 
 // TEMPORARY: Set to true to disable Razorpay payments
@@ -44,6 +44,9 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
             receipt: order.receipt,
         });
     } catch (error) {
+        if (error instanceof Error && COUPON_ERROR_CODES.has(error.message)) {
+            return res.status(400).json({ message: 'Invalid or unavailable coupon' });
+        }
         if (error instanceof Error && (error.message === 'INVALID_ITEMS' || error.message === 'INVALID_PRODUCT')) {
             return res.status(400).json({ message: 'Invalid payment items' });
         }
