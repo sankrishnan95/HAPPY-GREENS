@@ -306,8 +306,7 @@ export const validateCoupon = async (req: Request, res: Response) => {
             if (error.message === 'INVALID_COUPON') return res.status(404).json({ valid: false, message: 'Invalid or expired coupon code' });
             if (error.message === 'COUPON_NOT_APPLICABLE') return res.status(400).json({ valid: false, message: 'This coupon is not applicable to any items in your cart' });
             if (error.message === 'COUPON_MIN_ORDER') return res.status(400).json({ valid: false, message: 'Minimum applicable item amount was not met' });
-            if (error.message === 'COUPON_USAGE_LIMIT') return res.status(400).json({ valid: false, message: 'Coupon usage limit reached' });
-            if (error.message === 'COUPON_ALREADY_USED') return res.status(400).json({ valid: false, message: 'You have already used this coupon' });
+            if (error.message === 'COUPON_USAGE_LIMIT') return res.status(400).json({ valid: false, message: 'You have reached the usage limit for this coupon' });
             if (error.message === 'INVALID_ITEMS' || error.message === 'INVALID_PRODUCT' || COUPON_ERROR_CODES.has(error.message)) return res.status(400).json({ valid: false, message: 'Invalid cart items for coupon validation' });
         }
 

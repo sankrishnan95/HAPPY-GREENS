@@ -40,7 +40,6 @@ export const COUPON_ERROR_CODES = new Set([
     'COUPON_NOT_APPLICABLE',
     'COUPON_MIN_ORDER',
     'COUPON_USAGE_LIMIT',
-    'COUPON_ALREADY_USED',
 ]);
 
 export const prepareCalculatedOrderItems = async (
@@ -144,24 +143,14 @@ export const applyCouponToCalculatedItems = async (
         throw new Error('COUPON_MIN_ORDER');
     }
 
-    if (coupon.usage_limit) {
-        const usageCountResult = await dbClient.query(
-            'SELECT COUNT(*)::int AS count FROM coupon_usage WHERE coupon_id = $1',
-            [coupon.id]
-        );
-        const usedCount = Number(usageCountResult.rows[0]?.count || 0);
-        if (usedCount >= Number(coupon.usage_limit)) {
-            throw new Error('COUPON_USAGE_LIMIT');
-        }
-    }
-
-    if (userId && Number.isInteger(Number(userId))) {
+    if (coupon.usage_limit && userId && Number.isInteger(Number(userId))) {
         const usageResult = await dbClient.query(
-            'SELECT id FROM coupon_usage WHERE coupon_id = $1 AND user_id = $2 LIMIT 1',
+            'SELECT COUNT(*)::int AS count FROM coupon_usage WHERE coupon_id = $1 AND user_id = $2',
             [coupon.id, Number(userId)]
         );
-        if (usageResult.rows.length > 0) {
-            throw new Error('COUPON_ALREADY_USED');
+        const userUsageCount = Number(usageResult.rows[0]?.count || 0);
+        if (userUsageCount >= Number(coupon.usage_limit)) {
+            throw new Error('COUPON_USAGE_LIMIT');
         }
     }
 
