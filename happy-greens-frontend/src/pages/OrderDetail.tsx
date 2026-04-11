@@ -172,7 +172,7 @@ export default function OrderDetail() {
                     </div>
                     <div>
                         <p className="text-gray-500">Total Amount</p>
-                        <p className="font-bold text-green-700 text-base">?{parseFloat(order.total_amount).toFixed(2)}</p>
+                        <p className="font-bold text-green-700 text-base">&#8377;{parseFloat(order.total_amount).toFixed(2)}</p>
                     </div>
                 </div>
             </div>
@@ -237,16 +237,16 @@ export default function OrderDetail() {
                                         </td>
                                         <td className="px-6 py-4 text-sm">
                                             {originalLineTotal > lineTotal ? (
-                                                <span className="text-gray-400 line-through">?{originalLineTotal.toFixed(2)}</span>
+                                                <span className="text-gray-400 line-through">&#8377;{originalLineTotal.toFixed(2)}</span>
                                             ) : (
-                                                <span className="text-gray-700">?{lineTotal.toFixed(2)}</span>
+                                                <span className="text-gray-700">&#8377;{lineTotal.toFixed(2)}</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-700">{formatQuantity(Number(item.quantity), item.unit)}</td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="text-sm font-semibold text-gray-900">?{lineTotal.toFixed(2)}</span>
+                                            <span className="text-sm font-semibold text-gray-900">&#8377;{lineTotal.toFixed(2)}</span>
                                             {lineSaving > 0 && (
-                                                <p className="text-xs text-green-600 font-medium">Saved ?{lineSaving.toFixed(2)}</p>
+                                                <p className="text-xs text-green-600 font-medium">Saved &#8377;{lineSaving.toFixed(2)}</p>
                                             )}
                                         </td>
                                     </tr>
@@ -259,39 +259,39 @@ export default function OrderDetail() {
                     <div className="w-full sm:w-56 space-y-2 text-sm">
                         <div className="flex justify-between text-gray-500">
                             <span>Subtotal</span>
-                            <span className="font-medium text-gray-900">?{subtotal.toFixed(2)}</span>
+                            <span className="font-medium text-gray-900">&#8377;{subtotal.toFixed(2)}</span>
                         </div>
                         {totalSavings > 0 && (
                             <div className="flex justify-between text-green-700">
                                 <span>You saved</span>
-                                <span className="font-semibold">-?{totalSavings.toFixed(2)}</span>
+                                <span className="font-semibold">-&#8377;{totalSavings.toFixed(2)}</span>
                             </div>
                         )}
                         {itemSavings > 0 && (
                             <div className="flex justify-between text-xs text-gray-500">
                                 <span>Product savings</span>
-                                <span>-?{itemSavings.toFixed(2)}</span>
+                                <span>-&#8377;{itemSavings.toFixed(2)}</span>
                             </div>
                         )}
                         {pointsUsed > 0 && (
                             <div className="flex justify-between text-xs text-gray-500">
                                 <span>Loyalty points</span>
-                                <span>-?{pointsUsed.toFixed(2)}</span>
+                                <span>-&#8377;{pointsUsed.toFixed(2)}</span>
                             </div>
                         )}
                         {couponDiscount > 0 && (
                             <div className="flex justify-between text-xs text-gray-500">
                                 <span>Coupon discount</span>
-                                <span>-?{couponDiscount.toFixed(2)}</span>
+                                <span>-&#8377;{couponDiscount.toFixed(2)}</span>
                             </div>
                         )}
                         <div className="flex justify-between text-gray-500 pb-3 border-b border-gray-100">
                             <span>Delivery Fee</span>
-                            <span className="font-medium text-gray-900">?{deliveryFee.toFixed(2)}</span>
+                            <span className="font-medium text-gray-900">&#8377;{deliveryFee.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-base font-bold text-gray-900 pt-1">
                             <span>Total</span>
-                            <span className="text-green-700">?{parseFloat(order.total_amount).toFixed(2)}</span>
+                            <span className="text-green-700">&#8377;{parseFloat(order.total_amount).toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -315,7 +315,7 @@ export default function OrderDetail() {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="font-semibold text-gray-900 capitalize text-sm">{event.new_status?.replace(/_/g, ' ')}</h3>
                                             {event.old_status && (
-                                                <span className="text-xs text-gray-400">? {event.old_status}</span>
+                                                <span className="text-xs text-gray-400">&larr; {event.old_status}</span>
                                             )}
                                         </div>
                                         {event.notes && <p className="text-sm text-gray-500 mt-0.5">{event.notes}</p>}
