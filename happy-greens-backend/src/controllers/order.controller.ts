@@ -40,8 +40,8 @@ const resolveOriginalLineTotal = (item: any): number => {
     return calculateLineTotal(quantity, buildUnitConfig({
         unit: item.unit,
         price_per_unit: basePrice,
-        min_qty: quantity,
-        step_qty: quantity,
+        min_qty: Number(item.min_qty) || 1,
+        step_qty: Number(item.min_qty) || 1,
     }));
 };
 
@@ -356,7 +356,8 @@ export const getOrderById = async (req: Request, res: Response) => {
                 p.images,
                 p.price,
                 p.price_per_unit,
-                p.discount_price
+                p.discount_price,
+                p.min_qty
              FROM order_items oi
              LEFT JOIN products p ON oi.product_id = p.id
              WHERE oi.order_id = $1`,
