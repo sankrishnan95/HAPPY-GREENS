@@ -224,11 +224,11 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     if (orderLevelSavings > 0) {
         totRow('Coupon discount', `- Rs. ${orderLevelSavings.toFixed(2)}`);
     }
+    doc.moveTo(totLabelX, y - 2).lineTo(PAGE_W - MARGIN, y - 2).lineWidth(0.5).strokeColor(DARK).stroke();
+    totRow('TOTAL', `Rs. ${totalAmount.toFixed(2)}`, true);
     if (totalSaved > 0) {
         totRow('You saved', `Rs. ${totalSaved.toFixed(2)}`, false, GREEN);
     }
-    doc.moveTo(totLabelX, y - 2).lineTo(PAGE_W - MARGIN, y - 2).lineWidth(0.5).strokeColor(DARK).stroke();
-    totRow('TOTAL', `Rs. ${totalAmount.toFixed(2)}`, true);
 
     let rowCount = 3; // subtotal + delivery + total
     if (pointsUsed > 0) rowCount++;
