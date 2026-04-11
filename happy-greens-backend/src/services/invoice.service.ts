@@ -125,10 +125,14 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     doc.fontSize(9).font('Helvetica-Bold').fillColor(DARK).text(ship.name || orderData.full_name || '—', shipX, sy);
     sy += 13;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY);
-    if (ship.street) { doc.text(ship.street, shipX, sy); sy += 12; }
+    const addressLine = [ship.address_line, ship.address, ship.street].filter(Boolean).join(', ');
+    if (addressLine) { doc.text(addressLine, shipX, sy); sy += 12; }
+    if (ship.locality) { doc.text(ship.locality, shipX, sy); sy += 12; }
+    if (ship.landmark) { doc.text('Landmark: ' + ship.landmark, shipX, sy); sy += 12; }
     const cityLine = [ship.city, ship.state].filter(Boolean).join(', ');
     if (cityLine) { doc.text(cityLine, shipX, sy); sy += 12; }
-    if (ship.zipCode) { doc.text(`PIN: ${ship.zipCode}`, shipX, sy); sy += 12; }
+    if (ship.zip || ship.zipCode) { doc.text('PIN: ' + (ship.zip || ship.zipCode), shipX, sy); sy += 12; }
+    if (ship.phone) { doc.text('Phone: ' + ship.phone, shipX, sy); sy += 12; }
 
     y = Math.max(y, sy) + 12;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.4).strokeColor(XLGRAY).stroke();
