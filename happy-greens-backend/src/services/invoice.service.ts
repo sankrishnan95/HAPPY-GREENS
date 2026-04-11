@@ -99,7 +99,7 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     doc.text(`Date: ${invDate}`, MARGIN, y, { align: 'right', width: COL_W });
 
     y += 13;
-    doc.text('info@happygreens.com', MARGIN + logoW, y);
+    doc.text('happygreenspy@gmail.com', MARGIN + logoW, y);
     doc.text(`Order Status: ${orderData.status.toUpperCase()}`, MARGIN, y, { align: 'right', width: COL_W });
 
     y += 20; // Advanced PAST the logo height (50) and our 3 lines of text
@@ -148,7 +148,7 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
         .text('Product', C_ITEM, y, { width: 290 })
         .text('Quantity', C_QTY, y, { width: 52, align: 'center' })
-        .text('Price', C_PRICE, y, { width: 78, align: 'right' })
+        .text('Price/Unit', C_PRICE, y, { width: 78, align: 'right' })
         .text('Amount', C_SUB, y, { width: SUB_W, align: 'right' });
     y += 14;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.75).strokeColor(DARK).stroke();
