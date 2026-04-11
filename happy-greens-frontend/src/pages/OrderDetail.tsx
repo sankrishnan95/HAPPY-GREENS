@@ -236,14 +236,11 @@ export default function OrderDetail() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm">
-                                            <div className="flex flex-col">
-                                                {originalLineTotal > lineTotal ? (
-                                                    <span className="text-gray-400 line-through">&#8377;{(originalLineTotal / (item.unit?.match(/^(gram|g|kg)$/i) ? Number(item.quantity)/1000 : Number(item.quantity) || 1)).toFixed(2)}</span>
-                                                ) : (
-                                                    <span className="text-gray-700">&#8377;{(lineTotal / (item.unit?.match(/^(gram|g|kg)$/i) ? Number(item.quantity)/1000 : Number(item.quantity) || 1)).toFixed(2)}</span>
-                                                )}
-                                                <span className="text-[10px] text-gray-400">/{item.unit?.match(/^(gram|g|kg)$/i) ? 'kg' : 'unit'}</span>
-                                            </div>
+                                            {originalLineTotal > lineTotal ? (
+                                                <span className="text-gray-400 line-through">&#8377;{originalLineTotal.toFixed(2)}</span>
+                                            ) : (
+                                                <span className="text-gray-700">&#8377;{lineTotal.toFixed(2)}</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-700">{formatQuantity(Number(item.quantity), item.unit)}</td>
                                         <td className="px-6 py-4 text-right">

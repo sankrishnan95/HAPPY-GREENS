@@ -157,7 +157,7 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
         .text('Product', C_ITEM, y, { width: 290 })
         .text('Quantity', C_QTY, y, { width: 52, align: 'center' })
-        .text('Striked Price', C_PRICE, y, { width: 78, align: 'right' })
+        .text('MRP', C_PRICE, y, { width: 78, align: 'right' })
         .text('Amount', C_SUB, y, { width: SUB_W, align: 'right' });
     y += 14;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.75).strokeColor(DARK).stroke();
@@ -181,10 +181,7 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
             .text(formatQuantity(item), C_QTY, y, { width: 52, align: 'center' })
             .text(`Rs. ${lineTotal.toFixed(2)}`, C_SUB, y, { width: SUB_W, align: 'right' });
 
-        const qty = item.unit?.match(/^(gram|g|kg)$/i) ? Number(item.quantity) / 1000 : Number(item.quantity) || 1;
-        const originalPerUnit = originalTotal / qty;
-
-        const originalText = `Rs. ${originalPerUnit.toFixed(2)}`;
+        const originalText = `Rs. ${originalTotal.toFixed(2)}`;
         const originalWidth = doc.widthOfString(originalText);
         const originalX = C_PRICE + 78 - originalWidth;
         doc.fontSize(9).font('Helvetica').fillColor(originalTotal > lineTotal ? GRAY : DARK)
