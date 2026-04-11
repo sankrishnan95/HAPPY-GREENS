@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { createOrder } from '../services/order.service';
 import { createRazorpayOrder, verifyRazorpayPayment } from '../services/payment.service';
@@ -71,6 +71,7 @@ const hasMeaningfulDraft = (draft: Partial<CheckoutDraft>) =>
 
 const Checkout = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { cart, user, clearCart, coupon } = useStore();
     const subtotal = cart.reduce((acc, item) => acc + calculateLineTotal(item, item.quantity), 0);
     const clientOrderTokenRef = useRef(
@@ -192,6 +193,8 @@ const Checkout = () => {
     }, [user, draftRestoreComplete, savedAddressesLoaded, hasActiveDraft, defaultAddressApplied]);
 
     useEffect(() => {
+        if (!draftRestoreComplete) return;
+
         const draft: CheckoutDraft = {
             ...formData,
             email: user?.email || formData.email,
@@ -203,7 +206,7 @@ const Checkout = () => {
         } catch (error) {
             console.warn('Failed to save checkout draft', error);
         }
-    }, [draftStorageKey, formData, step, user?.email]);
+    }, [draftRestoreComplete, draftStorageKey, formData, step, user?.email]);
 
     useEffect(() => {
         if (cart.length > 0) {
@@ -212,6 +215,12 @@ const Checkout = () => {
     }, [cart.length]);
 
     const handleAddressContinue = () => {
+        if (!user) {
+            toast.error('Please login to continue checkout');
+            navigate('/login', { state: { from: location.pathname } });
+            return;
+        }
+
         if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim() || !formData.city.trim() || !formData.zip.trim()) {
             toast.error('Please fill in all required fields');
             return;
@@ -412,12 +421,32 @@ const Checkout = () => {
                         {step === 'address' && (
                             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
                                 <h2 className="text-lg font-bold text-gray-900 mb-3">Shipping address</h2>
+                                {!user && (
+                                    <div className="mb-5 rounded-2xl border border-green-200 bg-green-50 p-4 sm:p-5">
+                                        <p className="text-sm font-medium text-gray-900">Login before entering address and payment details.</p>
+                                        <p className="mt-1 text-sm text-gray-600">We’ll save your checkout details to your account once you sign in.</p>
+                                        <div className="mt-4 flex flex-wrap gap-3">
+                                            <Button
+                                                type="button"
+                                                onClick={() => navigate('/login', { state: { from: location.pathname } })}
+                                            >
+                                                Login to continue
+                                            </Button>
+                                            <Link
+                                                to="/cart"
+                                                className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:text-gray-900"
+                                            >
+                                                Back to cart
+                                            </Link>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
                                     <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
                                     <p className="text-sm text-amber-800">We currently deliver only in <strong>{SERVICE_AREA_LABEL}</strong>.</p>
                                 </div>
 
-                                {savedAddresses.length > 0 && (
+                                {user && savedAddresses.length > 0 && (
                                     <div className="mb-5">
                                         <div className="mb-2 flex items-center justify-between gap-3">
                                             <h3 className="text-sm font-semibold text-gray-900">Saved addresses</h3>
@@ -476,7 +505,7 @@ const Checkout = () => {
                                     </div>
                                 )}
 
-                                <div className="space-y-4">
+                                <fieldset disabled={!user} className={`space-y-4 ${!user ? 'opacity-60' : ''}`}>
                                     {/* Name & Phone */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
@@ -616,7 +645,7 @@ const Checkout = () => {
                                             value={formData.state}
                                         />
                                     </div>
-                                </div>
+                                </fieldset>
                             </div>
                         )}
 
@@ -828,7 +857,7 @@ const Checkout = () => {
                                 onClick={handleAddressContinue}
                                 className="w-full min-h-[48px] rounded-xl bg-gray-900 py-3.5 text-base font-bold text-white transition-all hover:bg-gray-800 flex items-center justify-center gap-2"
                             >
-                                Continue
+                                {user ? 'Continue' : 'Login to continue'}
                                 <ChevronRight className="w-4 h-4" />
                             </button>
                         ) : (
