@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg';
-import { buildUnitConfig, calculateLineTotal, isValidQuantityForConfig, normalizePriceToStandardUnit, normalizeQuantityForUnit, roundCurrency } from './unit-pricing.service';
+import { buildUnitConfig, calculateLineTotal, isValidQuantityForConfig, normalizeQuantityForUnit, roundCurrency } from './unit-pricing.service';
 
 type DbClient = Pool | PoolClient;
 
@@ -81,12 +81,9 @@ export const prepareCalculatedOrderItems = async (
 
         const baseConfig = buildUnitConfig(product);
         const discountPrice = Number(product.discount_price);
-        let pricePerUnit = baseConfig.pricePerUnit;
-        
-        if (Number.isFinite(discountPrice) && discountPrice >= 0) {
-            const minQty = Number(product?.min_qty ?? product?.minQty ?? 1);
-            pricePerUnit = roundCurrency(normalizePriceToStandardUnit(discountPrice, minQty >= 0 ? minQty : 1, baseConfig.unit));
-        }
+        const pricePerUnit = Number.isFinite(discountPrice) && discountPrice >= 0
+            ? roundCurrency(discountPrice)
+            : baseConfig.pricePerUnit;
         const normalizedQuantity = normalizeQuantityForUnit(item.quantity, baseConfig.unit);
         const config = { ...baseConfig, pricePerUnit };
 

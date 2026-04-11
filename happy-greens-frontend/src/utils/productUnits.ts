@@ -27,15 +27,6 @@ const roundTo = (value: number, digits: number) => {
 
 export const roundCurrency = (value: number) => roundTo(value, 2);
 
-export const normalizePriceToStandardUnit = (price: number, minQty: number, unit: ProductUnit): number => {
-    if (!Number.isFinite(price) || price <= 0) return 0;
-    const safeMinQty = Number.isFinite(minQty) && minQty > 0 ? minQty : 1;
-    if (unit === 'GRAM' || unit === 'LITRE') {
-        return (price / safeMinQty) * 1000;
-    }
-    return (price / safeMinQty);
-};
-
 export const getUnitLabel = (unit?: string) => {
     switch (normalizeUnit(unit)) {
         case 'GRAM': return 'kg';
@@ -103,19 +94,15 @@ export const decrementQuantity = (product: UnitAwareProduct, currentQuantity: nu
 };
 
 export const getEffectivePricePerUnit = (product: UnitAwareProduct) => {
-    const { unit, minQty } = getQuantityRules(product);
     const discountPrice = Number(product.discountPrice);
-    if (Number.isFinite(discountPrice) && discountPrice >= 0) {
-        return normalizePriceToStandardUnit(discountPrice, minQty, unit);
-    }
+    if (Number.isFinite(discountPrice) && discountPrice >= 0) return discountPrice;
     const pricePerUnit = Number(product.pricePerUnit ?? product.price ?? 0);
-    return normalizePriceToStandardUnit(Number.isFinite(pricePerUnit) ? pricePerUnit : 0, minQty, unit);
+    return Number.isFinite(pricePerUnit) ? pricePerUnit : 0;
 };
 
 export const getBasePricePerUnit = (product: UnitAwareProduct) => {
-    const { unit, minQty } = getQuantityRules(product);
     const pricePerUnit = Number(product.pricePerUnit ?? product.price ?? 0);
-    return normalizePriceToStandardUnit(Number.isFinite(pricePerUnit) ? pricePerUnit : 0, minQty, unit);
+    return Number.isFinite(pricePerUnit) ? pricePerUnit : 0;
 };
 
 export const calculateLineTotal = (product: UnitAwareProduct, quantity: number) => {

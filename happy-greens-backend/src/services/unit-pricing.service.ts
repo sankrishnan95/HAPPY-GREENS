@@ -25,31 +25,17 @@ const roundTo = (value: number, digits: number) => {
 
 export const roundCurrency = (value: number) => roundTo(value, 2);
 
-export const normalizePriceToStandardUnit = (price: number, minQty: number, unit: SupportedUnit): number => {
-    if (!Number.isFinite(price) || price <= 0) return 0;
-    const safeMinQty = Number.isFinite(minQty) && minQty > 0 ? minQty : 1;
-    if (unit === 'GRAM' || unit === 'LITRE') {
-        return (price / safeMinQty) * 1000;
-    }
-    return (price / safeMinQty);
-};
-
 export const buildUnitConfig = (product: any): UnitConfig => {
     const unit = normalizeUnit(product?.unit);
-    const rawPrice = Number(product?.price_per_unit ?? product?.pricePerUnit ?? product?.price ?? 0);
+    const pricePerUnit = Number(product?.price_per_unit ?? product?.pricePerUnit ?? product?.price ?? 0);
     const minQty = Number(product?.min_qty ?? product?.minQty ?? 1);
     const stepQty = Number(product?.step_qty ?? product?.stepQty ?? 1);
-
-    const safeMinQty = Number.isFinite(minQty) && minQty > 0 ? roundTo(minQty, INTEGER_UNITS.has(unit) ? 0 : 3) : 1;
-    const safeStepQty = Number.isFinite(stepQty) && stepQty > 0 ? roundTo(stepQty, INTEGER_UNITS.has(unit) ? 0 : 3) : 1;
-
-    let pricePerUnit = normalizePriceToStandardUnit(rawPrice, safeMinQty, unit);
 
     return {
         unit,
         pricePerUnit: Number.isFinite(pricePerUnit) && pricePerUnit >= 0 ? roundCurrency(pricePerUnit) : 0,
-        minQty: safeMinQty,
-        stepQty: safeStepQty,
+        minQty: Number.isFinite(minQty) && minQty > 0 ? roundTo(minQty, INTEGER_UNITS.has(unit) ? 0 : 3) : 1,
+        stepQty: Number.isFinite(stepQty) && stepQty > 0 ? roundTo(stepQty, INTEGER_UNITS.has(unit) ? 0 : 3) : 1,
     };
 };
 
