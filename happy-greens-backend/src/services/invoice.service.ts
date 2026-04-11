@@ -18,6 +18,31 @@ const getUnitPrice = (item: OrderItem) => {
     return lineTotal / quantity;
 };
 
+const formatQuantity = (item: OrderItem) => {
+    const normalizedUnit = String(item.unit || '').toUpperCase();
+    const quantity = Number(item.quantity || 0);
+
+    if (!Number.isFinite(quantity)) return String(item.quantity ?? '');
+
+    if (normalizedUnit === 'GRAM') {
+        if (quantity >= 1000) {
+            const kilograms = quantity / 1000;
+            return `${Number(kilograms).toFixed(kilograms % 1 === 0 ? 0 : 2)} kg`;
+        }
+        return `${Math.round(quantity)} g`;
+    }
+
+    if (normalizedUnit === 'LITRE') {
+        return `${Number(quantity).toFixed(quantity % 1 === 0 ? 0 : 2)} L`;
+    }
+
+    if (normalizedUnit === 'DOZEN') {
+        return `${Math.round(quantity)} dozen`;
+    }
+
+    return `${Math.round(quantity)} pc`;
+};
+
 /**
  * Generate A4 PDF Invoice — Clean Monochrome Layout
  */
@@ -118,9 +143,9 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
 
     doc.fontSize(8.5).font('Helvetica-Bold').fillColor(DARK)
         .text('Product', C_ITEM, y, { width: 290 })
-        .text('Qty', C_QTY, y, { width: 52, align: 'center' })
-        .text('Unit Price', C_PRICE, y, { width: 78, align: 'right' })
-        .text('Subtotal', C_SUB, y, { width: SUB_W, align: 'right' });
+        .text('Quantity', C_QTY, y, { width: 52, align: 'center' })
+        .text('Price', C_PRICE, y, { width: 78, align: 'right' })
+        .text('Amount', C_SUB, y, { width: SUB_W, align: 'right' });
     y += 14;
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.75).strokeColor(DARK).stroke();
     y += 7;
@@ -136,9 +161,9 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
         }
         doc.fontSize(9).font('Helvetica').fillColor(DARK)
             .text(item.product_name, C_ITEM, y, { width: 290 })
-            .text(String(item.quantity), C_QTY, y, { width: 52, align: 'center' })
-            .text(`\u20B9${price.toFixed(2)}`, C_PRICE, y, { width: 78, align: 'right' })
-            .text(`\u20B9${lineTotal.toFixed(2)}`, C_SUB, y, { width: SUB_W, align: 'right' });
+            .text(formatQuantity(item), C_QTY, y, { width: 52, align: 'center' })
+            .text(`Rs. ${price.toFixed(2)}`, C_PRICE, y, { width: 78, align: 'right' })
+            .text(`Rs. ${lineTotal.toFixed(2)}`, C_SUB, y, { width: SUB_W, align: 'right' });
         y += 20;
     });
     doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.75).strokeColor(DARK).stroke();
@@ -156,11 +181,11 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
         y += 16;
     };
 
-    totRow('Subtotal', `\u20B9${subtotal.toFixed(2)}`);
-    totRow('Delivery charge', '\u20B90.00');
-    totRow('Discount', '\u20B90.00');
+    totRow('Subtotal', `Rs. ${subtotal.toFixed(2)}`);
+    totRow('Delivery charge', 'Rs. 0.00');
+    totRow('Discount', 'Rs. 0.00');
     doc.moveTo(totLabelX, y - 2).lineTo(PAGE_W - MARGIN, y - 2).lineWidth(0.5).strokeColor(DARK).stroke();
-    totRow('TOTAL', `\u20B9${totalAmount.toFixed(2)}`, true);
+    totRow('TOTAL', `Rs. ${totalAmount.toFixed(2)}`, true);
 
     const payY = y - 16 * 4;
     doc.fontSize(8.5).font('Helvetica').fillColor(GRAY)
@@ -238,8 +263,8 @@ export function generateThermalReceipt(res: Response, orderData: OrderData, item
             .font('Helvetica')
             .text(item.product_name, 10, doc.y, { width: 207 });
 
-        doc.text(`${item.quantity} x ₹${price.toFixed(2)}`, 10, doc.y, { continued: true })
-            .text(`₹${lineTotal.toFixed(2)}`, { align: 'right' });
+        doc.text(`${formatQuantity(item)}  Rs. ${price.toFixed(2)}`, 10, doc.y, { continued: true })
+            .text(`Rs. ${lineTotal.toFixed(2)}`, { align: 'right' });
 
         doc.moveDown(0.3);
     });
@@ -254,7 +279,7 @@ export function generateThermalReceipt(res: Response, orderData: OrderData, item
     doc.fontSize(10)
         .font('Helvetica-Bold')
         .text('TOTAL:', 10, doc.y, { continued: true })
-        .text(`₹${totalAmount.toFixed(2)}`, { align: 'right' });
+        .text(`Rs. ${totalAmount.toFixed(2)}`, { align: 'right' });
 
     doc.moveDown(0.5);
     doc.text('--------------------------------', { align: 'center' })
