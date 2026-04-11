@@ -217,6 +217,7 @@ export default function OrderDetail() {
                                 const lineTotal = getLineTotal(item);
                                 const lineSaving = Math.max(0, originalLineTotal - lineTotal);
 
+
                                 return (
                                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
@@ -261,18 +262,6 @@ export default function OrderDetail() {
                             <span>Subtotal</span>
                             <span className="font-medium text-gray-900">&#8377;{subtotal.toFixed(2)}</span>
                         </div>
-                        {totalSavings > 0 && (
-                            <div className="flex justify-between text-green-700">
-                                <span>You saved</span>
-                                <span className="font-semibold">-&#8377;{totalSavings.toFixed(2)}</span>
-                            </div>
-                        )}
-                        {itemSavings > 0 && (
-                            <div className="flex justify-between text-xs text-gray-500">
-                                <span>Product savings</span>
-                                <span>-&#8377;{itemSavings.toFixed(2)}</span>
-                            </div>
-                        )}
                         {pointsUsed > 0 && (
                             <div className="flex justify-between text-xs text-gray-500">
                                 <span>Loyalty points</span>
@@ -293,6 +282,12 @@ export default function OrderDetail() {
                             <span>Total</span>
                             <span className="text-green-700">&#8377;{parseFloat(order.total_amount).toFixed(2)}</span>
                         </div>
+                        {totalSavings > 0 && (
+                            <div className="mt-3 flex justify-between items-center bg-purple-50 text-purple-700 font-semibold px-3 py-2 rounded-lg border border-purple-100">
+                                <span>You saved</span>
+                                <span>&#8377;{totalSavings.toFixed(2)}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
