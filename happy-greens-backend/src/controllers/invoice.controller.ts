@@ -49,8 +49,8 @@ export const getOrderInvoice = async (req: Request, res: Response) => {
         // Fetch order items
         const itemsResult = await pool.query<OrderItem>(
             `SELECT 
-                oi.product_name, oi.quantity, oi.price_at_purchase,
-                (oi.quantity * oi.price_at_purchase) as line_total
+                oi.product_name, oi.quantity, oi.unit, oi.price_at_purchase,
+                oi.price_at_purchase as line_total
              FROM order_items oi
              WHERE oi.order_id = $1
              ORDER BY oi.id`,

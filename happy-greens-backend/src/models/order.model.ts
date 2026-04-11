@@ -17,6 +17,7 @@ export interface OrderData {
 export interface OrderItem {
     product_name: string;
     quantity: number;
+    unit?: string;
     price_at_purchase: number;
     line_total: number;
 }

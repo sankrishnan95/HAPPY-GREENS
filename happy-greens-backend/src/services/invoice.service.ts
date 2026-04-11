@@ -4,6 +4,20 @@ import path from 'path';
 import fs from 'fs';
 import { OrderData, OrderItem } from '../models/order.model';
 
+const getLineTotal = (item: OrderItem) => Number(item.line_total ?? item.price_at_purchase ?? 0);
+
+const getUnitPrice = (item: OrderItem) => {
+    const normalizedUnit = String(item.unit || '').toUpperCase();
+    const quantity = Number(item.quantity || 0);
+    const lineTotal = getLineTotal(item);
+
+    if (!Number.isFinite(quantity) || quantity <= 0) return lineTotal;
+    if (normalizedUnit === 'GRAM') {
+        return lineTotal / (quantity / 1000);
+    }
+    return lineTotal / quantity;
+};
+
 /**
  * Generate A4 PDF Invoice — Clean Monochrome Layout
  */
@@ -114,8 +128,8 @@ export function generateA4Invoice(res: Response, orderData: OrderData, items: Or
     let subtotal = 0;
     items.forEach((item, idx) => {
         if (y > 670) { doc.addPage(); y = MARGIN; }
-        const price = parseFloat(item.price_at_purchase as any);
-        const lineTotal = price * item.quantity;
+        const price = getUnitPrice(item);
+        const lineTotal = getLineTotal(item);
         subtotal += lineTotal;
         if (idx > 0) {
             doc.moveTo(MARGIN, y - 4).lineTo(PAGE_W - MARGIN, y - 4).lineWidth(0.3).strokeColor(XLGRAY).stroke();
@@ -217,8 +231,8 @@ export function generateThermalReceipt(res: Response, orderData: OrderData, item
     // Items
     items.forEach((item) => {
         // Parse numeric values from database
-        const price = parseFloat(item.price_at_purchase as any);
-        const lineTotal = parseFloat(item.line_total as any);
+        const price = getUnitPrice(item);
+        const lineTotal = getLineTotal(item);
 
         doc.fontSize(8)
             .font('Helvetica')
