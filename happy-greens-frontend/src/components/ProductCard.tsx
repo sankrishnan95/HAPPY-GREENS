@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Plus, Minus, ShoppingCart, Heart } from 'lucide-react';
+import { Plus, Minus, Heart } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import Badge from './Badge';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
