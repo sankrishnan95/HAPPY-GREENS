@@ -167,7 +167,7 @@ const Home = () => {
                                                 {heroTitlePrefix}
                                             </span>
                                         ) : null}
-                                        <span className="text-[1.9rem] sm:text-[2.35rem] md:text-[3rem] lg:text-[3.7rem]">
+                                        <span className="text-[2.1rem] sm:text-[2.6rem] md:text-[3.2rem] lg:text-[4rem]">
                                             {heroTitleBrand}
                                         </span>
                                         {heroTitleSuffix ? (

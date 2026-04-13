@@ -87,13 +87,13 @@ const Navbar = () => {
                                 <img
                                     src="/logo.png"
                                     alt="Happy Greens"
-                                    className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+                                    className="h-[3.35rem] w-[3.35rem] object-contain sm:h-[3.8rem] sm:w-[3.8rem]"
                                     loading="eager"
                                     decoding="async"
                                 />
                                 <div className="min-w-0">
-                                    <p className="truncate text-[1.05rem] font-display font-bold leading-none text-gradient">Happy Greens</p>
-                                    <p className="truncate text-[0.72rem] font-medium text-slate-500">Groceries in minutes</p>
+                                    <p className="truncate text-[1.12rem] font-display font-bold leading-none text-gradient">Happy Greens</p>
+                                    <p className="truncate text-[0.76rem] font-medium text-slate-500">Groceries in minutes</p>
                                 </div>
                             </Link>
                         </div>

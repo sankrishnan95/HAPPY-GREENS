@@ -260,7 +260,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                             <button type="button" onClick={handleIncrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"><Plus className="h-4 w-4" /></button>
                         </div>
                     ) : (
-                        <button type="button" onClick={handleIncrement} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><ShoppingCart className="h-4 w-4" /></button>
+                        <button type="button" onClick={handleIncrement} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><Plus className="h-5 w-5" /></button>
                     )}
                 </div>
             </div>
