@@ -70,7 +70,7 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className="glass sticky top-0 z-50 border-b border-white/70 shadow-[0_10px_35px_rgba(15,23,42,0.08)]">
+            <nav className="glass border-b border-white/70 shadow-[0_10px_35px_rgba(15,23,42,0.08)]">
                 <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-3 py-3 sm:px-4 md:px-5">
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2.5">
