@@ -5,7 +5,7 @@ import ProductCard from '../components/ProductCard';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import RewardBanner from '../components/RewardBanner';
 
-const PRODUCTS_PER_PAGE = 20;
+const PRODUCTS_PER_PAGE = 30;
 
 const Shop = () => {
     const [products, setProducts] = useState<any[]>([]);
