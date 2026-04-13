@@ -1,40 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getProducts, getCategories } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import RewardBanner from '../components/RewardBanner';
 
-const PRODUCTS_PER_PAGE = 25;
-
-const buildPagination = (currentPage: number, pageCount: number) => {
-    if (pageCount <= 7) {
-        return Array.from({ length: pageCount }, (_, index) => index + 1);
-    }
-
-    if (currentPage <= 4) {
-        return [1, 2, 3, 4, 5, 'ellipsis', pageCount];
-    }
-
-    if (currentPage >= pageCount - 3) {
-        return [1, 'ellipsis', pageCount - 4, pageCount - 3, pageCount - 2, pageCount - 1, pageCount];
-    }
-
-    return [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', pageCount];
-};
+const PRODUCTS_PER_PAGE = 20;
 
 const Shop = () => {
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] = useState<any[]>([]);
     const [allCategories, setAllCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [fetching, setFetching] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const [totalPages, setTotalPages] = useState(1);
     const [showFilters, setShowFilters] = useState(false);
+    const [page, setPage] = useState(1);
+    const productsRef = useRef<HTMLDivElement>(null);
 
     const category = searchParams.get('category') || '';
     const q = searchParams.get('q') || '';
-    const page = Number(searchParams.get('page')) || 1;
     const sort = searchParams.get('sort') || '';
 
     const DUMMY_PRODUCTS = [
@@ -51,29 +36,27 @@ const Shop = () => {
     ];
 
     useEffect(() => {
-        const fetchProducts = async () => {
-            if (products.length === 0) {
-                setLoading(true);
-            } else {
-                setFetching(true);
-            }
-
+        const fetchInitialProducts = async () => {
+            setLoading(true);
+            setPage(1);
             try {
-                const res = await getProducts({ category, q, page, sort, limit: PRODUCTS_PER_PAGE });
+                const res = await getProducts({ category, q, sort, page: 1, limit: PRODUCTS_PER_PAGE });
                 setProducts(res.products);
                 setTotalPages(res.totalPages);
+                
+                // Scroll to top of products on filter change
+                if (productsRef.current) {
+                    const yOffset = -100;
+                    const element = productsRef.current;
+                    const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }
             } catch (error) {
                 console.log('Backend not reachable, using dummy data');
-                let filtered = DUMMY_PRODUCTS;
-                if (category) {
-                    filtered = DUMMY_PRODUCTS.filter((p) => p.category_name.toLowerCase() === category.toLowerCase());
-                }
-                // @ts-ignore
-                setProducts(filtered);
+                setProducts(DUMMY_PRODUCTS);
                 setTotalPages(1);
             } finally {
                 setLoading(false);
-                setFetching(false);
             }
         };
 
@@ -86,9 +69,26 @@ const Shop = () => {
             }
         };
 
-        fetchProducts();
+        fetchInitialProducts();
         if (allCategories.length === 0) fetchCats();
-    }, [category, q, page, sort]);
+    }, [category, q, sort]);
+
+    const handleLoadMore = async () => {
+        if (loadingMore || page >= totalPages) return;
+        
+        setLoadingMore(true);
+        const nextPage = page + 1;
+        try {
+            const res = await getProducts({ category, q, sort, page: nextPage, limit: PRODUCTS_PER_PAGE });
+            setProducts(prev => [...prev, ...res.products]);
+            setPage(nextPage);
+            setTotalPages(res.totalPages);
+        } catch (error) {
+            console.error("Failed to load more products");
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     const topLevelCategories = allCategories.filter((c: any) => !c.parent_id);
     
@@ -119,7 +119,6 @@ const Shop = () => {
         updateParams((params) => {
             if (cat) params.set('category', cat.toLowerCase());
             else params.delete('category');
-            params.set('page', '1');
         });
     };
 
@@ -127,22 +126,15 @@ const Shop = () => {
         updateParams((params) => {
             if (e.target.value) params.set('sort', e.target.value);
             else params.delete('sort');
-            params.set('page', '1');
         });
     };
 
-    const handlePageChange = (newPage: number) => {
-        updateParams((params) => {
-            params.set('page', String(newPage));
-        });
-    };
 
-    const paginationItems = buildPagination(page, totalPages);
 
     return (
         <div className="space-y-4">
             <RewardBanner />
-            <section className="mobile-app-card rounded-[1.8rem] p-4 md:p-5">
+            <section ref={productsRef} className="mobile-app-card rounded-[1.8rem] p-4 md:p-5">
                 <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>
                         <p className="section-kicker">Browse products</p>
@@ -178,7 +170,7 @@ const Shop = () => {
                 </div>
             </section>
 
-            <section className="space-y-3">
+            <section className="sticky top-[64px] z-30 -mx-3 mb-2 px-3 py-2 backdrop-blur-md bg-[#f5f7f2]/80 md:top-[74px] md:-mx-5 md:px-5 md:py-3 border-b border-green-100/50">
                 <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
                     <button
                         type="button"
@@ -249,52 +241,31 @@ const Shop = () => {
                 </div>
             ) : (
                 <>
-                    <div className={`grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 lg:gap-4 transition-opacity duration-200 ${fetching ? 'opacity-50' : 'opacity-100'}`}>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 lg:gap-4 transition-opacity duration-200">
                         {products.map((product: any) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
 
-                    <div className="mobile-app-card flex flex-wrap items-center justify-center gap-2 rounded-[1.5rem] px-3 py-3">
-                        <button
-                            type="button"
-                            disabled={page === 1}
-                            onClick={() => handlePageChange(page - 1)}
-                            className="min-h-[44px] rounded-[1rem] border border-[#d7e4cc] px-4 text-sm font-semibold text-slate-700 disabled:opacity-40"
-                        >
-                            Previous
-                        </button>
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                            {paginationItems.map((item, index) =>
-                                item === 'ellipsis' ? (
-                                    <span key={`ellipsis-${index}`} className="px-1 text-sm font-bold tracking-[0.2em] text-slate-400">
-                                        ...
-                                    </span>
+                    {page < totalPages && (
+                        <div className="mt-8 flex justify-center pb-8">
+                            <button
+                                type="button"
+                                onClick={handleLoadMore}
+                                disabled={loadingMore}
+                                className="safe-touch inline-flex min-h-[50px] min-w-[160px] items-center justify-center rounded-2xl bg-white border-2 border-green-600 px-8 text-base font-bold text-green-700 shadow-md transition-all hover:bg-green-50 active:scale-95 disabled:opacity-50"
+                            >
+                                {loadingMore ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-700 border-t-transparent"></div>
+                                        <span>Loading...</span>
+                                    </div>
                                 ) : (
-                                    <button
-                                        key={item}
-                                        type="button"
-                                        onClick={() => handlePageChange(Number(item))}
-                                        className={`min-h-[40px] min-w-[40px] rounded-full px-3 text-sm font-semibold transition-colors ${
-                                            page === item
-                                                ? 'bg-slate-900 text-white'
-                                                : 'border border-[#d7e4cc] bg-white text-slate-700 hover:bg-slate-50'
-                                        }`}
-                                    >
-                                        {item}
-                                    </button>
-                                )
-                            )}
+                                    'Load More'
+                                )}
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            disabled={page === totalPages}
-                            onClick={() => handlePageChange(page + 1)}
-                            className="min-h-[44px] rounded-[1rem] border border-[#d7e4cc] px-4 text-sm font-semibold text-slate-700 disabled:opacity-40"
-                        >
-                            Next
-                        </button>
-                    </div>
+                    )}
                 </>
             )}
         </div>
