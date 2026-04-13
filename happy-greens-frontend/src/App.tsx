@@ -185,7 +185,7 @@ function AppLayout() {
             <ScrollToTop />
             <PageTracker />
             <AuthRedirectHandler />
-            <div className="min-h-screen flex flex-col overflow-x-hidden">
+            <div className="min-h-screen flex flex-col">
                 <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
                 {!isAuthPage && <Navbar />}
                 <main className={isAuthPage ? 'flex-grow w-full' : 'page-shell flex-grow w-full pb-16 sm:pb-24'}>

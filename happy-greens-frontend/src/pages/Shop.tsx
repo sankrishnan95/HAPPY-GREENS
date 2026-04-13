@@ -170,7 +170,7 @@ const Shop = () => {
                 </div>
             </section>
 
-            <section className="sticky top-[64px] z-30 -mx-3 mb-2 px-3 py-2 backdrop-blur-md bg-[#f5f7f2]/80 md:top-[74px] md:-mx-5 md:px-5 md:py-3 border-b border-green-100/50">
+            <section className="sticky top-[152px] z-30 -mx-3 mb-2 px-3 py-2 backdrop-blur-md bg-white/80 md:top-[73px] md:-mx-5 md:px-5 md:py-3 border-b border-green-100/50 shadow-sm transition-all duration-300">
                 <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
                     <button
                         type="button"
