@@ -6,9 +6,11 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import OptimizedImage from '../components/OptimizedImage';
 import { getActiveBanners } from '../services/banner.service';
+import { getActiveCoupons } from '../services/coupon.service';
 import { normalizeImageUrl } from '../utils/image';
 import { getProducts } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
+import RewardBanner from '../components/RewardBanner';
 
 const CATEGORY_IMAGES: Record<string, string> = {
     'fruits': '/categories/apple.png',
@@ -85,6 +87,22 @@ const features = [
     { icon: Clock, title: 'Open all day', description: 'Quick reorder at any hour you need', tone: 'bg-amber-50 text-amber-700' },
 ];
 
+const formatCouponHeadline = (coupon: any) => {
+    const amount = Number(coupon.discount_value || 0);
+    if (coupon.discount_type === 'percentage') {
+        return `${amount}% OFF`;
+    }
+    return `₹${amount.toFixed(amount % 1 === 0 ? 0 : 2)} OFF`;
+};
+
+const formatCouponBadge = (coupon: any) =>
+    coupon.discount_type === 'percentage' ? 'Up to' : 'Flat';
+
+const formatCouponQualifier = (coupon: any) => {
+    const minOrderAmount = Number(coupon.min_order_amount || 0);
+    return minOrderAmount > 0 ? `above ₹${minOrderAmount.toFixed(0)}` : 'on any order';
+};
+
 const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
@@ -101,6 +119,8 @@ const Home = () => {
     const [offerProducts, setOfferProducts] = useState<any[]>([]);
     const [loadingOffers, setLoadingOffers] = useState(true);
     const [categories, setCategories] = useState<any[]>([]);
+    const [coupons, setCoupons] = useState<any[]>([]);
+    const [loadingCoupons, setLoadingCoupons] = useState(true);
 
     const isVideo = (url: string) => {
         if (!url) return false;
@@ -161,9 +181,21 @@ const Home = () => {
             }
         };
 
+        const fetchCoupons = async () => {
+            try {
+                const data = await getActiveCoupons();
+                setCoupons(Array.isArray(data) ? data.slice(0, 8) : []);
+            } catch {
+                console.error('Failed to fetch coupons');
+            } finally {
+                setLoadingCoupons(false);
+            }
+        };
+
         fetchBanners();
         fetchOffers();
         fetchCategories();
+        fetchCoupons();
     }, []);
 
     const heroBanner = banners.length > 0 ? banners[0] : null;
@@ -299,6 +331,47 @@ const Home = () => {
                     )}
                 </motion.section>
             ) : null}
+
+            {(loadingCoupons || coupons.length > 0) ? (
+                <motion.section
+                    initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
+                    className="space-y-4"
+                >
+                    <div className="px-2">
+                        <h2 className="text-[1.35rem] font-display font-bold text-slate-900 md:text-[1.6rem]">Coupons & Offers</h2>
+                    </div>
+
+                    {loadingCoupons ? (
+                        <div className="grid grid-cols-2 gap-3 px-2 md:grid-cols-4">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="h-24 animate-pulse rounded-[1.35rem] bg-[#eef8ec]" />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-3 px-2 md:grid-cols-4">
+                            {coupons.map((coupon) => (
+                                <div
+                                    key={coupon.id}
+                                    className="rounded-[1.35rem] border border-[#dbeed9] bg-gradient-to-b from-[#f4fff2] to-[#ebf8e8] px-3 py-3 shadow-[0_10px_24px_rgba(22,101,52,0.06)]"
+                                >
+                                    <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#dff5db] text-green-700">
+                                        <Leaf className="h-4 w-4" strokeWidth={2.2} />
+                                    </div>
+                                    <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-green-700/70">{formatCouponBadge(coupon)}</p>
+                                    <p className="mt-0.5 text-[1.05rem] font-extrabold leading-5 text-slate-900">
+                                        {formatCouponHeadline(coupon)}
+                                    </p>
+                                    <p className="mt-1 text-[0.72rem] font-medium text-slate-500">
+                                        {formatCouponQualifier(coupon)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </motion.section>
+            ) : null}
+
+            <RewardBanner />
 
             <motion.section 
                 initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
