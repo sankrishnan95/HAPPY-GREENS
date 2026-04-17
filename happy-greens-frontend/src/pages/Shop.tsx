@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getProducts, getCategories } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
@@ -17,6 +17,7 @@ const Shop = () => {
     const [showFilters, setShowFilters] = useState(false);
     const [page, setPage] = useState(1);
     const productsRef = useRef<HTMLDivElement>(null);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
 
     const category = searchParams.get('category') || '';
     const q = searchParams.get('q') || '';
@@ -73,7 +74,7 @@ const Shop = () => {
         if (allCategories.length === 0) fetchCats();
     }, [category, q, sort]);
 
-    const handleLoadMore = async () => {
+    const handleLoadMore = useCallback(async () => {
         if (loadingMore || page >= totalPages) return;
         
         setLoadingMore(true);
@@ -88,7 +89,30 @@ const Shop = () => {
         } finally {
             setLoadingMore(false);
         }
-    };
+    }, [category, loadingMore, page, q, sort, totalPages]);
+
+    useEffect(() => {
+        if (loading || page >= totalPages) return;
+
+        const node = loadMoreRef.current;
+        if (!node) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) {
+                    handleLoadMore();
+                }
+            },
+            {
+                rootMargin: '220px 0px',
+                threshold: 0.1,
+            }
+        );
+
+        observer.observe(node);
+
+        return () => observer.disconnect();
+    }, [handleLoadMore, loading, page, totalPages]);
 
     const topLevelCategories = allCategories.filter((c: any) => !c.parent_id);
     
@@ -248,22 +272,17 @@ const Shop = () => {
                     </div>
 
                     {page < totalPages && (
-                        <div className="mt-8 flex justify-center pb-8">
-                            <button
-                                type="button"
-                                onClick={handleLoadMore}
-                                disabled={loadingMore}
-                                className="safe-touch inline-flex min-h-[50px] min-w-[160px] items-center justify-center rounded-2xl bg-white border-2 border-green-600 px-8 text-base font-bold text-green-700 shadow-md transition-all hover:bg-green-50 active:scale-95 disabled:opacity-50"
-                            >
+                        <div ref={loadMoreRef} className="mt-8 flex justify-center pb-8">
+                            <div className="inline-flex min-h-[50px] min-w-[180px] items-center justify-center rounded-2xl border border-dashed border-green-200 bg-white/90 px-6 text-sm font-semibold text-green-700 shadow-sm">
                                 {loadingMore ? (
                                     <div className="flex items-center gap-2">
                                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-700 border-t-transparent"></div>
-                                        <span>Loading...</span>
+                                        <span>Loading more products...</span>
                                     </div>
                                 ) : (
-                                    'Load More'
+                                    <span>More products loading below</span>
                                 )}
-                            </button>
+                            </div>
                         </div>
                     )}
                 </>
