@@ -245,22 +245,22 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         {product.discountPrice && originalMinimumQuantityPrice > minimumQuantityPrice ? (
                             <div className="flex flex-col">
                                 <span className="text-[0.72rem] leading-none text-slate-400 line-through">Rs. {originalMinimumQuantityPrice.toFixed(0)}</span>
-                                <span className="mt-1 text-[1rem] font-bold leading-none text-green-700">Rs. {minimumQuantityPrice.toFixed(0)}</span>
+                                <span className="mt-1 text-[1rem] font-bold leading-none text-[#165c34]">Rs. {minimumQuantityPrice.toFixed(0)}</span>
                             </div>
                         ) : (
-                            <span className="text-[1rem] font-bold leading-none text-slate-900">Rs. {minimumQuantityPrice.toFixed(0)}</span>
+                            <span className="text-[1rem] font-bold leading-none text-[#165c34]">Rs. {minimumQuantityPrice.toFixed(0)}</span>
                         )}
                         <p className="mt-1 text-[0.72rem] leading-none text-slate-500">{minimumQuantityLabel}</p>
                     </div>
 
                     {quantity > 0 ? (
-                        <div className="flex items-center rounded-full border border-green-200 bg-green-50 p-1">
-                            <button type="button" onClick={handleDecrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"><Minus className="h-4 w-4" /></button>
-                            <span className="min-w-[3.5rem] px-1 text-center text-sm font-bold text-green-800">{formatQuantity(product, quantity)}</span>
-                            <button type="button" onClick={handleIncrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-green-700 transition hover:bg-green-600 hover:text-white"><Plus className="h-4 w-4" /></button>
+                        <div className="flex items-center rounded-full border border-[#b7d8bf] bg-[#eff8f1] p-1">
+                            <button type="button" onClick={handleDecrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#165c34] transition hover:bg-[#165c34] hover:text-white"><Minus className="h-4 w-4" /></button>
+                            <span className="min-w-[3.5rem] px-1 text-center text-sm font-bold text-[#165c34]">{formatQuantity(product, quantity)}</span>
+                            <button type="button" onClick={handleIncrement} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#165c34] transition hover:bg-[#165c34] hover:text-white"><Plus className="h-4 w-4" /></button>
                         </div>
                     ) : (
-                        <button type="button" onClick={handleIncrement} className="inline-flex h-9 items-center justify-center rounded-full bg-green-600 px-3 text-white shadow-[0_10px_22px_rgba(34,197,94,0.25)] transition hover:bg-green-700" title="Add to cart"><Plus className="h-5 w-5" /></button>
+                        <button type="button" onClick={handleIncrement} className="inline-flex h-9 items-center justify-center rounded-full bg-[#165c34] px-3 text-white shadow-[0_10px_22px_rgba(22,92,52,0.28)] transition hover:bg-[#124728]" title="Add to cart"><Plus className="h-5 w-5" /></button>
                     )}
                 </div>
             </div>

@@ -99,6 +99,10 @@ const formatCouponBadge = (coupon: any) =>
     coupon.discount_type === 'percentage' ? 'Up to' : 'Flat';
 
 const formatCouponQualifier = (coupon: any) => {
+    if (Number(coupon.usage_limit || 0) === 1) {
+        return 'only for first-time users';
+    }
+
     const minOrderAmount = Number(coupon.min_order_amount || 0);
     return minOrderAmount > 0 ? `above ₹${minOrderAmount.toFixed(0)}` : 'on any order';
 };
@@ -352,18 +356,33 @@ const Home = () => {
                             {coupons.map((coupon) => (
                                 <div
                                     key={coupon.id}
-                                    className="rounded-[1.35rem] border border-[#dbeed9] bg-gradient-to-b from-[#f4fff2] to-[#ebf8e8] px-3 py-3 shadow-[0_10px_24px_rgba(22,101,52,0.06)]"
+                                    className="group relative overflow-hidden rounded-[1.45rem] border border-[#d6ebd7] bg-[radial-gradient(circle_at_top_left,_#ffffff_0%,_#f6fff3_40%,_#e8f7e7_100%)] px-3 py-3 shadow-[0_14px_28px_rgba(22,101,52,0.08)] ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_rgba(22,101,52,0.12)]"
                                 >
-                                    <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#dff5db] text-green-700">
-                                        <Leaf className="h-4 w-4" strokeWidth={2.2} />
+                                    <div className="pointer-events-none absolute -right-5 -top-5 h-20 w-20 rounded-full bg-[#dff4da]/70 blur-2xl" />
+                                    <div className="pointer-events-none absolute bottom-0 left-0 h-10 w-full bg-[linear-gradient(180deg,transparent,rgba(140,211,154,0.12))]" />
+
+                                    <div className="relative mb-2 flex items-start justify-between gap-2">
+                                        <div className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-[#dff5db] text-[#165c34] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                                            <Leaf className="h-4 w-4" strokeWidth={2.2} />
+                                        </div>
+                                        <div className="rounded-full bg-white/80 px-2 py-1 text-[0.58rem] font-bold uppercase tracking-[0.16em] text-[#2e7a45] shadow-sm">
+                                            {formatCouponBadge(coupon)}
+                                        </div>
                                     </div>
-                                    <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-green-700/70">{formatCouponBadge(coupon)}</p>
-                                    <p className="mt-0.5 text-[1.05rem] font-extrabold leading-5 text-slate-900">
+
+                                    <p className="relative mt-1 text-[1.08rem] font-extrabold leading-5 text-[#18351f]">
                                         {formatCouponHeadline(coupon)}
                                     </p>
-                                    <p className="mt-1 text-[0.72rem] font-medium text-slate-500">
+
+                                    <p className="relative mt-1 text-[0.72rem] font-medium text-slate-500">
                                         {formatCouponQualifier(coupon)}
                                     </p>
+
+                                    {coupon.code && (
+                                        <div className="relative mt-3 inline-flex rounded-full border border-[#d7ead8] bg-white/80 px-2.5 py-1 text-[0.63rem] font-semibold tracking-[0.08em] text-[#165c34] shadow-sm">
+                                            {coupon.code}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
