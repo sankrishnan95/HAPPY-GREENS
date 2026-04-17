@@ -38,6 +38,44 @@ const getCategoryImage = (category: { slug?: string; name?: string; image_url?: 
     return CATEGORY_IMAGES[slugKey] || CATEGORY_IMAGES[nameKey] || FALLBACK_CATEGORY_IMAGE;
 };
 
+const CategoryTile = ({ cat, compact = false }: { cat: any; compact?: boolean }) => {
+    const resolvedImage = getCategoryImage(cat);
+    const [imageSrc, setImageSrc] = useState(resolvedImage);
+
+    useEffect(() => {
+        setImageSrc(resolvedImage);
+    }, [resolvedImage]);
+
+    return (
+        <Link
+            to={`/shop?category=${cat.slug}`}
+            className={`group flex flex-col items-center justify-center ${compact ? 'gap-2 rounded-[1.4rem] bg-[#f8fbf4] p-3 shadow-[0_8px_20px_rgba(22,101,52,0.06)] ring-1 ring-green-100/80' : 'gap-3'} transition-all duration-300`}
+        >
+            <div className={`relative flex items-center justify-center overflow-hidden ${compact ? 'h-16 w-16 rounded-full bg-white shadow-[0_6px_18px_rgba(22,101,52,0.08)]' : 'h-20 w-20 rounded-[1.75rem] bg-gradient-to-br from-white via-lime-50/70 to-green-50 shadow-[0_10px_24px_rgba(22,101,52,0.08)] ring-1 ring-green-100/80 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03] sm:h-24 sm:w-24 md:h-28 md:w-28'}`}>
+                {!compact && <span className="absolute inset-2 rounded-[1.3rem] bg-white/70" />}
+                <img
+                    key={`${cat.id}-${imageSrc}`}
+                    src={imageSrc}
+                    alt={cat.name}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                        if (imageSrc === FALLBACK_CATEGORY_IMAGE) return;
+                        e.currentTarget.onerror = null;
+                        setImageSrc(FALLBACK_CATEGORY_IMAGE);
+                    }}
+                    className={`relative z-10 object-contain ${compact ? 'h-11 w-11' : 'h-full w-full p-2.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.08)] md:p-3 md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.08)]'}`}
+                />
+            </div>
+            <h3 className={`text-center font-semibold text-slate-800 transition-colors group-hover:text-green-700 ${compact ? 'text-[0.78rem] leading-4' : 'text-[0.85rem] md:text-[0.95rem]'}`}>
+                {cat.name}
+            </h3>
+        </Link>
+    );
+};
+
 const CATEGORY_DISPLAY_ORDER = ['vegetables', 'fruits'];
 
 const features = [
@@ -201,29 +239,24 @@ const Home = () => {
                     <Link to="/shop" className="text-[0.85rem] font-bold text-green-700 hover:text-green-800 transition">View all</Link>
                 </div>
 
-                <div className="-mx-1 overflow-x-auto px-1 pb-6 pt-4 hide-scrollbar overscroll-x-contain">
+                <div className="grid grid-cols-3 gap-3 px-1 pt-2 md:hidden">
+                    {categories.length > 0 ? categories.map((cat) => (
+                        <CategoryTile key={`mobile-${cat.id}`} cat={cat} compact />
+                    )) : (
+                        [1,2,3,4,5,6,7,8,9].map(i => (
+                            <div key={i} className="rounded-[1.4rem] bg-[#f8fbf4] p-3 shadow-[0_8px_20px_rgba(22,101,52,0.06)] ring-1 ring-green-100/80">
+                                <div className="mx-auto h-16 w-16 animate-pulse rounded-full bg-slate-100" />
+                                <div className="mx-auto mt-3 h-3 w-14 animate-pulse rounded-full bg-slate-100" />
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                <div className="-mx-1 hidden overflow-x-auto px-1 pb-6 pt-4 hide-scrollbar overscroll-x-contain md:block">
                     <div className="flex min-w-max gap-4 px-3 md:gap-8">
                     {categories.length > 0 ? categories.map((cat) => (
-                        <div key={cat.id} className="flex-none snap-start">
-                            <Link to={`/shop?category=${cat.slug}`} className="group flex flex-col items-center justify-center gap-3 min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
-                                <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-white via-lime-50/70 to-green-50 shadow-[0_10px_24px_rgba(22,101,52,0.08)] ring-1 ring-green-100/80 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-[1.03] sm:h-24 sm:w-24 md:h-28 md:w-28">
-                                    <span className="absolute inset-2 rounded-[1.3rem] bg-white/70" />
-                                    <img
-                                        src={getCategoryImage(cat)}
-                                        alt={cat.name}
-                                        loading="eager"
-                                        decoding="async"
-                                        fetchPriority="high"
-                                        onError={(e) => {
-                                            if (e.currentTarget.src.endsWith(FALLBACK_CATEGORY_IMAGE)) return;
-                                            e.currentTarget.onerror = null;
-                                            e.currentTarget.src = FALLBACK_CATEGORY_IMAGE;
-                                        }}
-                                        className="relative z-10 h-full w-full object-contain p-2.5 filter drop-shadow-[0_6px_12px_rgba(0,0,0,0.08)] md:p-3 md:drop-shadow-[0_10px_16px_rgba(0,0,0,0.08)]"
-                                    />
-                                </div>
-                                <h3 className="text-center text-[0.85rem] md:text-[0.95rem] font-semibold text-slate-800 transition-colors group-hover:text-green-700">{cat.name}</h3>
-                            </Link>
+                        <div key={cat.id} className="flex-none snap-start min-w-[76px] sm:min-w-[90px] md:min-w-[110px]">
+                            <CategoryTile cat={cat} />
                         </div>
                     )) : (
                         [1,2,3,4,5,6].map(i => (
