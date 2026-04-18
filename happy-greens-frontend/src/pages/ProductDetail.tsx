@@ -61,7 +61,7 @@ const ProductDetail = () => {
             : [...cart, { ...product, quantity: nextQuantity }];
         toast.custom(
             (t) => <div className={t.visible ? 'animate-enter' : 'animate-leave'}><CartSummaryToast items={nextCart} toastId="cart-summary" /></div>,
-            { id: 'cart-summary', duration: 4000, position: 'top-right' }
+            { id: 'cart-summary', duration: 500, position: 'top-right' }
         );
     };
 
