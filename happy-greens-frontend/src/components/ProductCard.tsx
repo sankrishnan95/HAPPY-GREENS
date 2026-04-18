@@ -241,16 +241,16 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                 </Link>
 
                 <div className="flex flex-wrap items-end justify-between gap-2">
-                    <div className="min-w-0 rounded-xl bg-violet-600 px-2.5 py-1.5">
+                    <div className="min-w-0">
                         {product.discountPrice && originalMinimumQuantityPrice > minimumQuantityPrice ? (
                             <div className="flex flex-col">
-                                <span className="text-[0.72rem] leading-none text-white/60 line-through">Rs. {originalMinimumQuantityPrice.toFixed(0)}</span>
-                                <span className="mt-1 text-[1rem] font-bold leading-none text-white">Rs. {minimumQuantityPrice.toFixed(0)}</span>
+                                <span className="text-[0.72rem] leading-none text-slate-400 line-through">Rs. {originalMinimumQuantityPrice.toFixed(0)}</span>
+                                <span className="mt-1 inline-block rounded-lg bg-violet-600 px-2 py-1 text-[1rem] font-bold leading-none text-white">Rs. {minimumQuantityPrice.toFixed(0)}</span>
                             </div>
                         ) : (
-                            <span className="text-[1rem] font-bold leading-none text-white">Rs. {minimumQuantityPrice.toFixed(0)}</span>
+                            <span className="inline-block rounded-lg bg-violet-600 px-2 py-1 text-[1rem] font-bold leading-none text-white">Rs. {minimumQuantityPrice.toFixed(0)}</span>
                         )}
-                        <p className="mt-1 text-[0.72rem] leading-none text-white/70">{minimumQuantityLabel}</p>
+                        <p className="mt-1 text-[0.72rem] leading-none text-slate-500">{minimumQuantityLabel}</p>
                     </div>
 
                     {quantity > 0 ? (
