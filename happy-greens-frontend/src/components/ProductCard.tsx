@@ -75,6 +75,12 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     const minimumQuantityPrice = getMinimumQuantityPrice(product);
     const originalMinimumQuantityPrice = getOriginalMinimumQuantityPrice(product);
 
+    const rememberShopProduct = () => {
+        if (typeof window === 'undefined') return;
+        if (!window.location.pathname.startsWith('/shop')) return;
+        sessionStorage.setItem('shop_last_product_id', String(product.id));
+    };
+
     useEffect(() => {
         setActiveImageIndex(0);
         setSlideDirection(1);
@@ -167,8 +173,11 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
     };
 
     return (
-        <div className="mobile-app-card group flex h-full flex-col overflow-hidden rounded-[1.35rem]">
-            <Link to={`/product/${product.id}`} className="relative block">
+        <div
+            className="mobile-app-card group flex h-full flex-col overflow-hidden rounded-[1.35rem]"
+            data-product-card-id={product.id}
+        >
+            <Link to={`/product/${product.id}`} className="relative block" onClick={rememberShopProduct}>
                 <div
                     className="relative aspect-square overflow-hidden bg-[#f3f8ee]"
                     onMouseEnter={() => setIsImageHovered(true)}
@@ -236,7 +245,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                     </span>
                 )}
 
-                <Link to={`/product/${product.id}`} className="block h-[2.7rem] overflow-hidden">
+                <Link to={`/product/${product.id}`} className="block h-[2.7rem] overflow-hidden" onClick={rememberShopProduct}>
                     <h3 className="line-clamp-2 text-[0.94rem] font-semibold leading-[1.35] text-slate-900 [word-break:normal]" title={product.name}>{product.name}</h3>
                 </Link>
 

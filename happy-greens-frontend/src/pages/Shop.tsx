@@ -175,6 +175,30 @@ const Shop = () => {
         return () => observer.disconnect();
     }, [handleLoadMore, loading, page, totalPages]);
 
+    useEffect(() => {
+        if (loading || products.length === 0) return;
+
+        const lastProductId = sessionStorage.getItem('shop_last_product_id');
+        if (!lastProductId) return;
+
+        if (!products.some((product: any) => String(product.id) === lastProductId)) {
+            return;
+        }
+
+        const scrollToProduct = () => {
+            const productCard = document.querySelector(`[data-product-card-id="${lastProductId}"]`);
+            if (!(productCard instanceof HTMLElement)) return;
+
+            const yOffset = -110;
+            const y = productCard.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            sessionStorage.removeItem('shop_last_product_id');
+        };
+
+        const timeoutId = window.setTimeout(scrollToProduct, 80);
+        return () => window.clearTimeout(timeoutId);
+    }, [loading, products]);
+
     const topLevelCategories = allCategories.filter((c: any) => !c.parent_id);
     
     // Determine active category context for subcategories
