@@ -106,7 +106,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
         if (currentOrder.status !== status) {
             const loyaltyOrderRes = await pool.query(
-                `SELECT user_id, total_amount, points_earned, points_used FROM orders WHERE id = $1`,
+                `SELECT user_id, total_amount, points_earned, points_used, created_at FROM orders WHERE id = $1`,
                 [id]
             );
             const loyaltyOrder = loyaltyOrderRes.rows[0];
@@ -114,7 +114,12 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             if (status === 'delivered' && currentOrder.status !== 'delivered') {
                 const existingEarned = Number(loyaltyOrder.points_earned || 0);
                 if (existingEarned <= 0) {
-                    const earnedPoints = Math.floor(Number(loyaltyOrder.total_amount) / 20);
+                    const orderDate = new Date(loyaltyOrder.created_at);
+                    const ruleChangeDate = new Date('2026-04-18T20:00:00Z');
+                    const divisor = orderDate >= ruleChangeDate ? 40 : 20;
+                    
+                    const earnedPoints = Math.floor(Number(loyaltyOrder.total_amount) / divisor);
+
                     if (earnedPoints > 0) {
                         await pool.query(
                             `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
