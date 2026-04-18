@@ -240,7 +240,7 @@ const Cart = () => {
                             {!coupon && availableCoupons.length > 0 && (
                                 <div className="mt-4 space-y-2 animate-fade-in">
                                     <p className="mx-1 text-[0.65rem] font-bold uppercase tracking-wider text-gray-500">Available Offers</p>
-                                    <div className="flex flex-col gap-2.5 max-h-56 overflow-y-auto hide-scrollbar pr-1">
+                                    <div className="flex flex-col gap-3 max-h-72 overflow-y-auto hide-scrollbar pr-1 pb-1">
                                         {availableCoupons.map((c: any) => (
                                             <button
                                                 key={c.id}
@@ -249,19 +249,21 @@ const Cart = () => {
                                                     setCouponInput(c.code);
                                                     setCouponError('');
                                                 }}
-                                                className="group flex flex-col items-start gap-1 rounded-xl border border-dashed border-green-300 bg-green-50/40 p-3 text-left transition-colors hover:bg-green-50 w-full overflow-hidden"
+                                                className="group flex flex-col items-start gap-1.5 rounded-xl border border-dashed border-green-300 bg-green-50/40 p-4 text-left transition-colors hover:bg-green-50 w-full"
                                             >
                                                 <div className="flex w-full items-center justify-between gap-2">
                                                     <span className="font-display font-bold text-sm text-green-700 truncate">{c.code}</span>
-                                                    <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800 whitespace-nowrap">
+                                                    <span className="shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-800 whitespace-nowrap">
                                                         {c.discount_type === 'percentage' ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`}
                                                     </span>
                                                 </div>
-                                                <p className="w-full text-xs text-gray-600 leading-relaxed font-medium line-clamp-2 break-words">
+                                                <p className="w-full text-xs text-gray-600 leading-relaxed font-medium line-clamp-2 break-words mt-0.5">
                                                     {c.description || (c.applicable_category_name ? `Valid on ${c.applicable_category_name} items` : 'Applies to your order')}
                                                 </p>
                                                 {Number(c.min_order_amount) > 0 && (
-                                                    <span className="inline-block mt-0.5 rounded bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[0.65rem] text-amber-700 font-semibold">Min. order: ₹{c.min_order_amount}</span>
+                                                    <span className="inline-block mt-1.5 shrink-0 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[0.68rem] text-amber-700 font-bold whitespace-nowrap">
+                                                        Min. order: ₹{Number(c.min_order_amount).toFixed(0)}
+                                                    </span>
                                                 )}
                                             </button>
                                         ))}
