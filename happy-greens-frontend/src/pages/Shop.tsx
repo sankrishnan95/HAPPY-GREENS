@@ -6,7 +6,7 @@ import { Filter, SlidersHorizontal } from 'lucide-react';
 
 const PRODUCTS_PER_PAGE = 30;
 
-const SHOP_CACHE_KEY = 'shop_products_cache';
+const SHOP_CACHE_KEY = 'shop_products_cache_v2';
 
 const Shop = () => {
     const [products, setProducts] = useState<any[]>([]);
@@ -19,8 +19,6 @@ const Shop = () => {
     const [page, setPage] = useState(1);
     const productsRef = useRef<HTMLDivElement>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
-    const restoredFromCache = useRef(false);
-
     const category = searchParams.get('category') || '';
     const q = searchParams.get('q') || '';
     const sort = searchParams.get('sort') || '';
@@ -74,12 +72,11 @@ const Shop = () => {
         try {
             const cached = JSON.parse(sessionStorage.getItem(SHOP_CACHE_KEY) || 'null');
             if (cached && cached.key === cacheKey && cached.products?.length > 0) {
-                // Restore cached state instantly without network request
+                // Restore cached state instantly, then refresh it in the background
                 setProducts(cached.products);
                 setPage(cached.page);
                 setTotalPages(cached.totalPages);
                 setLoading(false);
-                restoredFromCache.current = true;
 
                 // Restore scroll position after products render
                 const savedScrollY = sessionStorage.getItem('shop_scroll_y');
@@ -95,15 +92,13 @@ const Shop = () => {
                 if (allCategories.length === 0) {
                     getCategories(true).then(res => setAllCategories(res || [])).catch(console.error);
                 }
-                return;
             }
         } catch (_) { /* parse error, fall through to fresh fetch */ }
 
         // No valid cache — fresh fetch
         const fetchInitialProducts = async () => {
-            setLoading(true);
+            setLoading(products.length === 0);
             setPage(1);
-            restoredFromCache.current = false;
             // Clear saved scroll for fresh fetches (filter/sort change)
             sessionStorage.removeItem('shop_scroll_y');
             try {
@@ -206,8 +201,9 @@ const Shop = () => {
     };
 
     const handleCategoryChange = (cat: string) => {
+        const normalizedCategory = cat.trim().toLowerCase();
         updateParams((params) => {
-            if (cat) params.set('category', cat);
+            if (normalizedCategory) params.set('category', normalizedCategory);
             else params.delete('category');
         });
     };
@@ -357,3 +353,4 @@ const Shop = () => {
 };
 
 export default Shop;
+
