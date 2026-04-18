@@ -90,11 +90,14 @@ export const getProducts = async (req: Request, res: Response) => {
         if (category) {
             const normalizedCategory = String(category).trim().toLowerCase();
             query += ` AND EXISTS (
-                SELECT 1 FROM categories cat_match
-                WHERE (cat_match.id = p.category_id OR cat_match.id = ANY(p.category_ids))
-                  AND (LOWER(TRIM(cat_match.slug)) = $${paramCount}
-                       OR LOWER(TRIM(cat_match.name)) = $${paramCount}
-                       OR LOWER(REPLACE(TRIM(cat_match.name), ' ', '-')) = $${paramCount})
+                SELECT 1
+                FROM categories selected_cat
+                JOIN categories cat_match
+                  ON (cat_match.id = p.category_id OR cat_match.id = ANY(p.category_ids))
+                WHERE (LOWER(TRIM(selected_cat.slug)) = $${paramCount}
+                       OR LOWER(TRIM(selected_cat.name)) = $${paramCount}
+                       OR LOWER(REPLACE(TRIM(selected_cat.name), ' ', '-')) = $${paramCount})
+                  AND (cat_match.id = selected_cat.id OR cat_match.parent_id = selected_cat.id)
             )`;
             params.push(normalizedCategory);
             paramCount++;
@@ -142,11 +145,14 @@ export const getProducts = async (req: Request, res: Response) => {
         if (category) {
             const normalizedCategory = String(category).trim().toLowerCase();
             countQuery += ` AND EXISTS (
-                SELECT 1 FROM categories cat_match
-                WHERE (cat_match.id = p.category_id OR cat_match.id = ANY(p.category_ids))
-                  AND (LOWER(TRIM(cat_match.slug)) = $${countParam}
-                       OR LOWER(TRIM(cat_match.name)) = $${countParam}
-                       OR LOWER(REPLACE(TRIM(cat_match.name), ' ', '-')) = $${countParam})
+                SELECT 1
+                FROM categories selected_cat
+                JOIN categories cat_match
+                  ON (cat_match.id = p.category_id OR cat_match.id = ANY(p.category_ids))
+                WHERE (LOWER(TRIM(selected_cat.slug)) = $${countParam}
+                       OR LOWER(TRIM(selected_cat.name)) = $${countParam}
+                       OR LOWER(REPLACE(TRIM(selected_cat.name), ' ', '-')) = $${countParam})
+                  AND (cat_match.id = selected_cat.id OR cat_match.parent_id = selected_cat.id)
             )`;
             countParams.push(normalizedCategory);
             countParam++;

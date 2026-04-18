@@ -313,7 +313,7 @@ const Shop = () => {
                                     handleCategoryChange(cat.slug);
                                     setShowFilters(false);
                                 }}
-                                className={`rounded-[1rem] px-3 py-3 text-sm font-semibold ${category === cat.slug ? 'bg-green-600 text-white' : 'bg-[#f5f8f1] text-slate-700'}`}
+                                className={`rounded-[1rem] px-3 py-3 text-sm font-semibold ${category?.toLowerCase() === cat.slug?.toLowerCase() ? 'bg-green-600 text-white' : 'bg-[#f5f8f1] text-slate-700'}`}
                             >
                                 {cat.name}
                             </button>
