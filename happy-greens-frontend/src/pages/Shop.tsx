@@ -176,6 +176,18 @@ const Shop = () => {
     }, [handleLoadMore, loading, page, totalPages]);
 
     useEffect(() => {
+        if (loading || loadingMore || products.length === 0) return;
+
+        const lastProductId = sessionStorage.getItem('shop_last_product_id');
+        if (!lastProductId) return;
+
+        const hasTargetProduct = products.some((product: any) => String(product.id) === lastProductId);
+        if (!hasTargetProduct && page < totalPages) {
+            handleLoadMore();
+        }
+    }, [handleLoadMore, loading, loadingMore, page, products, totalPages]);
+
+    useEffect(() => {
         if (loading || products.length === 0) return;
 
         const lastProductId = sessionStorage.getItem('shop_last_product_id');
