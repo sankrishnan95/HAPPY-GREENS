@@ -68,6 +68,8 @@ const Shop = () => {
     }, [products, page, totalPages, cacheKey]);
 
     useEffect(() => {
+        const lastProductId = sessionStorage.getItem('shop_last_product_id');
+
         // Try to restore from cache
         try {
             const cached = JSON.parse(sessionStorage.getItem(SHOP_CACHE_KEY) || 'null');
@@ -92,6 +94,10 @@ const Shop = () => {
                 if (allCategories.length === 0) {
                     getCategories(true).then(res => setAllCategories(res || [])).catch(console.error);
                 }
+
+                if (lastProductId) {
+                    return;
+                }
             }
         } catch (_) { /* parse error, fall through to fresh fetch */ }
 
@@ -99,8 +105,10 @@ const Shop = () => {
         const fetchInitialProducts = async () => {
             setLoading(products.length === 0);
             setPage(1);
-            // Clear saved scroll for fresh fetches (filter/sort change)
-            sessionStorage.removeItem('shop_scroll_y');
+            // Clear saved scroll only when not returning to a remembered product
+            if (!lastProductId) {
+                sessionStorage.removeItem('shop_scroll_y');
+            }
             try {
                 const res = await getProducts({ category, q, sort, page: 1, limit: PRODUCTS_PER_PAGE });
                 setProducts(res.products);
