@@ -52,7 +52,7 @@ export default function Rewards() {
                     <Star className="w-8 h-8 text-white fill-white" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900">My Rewards</h1>
-                <p className="text-gray-500 mt-2">Earn 1 point for every ₹20 spent. Redeem at checkout — 1 point = ₹1 off.</p>
+                <p className="text-gray-500 mt-2">Earn 1 point for every ₹40 spent. Redeem at checkout — 1 point = ₹1 off.</p>
             </div>
 
             {/* Stats Cards */}
@@ -84,7 +84,7 @@ export default function Rewards() {
                     <Gift className="w-5 h-5 text-green-600" /> How Points Work
                 </h2>
                 <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">•</span> Earn <strong>1 point for every ₹20</strong> spent on delivered orders.</li>
+                    <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">•</span> Earn <strong>1 point for every ₹40</strong> spent on delivered orders.</li>
                     <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">•</span> Redeem at checkout — <strong>1 point = ₹1 discount</strong> (max 50% of order).</li>
                     <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">•</span> Points are awarded only after your order is <strong>delivered</strong>.</li>
                     <li className="flex items-start gap-2"><span className="text-green-600 font-bold mt-0.5">•</span> If an order is cancelled, earned points from that order are <strong>reversed</strong>.</li>
