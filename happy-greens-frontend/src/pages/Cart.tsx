@@ -249,19 +249,19 @@ const Cart = () => {
                                                     setCouponInput(c.code);
                                                     setCouponError('');
                                                 }}
-                                                className="group flex flex-col items-start gap-1 rounded-xl border border-dashed border-green-300 bg-green-50/40 p-3 text-left transition-colors hover:bg-green-50 w-full"
+                                                className="group flex flex-col items-start gap-1 rounded-xl border border-dashed border-green-300 bg-green-50/40 p-3 text-left transition-colors hover:bg-green-50 w-full overflow-hidden"
                                             >
-                                                <div className="flex w-full items-center justify-between">
-                                                    <span className="font-display font-bold text-sm text-green-700">{c.code}</span>
-                                                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800">
+                                                <div className="flex w-full items-center justify-between gap-2">
+                                                    <span className="font-display font-bold text-sm text-green-700 truncate">{c.code}</span>
+                                                    <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800 whitespace-nowrap">
                                                         {c.discount_type === 'percentage' ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`}
                                                     </span>
                                                 </div>
-                                                <p className="w-full text-xs text-gray-600 leading-relaxed font-medium">
+                                                <p className="w-full text-xs text-gray-600 leading-relaxed font-medium line-clamp-2 break-words">
                                                     {c.description || (c.applicable_category_name ? `Valid on ${c.applicable_category_name} items` : 'Applies to your order')}
                                                 </p>
                                                 {c.min_order_amount > 0 && (
-                                                    <p className="text-[0.65rem] text-gray-400 font-medium">Min. order: ₹{c.min_order_amount}</p>
+                                                    <p className="text-[0.65rem] text-gray-400 font-medium truncate w-full">Min. order: ₹{c.min_order_amount}</p>
                                                 )}
                                             </button>
                                         ))}
