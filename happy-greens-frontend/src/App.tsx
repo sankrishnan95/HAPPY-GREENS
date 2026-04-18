@@ -1,4 +1,4 @@
-import { ReactNode, Suspense, lazy, useEffect, useState } from 'react';
+import { ReactNode, Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ChatbotWidget from './components/ChatbotWidget';
@@ -148,8 +148,27 @@ const PageTracker = () => {
 
 const ScrollToTop = () => {
     const location = useLocation();
+    const prevPathRef = useRef(location.pathname);
 
     useEffect(() => {
+        const prevPath = prevPathRef.current;
+        const currentPath = location.pathname;
+        prevPathRef.current = currentPath;
+
+        // When leaving /shop, save scroll position
+        if (prevPath === '/shop' && currentPath.startsWith('/product/')) {
+            sessionStorage.setItem('shop_scroll_y', String(window.scrollY));
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+            return;
+        }
+
+        // When returning to /shop from a product page, restore scroll position
+        if (currentPath === '/shop' && prevPath.startsWith('/product/')) {
+            // Restoration is handled by Shop component after products render
+            return;
+        }
+
+        // For all other navigations, scroll to top as usual
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }, [location.pathname, location.search]);
 

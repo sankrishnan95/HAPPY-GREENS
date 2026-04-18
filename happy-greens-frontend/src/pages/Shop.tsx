@@ -6,6 +6,8 @@ import { Filter, SlidersHorizontal } from 'lucide-react';
 
 const PRODUCTS_PER_PAGE = 30;
 
+const SHOP_CACHE_KEY = 'shop_products_cache';
+
 const Shop = () => {
     const [products, setProducts] = useState<any[]>([]);
     const [allCategories, setAllCategories] = useState<any[]>([]);
@@ -17,10 +19,12 @@ const Shop = () => {
     const [page, setPage] = useState(1);
     const productsRef = useRef<HTMLDivElement>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const restoredFromCache = useRef(false);
 
     const category = searchParams.get('category') || '';
     const q = searchParams.get('q') || '';
     const sort = searchParams.get('sort') || '';
+    const cacheKey = `${category}|${q}|${sort}`;
 
     const DUMMY_PRODUCTS = [
         { id: 1, name: 'Fresh Spinach', price: 40, category_name: 'Vegetables', image_url: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=500&q=60' },
@@ -35,10 +39,59 @@ const Shop = () => {
         { id: 10, name: 'Cheese', price: 150, category_name: 'Dairy', image_url: 'https://images.unsplash.com/photo-1624806992066-5ffcf7ca186b?auto=format&fit=crop&w=500&q=60' },
     ];
 
+    // Save products to sessionStorage whenever they change
     useEffect(() => {
+        if (products.length > 0) {
+            try {
+                sessionStorage.setItem(SHOP_CACHE_KEY, JSON.stringify({
+                    key: cacheKey,
+                    products,
+                    page,
+                    totalPages,
+                }));
+            } catch (_) { /* quota exceeded, ignore */ }
+        }
+    }, [products, page, totalPages, cacheKey]);
+
+    useEffect(() => {
+        // Check if we're returning from a product detail page with cached data
+        const savedScrollY = sessionStorage.getItem('shop_scroll_y');
+        const isReturningFromProduct = savedScrollY !== null;
+
+        if (isReturningFromProduct) {
+            try {
+                const cached = JSON.parse(sessionStorage.getItem(SHOP_CACHE_KEY) || 'null');
+                if (cached && cached.key === cacheKey && cached.products?.length > 0) {
+                    // Restore cached state instantly without a network request
+                    setProducts(cached.products);
+                    setPage(cached.page);
+                    setTotalPages(cached.totalPages);
+                    setLoading(false);
+                    restoredFromCache.current = true;
+
+                    // Restore scroll position after render
+                    const scrollY = parseInt(savedScrollY, 10);
+                    sessionStorage.removeItem('shop_scroll_y');
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+                        });
+                    });
+
+                    // Still fetch categories if needed
+                    if (allCategories.length === 0) {
+                        getCategories(true).then(res => setAllCategories(res || [])).catch(console.error);
+                    }
+                    return;
+                }
+            } catch (_) { /* parse error, fall through to fresh fetch */ }
+            sessionStorage.removeItem('shop_scroll_y');
+        }
+
         const fetchInitialProducts = async () => {
             setLoading(true);
             setPage(1);
+            restoredFromCache.current = false;
             try {
                 const res = await getProducts({ category, q, sort, page: 1, limit: PRODUCTS_PER_PAGE });
                 setProducts(res.products);
