@@ -187,7 +187,7 @@ const Shop = () => {
     let activeParentSlug = '';
 
     if (category) {
-        const selectedCatObj = allCategories.find((c: any) => c.slug === category);
+        const selectedCatObj = allCategories.find((c: any) => c.slug?.toLowerCase() === category.toLowerCase());
         if (selectedCatObj) {
             const activeParentId = selectedCatObj.parent_id ? selectedCatObj.parent_id : selectedCatObj.id;
             activeSubcategories = allCategories.filter((c: any) => c.parent_id === activeParentId);
@@ -207,7 +207,7 @@ const Shop = () => {
 
     const handleCategoryChange = (cat: string) => {
         updateParams((params) => {
-            if (cat) params.set('category', cat.toLowerCase());
+            if (cat) params.set('category', cat);
             else params.delete('category');
         });
     };
@@ -269,7 +269,7 @@ const Shop = () => {
                         All
                     </button>
                     {topLevelCategories.map((cat: any) => {
-                        const isActiveParent = category === cat.slug || activeParentSlug === cat.slug;
+                        const isActiveParent = category?.toLowerCase() === cat.slug?.toLowerCase() || activeParentSlug?.toLowerCase() === cat.slug?.toLowerCase();
                         return (
                             <button
                                 key={cat.id}
@@ -291,7 +291,7 @@ const Shop = () => {
                                 type="button"
                                 onClick={() => handleCategoryChange(sub.slug)}
                                 className={`min-h-[34px] whitespace-nowrap rounded-full px-5 py-1.5 text-xs font-bold transition-all duration-200 ${
-                                    category === sub.slug 
+                                    category?.toLowerCase() === sub.slug?.toLowerCase() 
                                     ? 'bg-sky-600 text-white shadow-md transform scale-105' 
                                     : 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100'
                                 }`}
