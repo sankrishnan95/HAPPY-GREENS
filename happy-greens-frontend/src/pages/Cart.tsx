@@ -260,8 +260,8 @@ const Cart = () => {
                                                 <p className="w-full text-xs text-gray-600 leading-relaxed font-medium line-clamp-2 break-words">
                                                     {c.description || (c.applicable_category_name ? `Valid on ${c.applicable_category_name} items` : 'Applies to your order')}
                                                 </p>
-                                                {c.min_order_amount > 0 && (
-                                                    <p className="text-[0.65rem] text-gray-400 font-medium truncate w-full">Min. order: ₹{c.min_order_amount}</p>
+                                                {Number(c.min_order_amount) > 0 && (
+                                                    <span className="inline-block mt-0.5 rounded bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[0.65rem] text-amber-700 font-semibold">Min. order: ₹{c.min_order_amount}</span>
                                                 )}
                                             </button>
                                         ))}
