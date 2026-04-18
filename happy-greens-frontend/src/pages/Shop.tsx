@@ -39,6 +39,22 @@ const Shop = () => {
         { id: 10, name: 'Cheese', price: 150, category_name: 'Dairy', image_url: 'https://images.unsplash.com/photo-1624806992066-5ffcf7ca186b?auto=format&fit=crop&w=500&q=60' },
     ];
 
+    // Continuously save scroll position while on the shop page
+    useEffect(() => {
+        let ticking = false;
+        const handleScroll = () => {
+            if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(() => {
+                    sessionStorage.setItem('shop_scroll_y', String(window.scrollY));
+                    ticking = false;
+                });
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     // Save products to sessionStorage whenever they change
     useEffect(() => {
         if (products.length > 0) {
@@ -54,44 +70,42 @@ const Shop = () => {
     }, [products, page, totalPages, cacheKey]);
 
     useEffect(() => {
-        // Check if we're returning from a product detail page with cached data
-        const savedScrollY = sessionStorage.getItem('shop_scroll_y');
-        const isReturningFromProduct = savedScrollY !== null;
+        // Try to restore from cache
+        try {
+            const cached = JSON.parse(sessionStorage.getItem(SHOP_CACHE_KEY) || 'null');
+            if (cached && cached.key === cacheKey && cached.products?.length > 0) {
+                // Restore cached state instantly without network request
+                setProducts(cached.products);
+                setPage(cached.page);
+                setTotalPages(cached.totalPages);
+                setLoading(false);
+                restoredFromCache.current = true;
 
-        if (isReturningFromProduct) {
-            try {
-                const cached = JSON.parse(sessionStorage.getItem(SHOP_CACHE_KEY) || 'null');
-                if (cached && cached.key === cacheKey && cached.products?.length > 0) {
-                    // Restore cached state instantly without a network request
-                    setProducts(cached.products);
-                    setPage(cached.page);
-                    setTotalPages(cached.totalPages);
-                    setLoading(false);
-                    restoredFromCache.current = true;
-
-                    // Restore scroll position after render
+                // Restore scroll position after products render
+                const savedScrollY = sessionStorage.getItem('shop_scroll_y');
+                if (savedScrollY) {
                     const scrollY = parseInt(savedScrollY, 10);
-                    sessionStorage.removeItem('shop_scroll_y');
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
-                        });
-                    });
-
-                    // Still fetch categories if needed
-                    if (allCategories.length === 0) {
-                        getCategories(true).then(res => setAllCategories(res || [])).catch(console.error);
-                    }
-                    return;
+                    // Use a small timeout to ensure DOM has rendered with all the product cards
+                    setTimeout(() => {
+                        window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+                    }, 50);
                 }
-            } catch (_) { /* parse error, fall through to fresh fetch */ }
-            sessionStorage.removeItem('shop_scroll_y');
-        }
 
+                // Still fetch categories if needed
+                if (allCategories.length === 0) {
+                    getCategories(true).then(res => setAllCategories(res || [])).catch(console.error);
+                }
+                return;
+            }
+        } catch (_) { /* parse error, fall through to fresh fetch */ }
+
+        // No valid cache — fresh fetch
         const fetchInitialProducts = async () => {
             setLoading(true);
             setPage(1);
             restoredFromCache.current = false;
+            // Clear saved scroll for fresh fetches (filter/sort change)
+            sessionStorage.removeItem('shop_scroll_y');
             try {
                 const res = await getProducts({ category, q, sort, page: 1, limit: PRODUCTS_PER_PAGE });
                 setProducts(res.products);
