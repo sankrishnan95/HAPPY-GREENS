@@ -119,8 +119,8 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
             ? cart.map((item) => (item.id === product.id ? { ...item, quantity: nextQuantity } : item))
             : [...cart, { ...product, quantity: nextQuantity }];
         toast.custom(
-            (t) => <div className={t.visible ? 'animate-enter' : 'animate-leave'}><CartSummaryToast items={nextCart} toastId={`cart-${product.id}`} /></div>,
-            { id: `cart-${product.id}`, duration: Infinity, position: 'top-right' }
+            (t) => <div className={t.visible ? 'animate-enter' : 'animate-leave'}><CartSummaryToast items={nextCart} toastId="cart-summary" /></div>,
+            { id: 'cart-summary', duration: Infinity, position: 'top-right' }
         );
     };
 
@@ -245,10 +245,10 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
                         {product.discountPrice && originalMinimumQuantityPrice > minimumQuantityPrice ? (
                             <div className="flex flex-col items-start">
                                 <span className="text-[0.72rem] leading-none text-slate-400 line-through">Rs. {originalMinimumQuantityPrice.toFixed(0)}</span>
-                                <span className="mt-1 inline-block rounded-lg bg-violet-600 px-2 py-1 text-[1rem] font-bold leading-none text-white w-fit">Rs. {minimumQuantityPrice.toFixed(0)}</span>
+                                <span className="mt-1 inline-block rounded-lg bg-violet-900 px-2 py-1 text-[1rem] font-bold leading-none text-white w-fit">Rs. {minimumQuantityPrice.toFixed(0)}</span>
                             </div>
                         ) : (
-                            <span className="inline-block rounded-lg bg-violet-600 px-2 py-1 text-[1rem] font-bold leading-none text-white w-fit">Rs. {minimumQuantityPrice.toFixed(0)}</span>
+                            <span className="inline-block rounded-lg bg-violet-900 px-2 py-1 text-[1rem] font-bold leading-none text-white w-fit">Rs. {minimumQuantityPrice.toFixed(0)}</span>
                         )}
                         <p className="mt-1 text-[0.72rem] leading-none text-slate-500">{minimumQuantityLabel}</p>
                     </div>
