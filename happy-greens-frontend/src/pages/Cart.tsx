@@ -241,32 +241,51 @@ const Cart = () => {
                                 <div className="mt-4 space-y-2 animate-fade-in">
                                     <p className="mx-1 text-[0.65rem] font-bold uppercase tracking-wider text-gray-500">Available Offers</p>
                                     <div className="flex flex-col gap-3 max-h-72 overflow-y-auto hide-scrollbar pr-1 pb-1">
-                                        {availableCoupons.map((c: any) => (
+                                        {availableCoupons.map((c: any) => {
+                                            const minOrder = Number(c.min_order_amount) || 0;
+                                            const isEligible = subtotal >= minOrder;
+                                            const shortfall = minOrder - subtotal;
+
+                                            return (
                                             <button
                                                 key={c.id}
                                                 type="button"
                                                 onClick={() => {
-                                                    setCouponInput(c.code);
-                                                    setCouponError('');
+                                                    if (isEligible) {
+                                                        setCouponInput(c.code);
+                                                        setCouponError('');
+                                                    }
                                                 }}
-                                                className="group flex flex-col items-start gap-1.5 rounded-xl border border-dashed border-green-300 bg-green-50/40 p-4 text-left transition-colors hover:bg-green-50 w-full"
+                                                disabled={!isEligible}
+                                                className={`group flex flex-col items-start gap-1.5 rounded-xl border border-dashed p-4 text-left transition-colors w-full ${
+                                                    isEligible 
+                                                        ? 'border-green-300 bg-green-50/40 hover:bg-green-50 focus:ring-2 focus:ring-green-400' 
+                                                        : 'border-gray-200 bg-gray-50/50 opacity-80 cursor-not-allowed'
+                                                }`}
                                             >
                                                 <div className="flex w-full items-center justify-between gap-2">
-                                                    <span className="font-display font-bold text-sm text-green-700 truncate">{c.code}</span>
-                                                    <span className="shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-800 whitespace-nowrap">
+                                                    <span className={`font-display font-bold text-sm truncate ${isEligible ? 'text-green-700' : 'text-gray-500'}`}>{c.code}</span>
+                                                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ${isEligible ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
                                                         {c.discount_type === 'percentage' ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`}
                                                     </span>
                                                 </div>
-                                                <p className="w-full text-xs text-gray-600 leading-relaxed font-medium line-clamp-2 break-words mt-0.5">
+                                                <p className={`w-full text-xs leading-relaxed font-medium line-clamp-2 break-words mt-0.5 ${isEligible ? 'text-gray-600' : 'text-gray-400'}`}>
                                                     {c.description || (c.applicable_category_name ? `Valid on ${c.applicable_category_name} items` : 'Applies to your order')}
                                                 </p>
-                                                {Number(c.min_order_amount) > 0 && (
-                                                    <span className="inline-block mt-1.5 shrink-0 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[0.68rem] text-amber-700 font-bold whitespace-nowrap">
-                                                        Min. order: ₹{Number(c.min_order_amount).toFixed(0)}
-                                                    </span>
+                                                {minOrder > 0 && (
+                                                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                                                        <span className={`inline-block shrink-0 rounded-md border px-2 py-0.5 text-[0.68rem] font-bold whitespace-nowrap ${isEligible ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-100 border-gray-200 text-gray-500'}`}>
+                                                            Min. order: ₹{minOrder.toFixed(0)}
+                                                        </span>
+                                                        {!isEligible && (
+                                                            <span className="text-[0.65rem] font-medium text-red-500">
+                                                                Add ₹{shortfall.toFixed(0)} more to unlock
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </button>
-                                        ))}
+                                        )})}
                                     </div>
                                 </div>
                             )}
