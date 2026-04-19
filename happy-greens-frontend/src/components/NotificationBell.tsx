@@ -5,7 +5,9 @@ import { getNotifications, markAllNotificationsRead, markNotificationRead, type 
 
 const ENABLE_NOTIFICATION_POLLING = true;
 const NOTIFICATION_POLL_INTERVAL_MS = 30000;
-let notificationsRequest: Promise<{ notifications: AppNotification[]; unreadCount: number }> | null = null;
+type NotificationsResponse = { notifications: AppNotification[]; unreadCount: number };
+let notificationsRequest: Promise<NotificationsResponse> | null = null;
+let notificationsCache: NotificationsResponse | null = null;
 
 const formatRelativeTime = (value: string) => {
     const createdAt = new Date(value).getTime();
@@ -29,7 +31,16 @@ const NotificationBell = () => {
     const hasLoadedInitiallyRef = useRef(false);
     const navigate = useNavigate();
 
-    const loadNotifications = async () => {
+    const loadNotifications = async (forceRefresh = false) => {
+        if (!forceRefresh && notificationsCache) {
+            if (isMountedRef.current) {
+                setItems(notificationsCache.notifications);
+                setUnreadCount(notificationsCache.unreadCount);
+                setLoading(false);
+            }
+            return;
+        }
+
         if (notificationsRequest) {
             const data = await notificationsRequest;
             if (isMountedRef.current) {
@@ -45,6 +56,7 @@ const NotificationBell = () => {
         try {
             const data = await notificationsRequest;
             if (!isMountedRef.current) return;
+            notificationsCache = data;
             setItems(data.notifications);
             setUnreadCount(data.unreadCount);
         } catch (error) {
@@ -67,7 +79,7 @@ const NotificationBell = () => {
 
         const intervalId = ENABLE_NOTIFICATION_POLLING
             ? window.setInterval(() => {
-                void loadNotifications();
+                void loadNotifications(true);
             }, NOTIFICATION_POLL_INTERVAL_MS)
             : null;
 
@@ -99,6 +111,12 @@ const NotificationBell = () => {
         if (!notification.is_read) {
             try {
                 const data = await markNotificationRead(notification.id);
+                notificationsCache = {
+                    notifications: items.map((item) =>
+                        item.id === notification.id ? { ...item, is_read: true, read_at: new Date().toISOString() } : item
+                    ),
+                    unreadCount: data.unreadCount,
+                };
                 setUnreadCount(data.unreadCount);
                 setItems((current) =>
                     current.map((item) =>
@@ -119,6 +137,10 @@ const NotificationBell = () => {
     const handleReadAll = async () => {
         try {
             await markAllNotificationsRead();
+            notificationsCache = {
+                notifications: items.map((item) => ({ ...item, is_read: true, read_at: item.read_at || new Date().toISOString() })),
+                unreadCount: 0,
+            };
             setUnreadCount(0);
             setItems((current) => current.map((item) => ({ ...item, is_read: true, read_at: item.read_at || new Date().toISOString() })));
         } catch (error) {
