@@ -3,6 +3,10 @@ import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification } from '../services/notification.service';
 
+const ENABLE_NOTIFICATION_POLLING = true;
+const NOTIFICATION_POLL_INTERVAL_MS = 30000;
+let notificationsRequest: Promise<{ notifications: AppNotification[]; unreadCount: number }> | null = null;
+
 const formatRelativeTime = (value: string) => {
     const createdAt = new Date(value).getTime();
     const diffMs = Date.now() - createdAt;
@@ -21,24 +25,58 @@ const NotificationBell = () => {
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const panelRef = useRef<HTMLDivElement | null>(null);
+    const isMountedRef = useRef(false);
+    const hasLoadedInitiallyRef = useRef(false);
     const navigate = useNavigate();
 
     const loadNotifications = async () => {
+        if (notificationsRequest) {
+            const data = await notificationsRequest;
+            if (isMountedRef.current) {
+                setItems(data.notifications);
+                setUnreadCount(data.unreadCount);
+                setLoading(false);
+            }
+            return;
+        }
+
+        notificationsRequest = getNotifications();
+
         try {
-            const data = await getNotifications();
+            const data = await notificationsRequest;
+            if (!isMountedRef.current) return;
             setItems(data.notifications);
             setUnreadCount(data.unreadCount);
         } catch (error) {
             console.error('Failed to load notifications', error);
         } finally {
-            setLoading(false);
+            notificationsRequest = null;
+            if (isMountedRef.current) {
+                setLoading(false);
+            }
         }
     };
 
     useEffect(() => {
-        loadNotifications();
-        const intervalId = window.setInterval(loadNotifications, 30000);
-        return () => window.clearInterval(intervalId);
+        isMountedRef.current = true;
+
+        if (!hasLoadedInitiallyRef.current) {
+            hasLoadedInitiallyRef.current = true;
+            void loadNotifications();
+        }
+
+        const intervalId = ENABLE_NOTIFICATION_POLLING
+            ? window.setInterval(() => {
+                void loadNotifications();
+            }, NOTIFICATION_POLL_INTERVAL_MS)
+            : null;
+
+        return () => {
+            isMountedRef.current = false;
+            if (intervalId) {
+                window.clearInterval(intervalId);
+            }
+        };
     }, []);
 
     useEffect(() => {
