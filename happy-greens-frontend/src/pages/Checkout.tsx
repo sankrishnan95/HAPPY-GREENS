@@ -79,6 +79,7 @@ const Checkout = () => {
             ? crypto.randomUUID()
             : `order_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
     );
+    const checkoutTrackedRef = useRef(false);
 
     const [step, setStep] = useState<Step>('address');
 
@@ -209,7 +210,8 @@ const Checkout = () => {
     }, [draftRestoreComplete, draftStorageKey, formData, step, user?.email]);
 
     useEffect(() => {
-        if (cart.length > 0) {
+        if (!checkoutTrackedRef.current && cart.length > 0) {
+            checkoutTrackedRef.current = true;
             trackCheckoutStarted({ page: '/checkout', total: subtotal, item_count: cart.length, coupon: coupon?.code });
         }
     }, [cart.length, coupon?.code, subtotal]);
