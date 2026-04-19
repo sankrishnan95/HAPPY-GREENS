@@ -7,7 +7,7 @@ import Badge from './Badge';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
 import { normalizeImageUrl } from '../utils/image';
-import { trackEvent } from '../services/analytics.service';
+import { trackAddToCart as trackAddToCartEvent } from '../services/analytics.service';
 import { decrementQuantity, formatQuantity, getInitialQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, incrementQuantity } from '../utils/productUnits';
 import CartSummaryToast from './CartSummaryToast';
 
@@ -113,9 +113,12 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
         return () => window.clearInterval(intervalId);
     }, [isImageHovered, productImages, sequenceDirection]);
 
-    const trackAddToCart = () => {
-        trackEvent('add_to_cart', {
+    const trackCartAddition = () => {
+        trackAddToCartEvent({
             product_id: product.id,
+            product_name: product.name,
+            price: product.discountPrice || product.pricePerUnit || product.price,
+            quantity: minimumQuantity,
             page: typeof window !== 'undefined' ? window.location.pathname + window.location.search : `/product/${product.id}`,
         });
     };
@@ -138,7 +141,7 @@ const ProductCard = ({ product, onWishlistChange }: ProductCardProps) => {
             addToCart(product);
         }
         showCartToast(nextQuantity);
-        trackAddToCart();
+        trackCartAddition();
     };
 
     const handleDecrement = () => {

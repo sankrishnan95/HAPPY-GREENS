@@ -25,11 +25,16 @@ import analyticsRoutes from './routes/analytics.routes';
 import notificationRoutes from './routes/notification.routes';
 import { analyticsRateLimiter, authRateLimiter, globalRateLimiter, paymentRateLimiter, uploadRateLimiter } from './middleware/rateLimit';
 import { applySecurityHeaders, enforceHttps } from './middleware/security';
+import { requestLogger } from './middleware/request-logger';
+import { errorHandler } from './middleware/error-handler';
+import { initBackendMonitoring, captureBackendException } from './lib/sentry';
+import { logger, logError } from './lib/logger';
 
 const app = express();
 const port = process.env.PORT || 3000;
 const debugHealthChecks = process.env.DEBUG_HEALTHCHECKS === 'true';
 const debugRequestLogs = process.env.DEBUG_REQUEST_LOGS === 'true';
+initBackendMonitoring();
 
 const normalizeOrigin = (origin: string) => origin.trim().replace(/\/+$/, '');
 
@@ -84,6 +89,7 @@ app.disable('x-powered-by');
 app.use(applySecurityHeaders);
 app.use(enforceHttps);
 app.use(globalRateLimiter);
+app.use(requestLogger);
 if (debugRequestLogs) {
   app.use((req: Request, res: Response, next) => {
     const startedAt = Date.now();
@@ -120,7 +126,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Ping https://your-backend.onrender.com/api/health every 10 minutes to reduce cold starts.
 const sendHealthResponse = (req: Request, res: Response) => {
   if (debugHealthChecks) {
-    console.log(`[health] ${req.method} ${req.originalUrl} @ ${new Date().toISOString()}`);
+    logger.info(`[health] ${req.method} ${req.originalUrl} @ ${new Date().toISOString()}`);
   }
 
   res.setHeader('Cache-Control', 'no-store');
@@ -134,6 +140,9 @@ app.get('/', (req: Request, res: Response) => {
     message: "Happy Greens API running ðŸŒ±",
     health: "/api/health"
   });
+});
+app.get('/api/debug/sentry', (_req: Request, _res: Response) => {
+  throw new Error('Sentry backend test error');
 });
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -157,6 +166,18 @@ app.use('/api/notifications', notificationRoutes);
 
 // Generic admin routes (MUST be after specific admin routes)
 app.use('/api/admin', adminRoutes);
+app.use(errorHandler);
+
+process.on('unhandledRejection', (reason) => {
+  captureBackendException(reason, { scope: 'unhandled_rejection' });
+  logError('Unhandled promise rejection', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  captureBackendException(error, { scope: 'uncaught_exception' });
+  logError('Uncaught exception', error);
+  process.exit(1);
+});
 
 const startServer = async () => {
   try {
@@ -174,15 +195,17 @@ const startServer = async () => {
     await ensureBannerTextColumns();
     await ensureAdminFromEnv();
     app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
+      logger.info(`Server running on port ${port}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    captureBackendException(error, { scope: 'server_startup' });
+    logError('Failed to start server', error);
     process.exit(1);
   }
 };
 
 startServer();
+
 
 
 

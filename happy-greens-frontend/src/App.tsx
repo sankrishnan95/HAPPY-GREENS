@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Link 
 import Navbar from './components/Navbar';
 import ChatbotWidget from './components/ChatbotWidget';
 import { Toaster } from 'react-hot-toast';
-import { trackEvent } from './services/analytics.service';
+import { trackPageView } from './services/analytics.service';
 import { checkBackendHealth } from './services/api';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -24,6 +24,7 @@ const Wishlist = lazy(() => import('./pages/Wishlist'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
 const RefundCancellationPolicy = lazy(() => import('./pages/RefundCancellationPolicy'));
+const MonitoringDebug = lazy(() => import('./pages/MonitoringDebug'));
 
 const StorefrontLoader = ({ label }: { label?: string }) => (
     <div className="flex flex-col items-center justify-center text-center">
@@ -140,7 +141,7 @@ const PageTracker = () => {
     const location = useLocation();
 
     useEffect(() => {
-        trackEvent('page_view', { page: `${location.pathname}${location.search}` });
+        trackPageView(`${location.pathname}${location.search}`);
     }, [location.pathname, location.search]);
 
     return null;
@@ -214,6 +215,7 @@ function AppLayout() {
                             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                             <Route path="/refund-cancellation-policy" element={<RefundCancellationPolicy />} />
+                            <Route path="/debug/monitoring" element={<MonitoringDebug />} />
                         </Routes>
                     </Suspense>
                 </main>

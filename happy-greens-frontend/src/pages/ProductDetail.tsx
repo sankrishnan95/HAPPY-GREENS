@@ -9,7 +9,7 @@ import { API_BASE_URL } from '../config/api';
 import { normalizeImageUrl } from '../utils/image';
 import { addToWishlist, removeFromWishlist } from '../services/wishlist.service';
 import toast from 'react-hot-toast';
-import { trackEvent } from '../services/analytics.service';
+import { trackAddToCart, trackEvent } from '../services/analytics.service';
 import { decrementQuantity, formatQuantity, getMinimumQuantityPrice, getOriginalMinimumQuantityPrice, getQuantityRules, incrementQuantity } from '../utils/productUnits';
 import CartSummaryToast from '../components/CartSummaryToast';
 
@@ -73,8 +73,11 @@ const ProductDetail = () => {
             addToCart(product);
         }
         showCartToast(nextQuantity);
-        trackEvent('add_to_cart', {
+        trackAddToCart({
             product_id: Number(id),
+            product_name: product?.name,
+            price: product?.discountPrice || product?.pricePerUnit || product?.price,
+            quantity: minQty,
             page: `/product/${id}`,
         });
     };

@@ -8,7 +8,7 @@ import { getProfileAddresses, type SavedAddress } from '../services/auth.service
 import Button from '../components/Button';
 import { Star, Gift, ShoppingCart, MapPin, CreditCard, ChevronRight, Truck, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { trackEvent } from '../services/analytics.service';
+import { trackCheckoutStarted, trackOrderCompleted } from '../services/analytics.service';
 import { calculateLineTotal, formatQuantity } from '../utils/productUnits';
 import { normalizeImageUrl } from '../utils/image';
 import { isPondicherryPincode, SERVICE_AREA_LABEL, SERVICE_STATE } from '../config/pondicherryPincodes';
@@ -210,9 +210,9 @@ const Checkout = () => {
 
     useEffect(() => {
         if (cart.length > 0) {
-            trackEvent('checkout_start', { page: '/checkout' });
+            trackCheckoutStarted({ page: '/checkout', total: subtotal, item_count: cart.length, coupon: coupon?.code });
         }
-    }, [cart.length]);
+    }, [cart.length, coupon?.code, subtotal]);
 
     const handleAddressContinue = () => {
         if (!user) {
@@ -368,7 +368,14 @@ const Checkout = () => {
                 clientOrderToken: clientOrderTokenRef.current
             };
 
-            await createOrder(orderData);
+            const createdOrder = await createOrder(orderData);
+
+            trackOrderCompleted({
+                order_id: createdOrder?.id || createdOrder?.order?.id,
+                total,
+                coupon: coupon?.code,
+                item_count: cart.length,
+            });
 
             if (loyaltyDiscount > 0) {
                 toast.success(`You saved ₹${loyaltyDiscount} using loyalty points!`);

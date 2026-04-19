@@ -1,5 +1,7 @@
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { captureBackendException } from '../lib/sentry';
+import { logError } from '../lib/logger';
 
 dotenv.config();
 
@@ -9,6 +11,7 @@ export const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-    console.error('Unexpected error on idle client', err);
+    captureBackendException(err, { scope: 'pg_idle_client' });
+    logError('Unexpected error on idle client', err);
     process.exit(-1);
 });

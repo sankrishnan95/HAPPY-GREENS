@@ -3,6 +3,8 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { calculateOrderTotals, COUPON_ERROR_CODES } from '../services/order-pricing.service';
 import { pool } from '../db';
+import { captureBackendException } from '../lib/sentry';
+import { logError, logger } from '../lib/logger';
 
 // TEMPORARY: Set to true to disable Razorpay payments
 const RAZORPAY_TEMPORARILY_DISABLED = true;
@@ -24,6 +26,7 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
     const { items, pointsUsed, couponCode } = req.body;
 
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        logger.error('Razorpay configuration missing');
         return res.status(500).json({ message: 'Razorpay is not configured on server' });
     }
 
@@ -50,7 +53,8 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
         if (error instanceof Error && (error.message === 'INVALID_ITEMS' || error.message === 'INVALID_PRODUCT')) {
             return res.status(400).json({ message: 'Invalid payment items' });
         }
-        console.error('Razorpay order creation failed:', error);
+        captureBackendException(error, { scope: 'razorpay_order_creation', userId });
+        logError('Razorpay order creation failed', error, { userId });
         res.status(500).json({ message: 'Razorpay error' });
     }
 };
@@ -91,7 +95,8 @@ export const verifyRazorpaySignature = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error('Razorpay payment fetch failed:', error);
+        captureBackendException(error, { scope: 'razorpay_payment_fetch', razorpay_payment_id });
+        logError('Razorpay payment fetch failed', error, { razorpay_payment_id });
         return res.status(500).json({ status: 'failure', message: 'Failed to fetch payment details' });
     }
 };

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useStore } from '../store/useStore';
+import { captureFrontendException } from '../lib/monitoring/sentry';
 
 const DEPLOYED_API_BASE_URL = 'https://happy-greens-18n3.onrender.com/api';
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || DEPLOYED_API_BASE_URL;
@@ -31,6 +32,8 @@ api.interceptors.response.use(
     (error) => {
         const status = error?.response?.status;
         const message = (error?.response?.data?.message || '').toLowerCase();
+        const requestUrl = error?.config?.url || 'unknown';
+        const requestMethod = error?.config?.method || 'unknown';
 
         if (status === 401 && (message.includes('token') || message.includes('authorization'))) {
             try {
@@ -40,6 +43,15 @@ api.interceptors.response.use(
             if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
                 window.dispatchEvent(new CustomEvent('auth:expired'));
             }
+        }
+
+        if (!status || status >= 500) {
+            captureFrontendException(error, {
+                scope: 'api_failure',
+                requestUrl,
+                requestMethod,
+                status: status ?? 'network_error',
+            });
         }
 
         return Promise.reject(error);

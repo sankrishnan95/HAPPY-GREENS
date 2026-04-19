@@ -2,6 +2,8 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './index.css';
+import { initFrontendMonitoring, Sentry } from './lib/monitoring/sentry';
+import { initGoogleAnalytics } from './lib/monitoring/ga';
 
 const STALE_DEPLOY_RECOVERY_KEY = 'happy-greens:stale-deploy-recovery';
 
@@ -23,12 +25,17 @@ if (typeof window !== 'undefined') {
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+initFrontendMonitoring();
+initGoogleAnalytics();
+
 const app = <App />;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-    googleClientId ? (
-        <GoogleOAuthProvider clientId={googleClientId}>
-            {app}
-        </GoogleOAuthProvider>
-    ) : app
+    <Sentry.ErrorBoundary fallback={<div className="p-6 text-center text-sm text-slate-600">Something went wrong. Please refresh and try again.</div>}>
+        {googleClientId ? (
+            <GoogleOAuthProvider clientId={googleClientId}>
+                {app}
+            </GoogleOAuthProvider>
+        ) : app}
+    </Sentry.ErrorBoundary>
 );
