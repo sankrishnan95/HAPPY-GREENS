@@ -7,11 +7,19 @@ dotenv.config();
 
 export const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 10000,
+    max: 10,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000
+});
+
+pool.on('connect', () => {
+    console.log('[DB] Successfully connected to PostgreSQL pool');
 });
 
 pool.on('error', (err) => {
     captureBackendException(err, { scope: 'pg_idle_client' });
     logError('Unexpected error on idle client', err);
-    process.exit(-1);
 });
