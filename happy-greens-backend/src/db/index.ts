@@ -10,7 +10,7 @@ export const pool = new Pool({
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 10000,
-    max: 10,
+    max: 3,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10000
 });
