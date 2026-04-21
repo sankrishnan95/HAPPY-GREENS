@@ -180,7 +180,15 @@ process.on('uncaughtException', (error) => {
 });
 
 const startServer = async () => {
+  // START LISTENING FIRST
+  const server = app.listen(port, () => {
+    logger.info(`Server running on port ${port}`);
+    console.log(`[HTTP] Server bounded to port ${port}`);
+  });
+
+  // Run bootstrap separately — don't crash if it fails
   try {
+    console.log('[Bootstrap] Ensuring database schema...');
     await ensureAuthColumns();
     await ensureOperationsSchema();
     await ensureAnalyticsSchema();
@@ -194,13 +202,11 @@ const startServer = async () => {
     await ensureMultiUnitSchema();
     await ensureBannerTextColumns();
     await ensureAdminFromEnv();
-    app.listen(port, () => {
-      logger.info(`Server running on port ${port}`);
-    });
+    console.log('[Bootstrap] All database schemas ensured successfully.');
   } catch (error) {
     captureBackendException(error, { scope: 'server_startup' });
-    logError('Failed to start server', error);
-    process.exit(1);
+    logError('Bootstrap failed — server still running', error);
+    // NO process.exit here ← this is the key change
   }
 };
 
