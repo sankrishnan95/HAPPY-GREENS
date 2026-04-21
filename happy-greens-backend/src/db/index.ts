@@ -9,9 +9,9 @@ export const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 10000,
+    idleTimeoutMillis: 5000,
     max: 3,
-    keepAlive: true,
+    keepAlive: false,
     keepAliveInitialDelayMillis: 10000
 });
 
