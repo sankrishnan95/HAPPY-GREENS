@@ -1,5 +1,11 @@
+require('dotenv').config();
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: 'postgresql://postgres:HappyGreens@123@localhost:5433/happy_greens' });
+
+if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required');
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 pool.query(`
     ALTER TABLE categories
     ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES categories(id) ON DELETE CASCADE

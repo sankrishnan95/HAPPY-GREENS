@@ -1,5 +1,11 @@
+require('dotenv').config();
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: 'postgresql://postgres:HappyGreens@123@localhost:5433/happy_greens' });
+
+if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required');
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 pool.query('SELECT column_name FROM information_schema.columns WHERE table_name = \'categories\'')
     .then(res => { console.log(res.rows); process.exit(0); })
     .catch(err => { console.error(err); process.exit(1); });
