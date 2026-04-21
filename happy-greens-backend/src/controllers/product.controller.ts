@@ -436,17 +436,35 @@ export const getCategories = async (req: Request, res: Response) => {
     try {
         const { activeOnly } = req.query;
         let query = `
-            SELECT c.id, c.name, c.slug, c.description, c.image_url, c.parent_id, c.is_active,
-                   (
-                       SELECT COUNT(*)::int
-                       FROM products p
-                       WHERE p.is_deleted = false
-                         AND (
-                             p.category_id = c.id
-                             OR c.id = ANY(COALESCE(p.category_ids, ARRAY[]::int[]))
-                         )
-                   ) as product_count
+            WITH product_category_links AS (
+                SELECT p.category_id AS category_id
+                FROM products p
+                WHERE p.is_deleted = false
+                  AND p.category_id IS NOT NULL
+
+                UNION ALL
+
+                SELECT UNNEST(COALESCE(p.category_ids, ARRAY[]::int[])) AS category_id
+                FROM products p
+                WHERE p.is_deleted = false
+            ),
+            product_counts AS (
+                SELECT category_id, COUNT(*)::int AS product_count
+                FROM product_category_links
+                WHERE category_id IS NOT NULL
+                GROUP BY category_id
+            )
+            SELECT
+                c.id,
+                c.name,
+                c.slug,
+                c.description,
+                c.image_url,
+                c.parent_id,
+                c.is_active,
+                COALESCE(pc.product_count, 0) AS product_count
             FROM categories c
+            LEFT JOIN product_counts pc ON pc.category_id = c.id
         `;
         
         const params: any[] = [];
