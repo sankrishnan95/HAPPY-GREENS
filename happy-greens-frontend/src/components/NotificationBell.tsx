@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification } from '../services/notification.service';
 
 const ENABLE_NOTIFICATION_POLLING = true;
-const NOTIFICATION_POLL_INTERVAL_MS = 30000;
+const NOTIFICATION_POLL_INTERVAL_MS = 5 * 60 * 1000;
 type NotificationsResponse = { notifications: AppNotification[]; unreadCount: number };
 let notificationsRequest: Promise<NotificationsResponse> | null = null;
 let notificationsCache: NotificationsResponse | null = null;
