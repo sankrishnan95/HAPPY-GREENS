@@ -3,6 +3,7 @@ import { pool } from '../db';
 import { getPublicBaseUrl, normalizeMediaUrl } from '../utils/media';
 import { createUserNotification } from '../services/notification.service';
 import { buildUnitConfig, calculateLineTotal } from '../services/unit-pricing.service';
+import { deductStockForDeliveredOrder, hasDeliveredStockDeduction } from '../services/inventory.service';
 
 const safelyRunNotificationTask = async (task: () => Promise<void>) => {
     try {
@@ -43,32 +44,40 @@ const resolveOriginalLineTotal = (item: any): number => {
  * Updates order status and logs change in history
  */
 export const updateOrderStatus = async (req: Request, res: Response) => {
+    const client = await pool.connect();
     try {
         const { id } = req.params;
         const { status, notes } = req.body;
         const userId = (req as any).user?.id;
 
+        await client.query('BEGIN');
+
         const validStatuses = ['pending', 'placed', 'paid', 'accepted', 'processing', 'shipped', 'delivered', 'cancelled'];
         if (!validStatuses.includes(status)) {
+            await client.query('ROLLBACK');
             return res.status(400).json({
                 message: 'Invalid status',
                 validStatuses,
             });
         }
 
-        const orderResult = await pool.query(
+        const orderResult = await client.query(
             'SELECT id, status FROM orders WHERE id = $1',
             [id]
         );
 
         if (orderResult.rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Order not found' });
         }
 
         const currentOrder = orderResult.rows[0];
+        const stockAlreadyDeducted = status === 'delivered'
+            ? await hasDeliveredStockDeduction(client, id)
+            : false;
 
         if (currentOrder.status === 'cancelled' && status !== 'cancelled') {
-            const latestCancellationResult = await pool.query(
+            const latestCancellationResult = await client.query(
                 `SELECT notes
                  FROM order_status_history
                  WHERE order_id = $1 AND new_status = 'cancelled'
@@ -79,13 +88,14 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
             const latestCancellationNote = String(latestCancellationResult.rows[0]?.notes || '').toLowerCase();
             if (latestCancellationNote === 'cancelled by customer') {
+                await client.query('ROLLBACK');
                 return res.status(400).json({
                     message: 'A customer-cancelled order cannot be reopened by admin',
                 });
             }
         }
 
-        const updateResult = await pool.query(
+        const updateResult = await client.query(
             `UPDATE orders
              SET status = $1, updated_at = NOW()
              WHERE id = $2
@@ -96,7 +106,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         const updatedOrder = updateResult.rows[0];
 
         if (currentOrder.status !== status) {
-            await pool.query(
+            await client.query(
                 `INSERT INTO order_status_history
                  (order_id, old_status, new_status, notes, changed_by)
                  VALUES ($1, $2, $3, $4, $5)`,
@@ -105,7 +115,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         }
 
         if (currentOrder.status !== status) {
-            const loyaltyOrderRes = await pool.query(
+            const loyaltyOrderRes = await client.query(
                 `SELECT user_id, total_amount, points_earned, points_used, created_at FROM orders WHERE id = $1`,
                 [id]
             );
@@ -121,13 +131,13 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                     const earnedPoints = Math.floor(Number(loyaltyOrder.total_amount) / divisor);
 
                     if (earnedPoints > 0) {
-                        await pool.query(
+                        await client.query(
                             `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
                              VALUES ($1, $2, 'earned', $3, $4)`,
                             [loyaltyOrder.user_id, id, earnedPoints, `Points earned from Order #${id}`]
                         );
 
-                        await pool.query(
+                        await client.query(
                             `UPDATE users
                              SET loyalty_points = loyalty_points + $1,
                                  total_points_earned = total_points_earned + $1
@@ -135,22 +145,26 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                             [earnedPoints, loyaltyOrder.user_id]
                         );
 
-                        await pool.query(
+                        await client.query(
                             `UPDATE orders SET points_earned = $1 WHERE id = $2`,
                             [earnedPoints, id]
                         );
                     }
                 }
+
+                if (!stockAlreadyDeducted) {
+                    await deductStockForDeliveredOrder(client, id);
+                }
             }
 
             if (status === 'cancelled') {
                 if (loyaltyOrder.points_used > 0) {
-                    await pool.query(
+                    await client.query(
                         `INSERT INTO loyalty_transactions (user_id, order_id, type, points, description)
                          VALUES ($1, $2, 'earned', $3, $4)`,
                         [loyaltyOrder.user_id, id, loyaltyOrder.points_used, `Points refunded - Order #${id} cancelled`]
                     );
-                    await pool.query(
+                    await client.query(
                         `UPDATE users
                          SET loyalty_points = loyalty_points + $1,
                              total_points_redeemed = GREATEST(0, total_points_redeemed - $1)
@@ -175,7 +189,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
                 const normalizedStatus = String(status).toLowerCase();
                 await safelyRunNotificationTask(async () => {
-                    await createUserNotification(pool, customerUserId, {
+                    await createUserNotification(client, customerUserId, {
                         type: 'order_status_updated',
                         title: 'Order status updated',
                         message: `Order #${id} is now ${statusLabels[normalizedStatus] || normalizedStatus}.`,
@@ -190,14 +204,19 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
             }
         }
 
+        await client.query('COMMIT');
+
         res.json({
             success: true,
             order: updatedOrder,
             message: `Order status updated to ${status}`,
         });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error updating order status:', error);
         res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
     }
 };
 

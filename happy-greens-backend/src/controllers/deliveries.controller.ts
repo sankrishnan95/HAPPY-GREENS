@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import {pool} from '../db';
+import { deductStockForDeliveredOrder, hasDeliveredStockDeduction } from '../services/inventory.service';
 
 /**
  * Create Delivery
@@ -139,10 +140,12 @@ export const getDeliveryById = async (req: Request, res: Response) => {
  * Updates delivery status and logs change
  */
 export const updateDeliveryStatus = async (req: Request, res: Response) => {
+    const client = await pool.connect();
     try {
         const { id } = req.params;
         const { delivery_status, notes } = req.body;
         const userId = (req as any).user?.id;
+        await client.query('BEGIN');
 
         // Validate status
         const validStatuses = [
@@ -155,6 +158,7 @@ export const updateDeliveryStatus = async (req: Request, res: Response) => {
         ];
 
         if (!validStatuses.includes(delivery_status)) {
+            await client.query('ROLLBACK');
             return res.status(400).json({
                 message: 'Invalid delivery status',
                 validStatuses
@@ -162,19 +166,23 @@ export const updateDeliveryStatus = async (req: Request, res: Response) => {
         }
 
         // Get current delivery
-        const deliveryResult = await pool.query(
+        const deliveryResult = await client.query(
             'SELECT id, delivery_status, order_id FROM deliveries WHERE id = $1',
             [id]
         );
 
         if (deliveryResult.rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Delivery not found' });
         }
 
         const currentDelivery = deliveryResult.rows[0];
+        const stockAlreadyDeducted = delivery_status === 'delivered'
+            ? await hasDeliveredStockDeduction(client, currentDelivery.order_id)
+            : false;
 
         // Update delivery status
-        const updateResult = await pool.query(
+        const updateResult = await client.query(
             `UPDATE deliveries 
              SET delivery_status = $1, 
                  actual_delivery = CASE WHEN $1 = 'delivered' THEN NOW() ELSE actual_delivery END,
@@ -186,7 +194,7 @@ export const updateDeliveryStatus = async (req: Request, res: Response) => {
 
         // Log status change
         if (currentDelivery.delivery_status !== delivery_status) {
-            await pool.query(
+            await client.query(
                 `INSERT INTO delivery_status_history 
                  (delivery_id, old_status, new_status, notes, changed_by)
                  VALUES ($1, $2, $3, $4, $5)`,
@@ -196,16 +204,28 @@ export const updateDeliveryStatus = async (req: Request, res: Response) => {
 
         // Update order status based on delivery status
         if (delivery_status === 'delivered') {
-            await pool.query(
+            await client.query(
                 'UPDATE orders SET status = $1 WHERE id = $2',
                 ['delivered', currentDelivery.order_id]
             );
+            if (currentDelivery.delivery_status !== 'delivered' && !stockAlreadyDeducted) {
+                await client.query(
+                    `INSERT INTO order_status_history (order_id, old_status, new_status, notes, changed_by)
+                     SELECT id, status, 'delivered', 'Updated via delivery workflow', $2
+                     FROM orders
+                     WHERE id = $1 AND status <> 'delivered'`,
+                    [currentDelivery.order_id, userId || null]
+                );
+                await deductStockForDeliveredOrder(client, currentDelivery.order_id);
+            }
         } else if (delivery_status === 'out_for_delivery') {
-            await pool.query(
+            await client.query(
                 'UPDATE orders SET status = $1 WHERE id = $2',
                 ['shipped', currentDelivery.order_id]
             );
         }
+
+        await client.query('COMMIT');
 
         res.json({
             success: true,
@@ -213,8 +233,11 @@ export const updateDeliveryStatus = async (req: Request, res: Response) => {
             message: `Delivery status updated to ${delivery_status}`
         });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error updating delivery status:', error);
         res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
     }
 };
 
