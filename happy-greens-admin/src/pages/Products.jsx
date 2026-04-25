@@ -1,31 +1,119 @@
-﻿import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency } from '../utils/format';
 import { Search, Plus, Edit2, Trash2, Package } from 'lucide-react';
 import { getProducts, deleteProduct, updateProductStatus, updateProduct, getCategories, bulkUpdateProductCategory } from '../services/product.service';
 
+const PRODUCTS_CACHE_KEY = 'admin_products_page_cache_v1';
+const PRODUCTS_SCROLL_KEY = 'admin_products_scroll_v1';
+const PRODUCTS_CACHE_TTL_MS = 5 * 60 * 1000;
+const PRODUCTS_PER_PAGE = 50;
+const SEARCH_DEBOUNCE_MS = 250;
+const DEBUG_PRODUCTS_PAGE = import.meta.env.DEV;
+
+const readProductsCache = () => {
+  try {
+    const raw = sessionStorage.getItem(PRODUCTS_CACHE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed?.savedAt || Date.now() - parsed.savedAt > PRODUCTS_CACHE_TTL_MS) {
+      sessionStorage.removeItem(PRODUCTS_CACHE_KEY);
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    sessionStorage.removeItem(PRODUCTS_CACHE_KEY);
+    return null;
+  }
+};
+
+const writeProductsCache = (payload) => {
+  sessionStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({
+    ...payload,
+    savedAt: Date.now()
+  }));
+};
+
+const readSavedScroll = () => {
+  const raw = sessionStorage.getItem(PRODUCTS_SCROLL_KEY);
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+};
+
 export default function Products() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedProductIds, setSelectedProductIds] = useState([]);
   const [bulkCategoryId, setBulkCategoryId] = useState('');
   const [bulkUpdating, setBulkUpdating] = useState(false);
-  const navigate = useNavigate();
+  const restoreScrollRef = useRef(readSavedScroll());
+  const didRestoreScrollRef = useRef(false);
+  const categoryFilter = searchParams.get('category') || 'all';
+  const currentPage = Math.max(1, Number(searchParams.get('page') || 1));
 
   useEffect(() => {
-    loadProductsAndCategories();
+    const nextSearch = searchParams.get('search') || '';
+    setSearchInput(nextSearch);
+    setDebouncedSearchTerm(nextSearch);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchInput.trim());
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  const saveScrollPosition = useCallback(() => {
+    sessionStorage.setItem(PRODUCTS_SCROLL_KEY, String(window.scrollY));
   }, []);
 
-  useEffect(() => {
-    filterProducts();
-  }, [searchTerm, categoryFilter, products]);
+  const updateQueryParams = useCallback((updates) => {
+    const nextParams = new URLSearchParams(searchParams);
 
-  const loadProductsAndCategories = async () => {
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== 'all') {
+        nextParams.set(key, value);
+      } else {
+        nextParams.delete(key);
+      }
+    });
+
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const loadProductsAndCategories = useCallback(async ({ preferCache = true } = {}) => {
+    if (DEBUG_PRODUCTS_PAGE) {
+      console.time('admin-products-load');
+    }
+
     try {
+      const cached = preferCache ? readProductsCache() : null;
+      if (cached) {
+        // Reuse the last loaded list when returning from edit to avoid a full refetch and UI jump.
+        setProducts(cached.products || []);
+        setCategories(cached.categories || []);
+        setLoading(false);
+
+        if (DEBUG_PRODUCTS_PAGE) {
+          console.debug('[Products] restored cache', {
+            productCount: cached.products?.length || 0,
+            categoryCount: cached.categories?.length || 0
+          });
+          console.timeEnd('admin-products-load');
+        }
+        return;
+      }
+
       const fetchAllProducts = async () => {
         const pageSize = 100;
         const firstPage = await getProducts({ limit: pageSize, page: 1 });
@@ -51,59 +139,112 @@ export default function Products() {
         getCategories()
       ]);
 
-      setProducts(productsResponse);
-      setCategories((categoriesResponse.data || []).map((category) => ({
+      const normalizedCategories = (categoriesResponse.data || []).map((category) => ({
         id: category.id,
         name: category.name
-      })));
+      }));
+
+      setProducts(productsResponse);
+      setCategories(normalizedCategories);
+      writeProductsCache({
+        products: productsResponse,
+        categories: normalizedCategories
+      });
+
+      if (DEBUG_PRODUCTS_PAGE) {
+        console.debug('[Products] fetched list', {
+          productCount: productsResponse.length,
+          categoryCount: normalizedCategories.length
+        });
+      }
     } catch (error) {
       console.error('Error loading products:', error);
       alert('Failed to load products');
     } finally {
       setLoading(false);
+      if (DEBUG_PRODUCTS_PAGE) {
+        console.timeEnd('admin-products-load');
+      }
     }
-  };
+  }, []);
 
-  const filterProducts = () => {
+  useEffect(() => {
+    loadProductsAndCategories();
+  }, [loadProductsAndCategories]);
+
+  const filteredProducts = useMemo(() => {
     let filtered = products;
 
     if (categoryFilter !== 'all') {
-      const selectedCategoryId = parseInt(categoryFilter);
+      const selectedCategoryId = parseInt(categoryFilter, 10);
       filtered = filtered.filter((product) => {
         const categoryIds = Array.isArray(product.category_ids) ? product.category_ids.map(Number) : [];
         return product.category_id === selectedCategoryId || categoryIds.includes(selectedCategoryId);
       });
     }
 
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    if (debouncedSearchTerm) {
+      const loweredTerm = debouncedSearchTerm.toLowerCase();
+      filtered = filtered.filter((product) =>
+        product.name?.toLowerCase().includes(loweredTerm) ||
+        product.description?.toLowerCase().includes(loweredTerm)
       );
     }
 
-    setFilteredProducts(filtered);
-  };
+    return filtered;
+  }, [categoryFilter, debouncedSearchTerm, products]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * PRODUCTS_PER_PAGE;
+    return filteredProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
+  }, [filteredProducts, safeCurrentPage]);
 
   useEffect(() => {
-    setSelectedProductIds((current) => current.filter((id) => filteredProducts.some((product) => product.id === id)));
-  }, [filteredProducts]);
+    setSelectedProductIds((current) => current.filter((id) => paginatedProducts.some((product) => product.id === id)));
+  }, [paginatedProducts]);
 
-  const handleCreateProduct = () => {
-    navigate('/products/edit/new');
-  };
+  useEffect(() => {
+    if (currentPage !== safeCurrentPage) {
+      updateQueryParams({ category: categoryFilter, search: searchInput, page: String(safeCurrentPage) });
+    }
+  }, [categoryFilter, currentPage, safeCurrentPage, searchInput, updateQueryParams]);
 
-  const handleEditProduct = (product) => {
-    navigate(`/products/edit/${product.id}`);
-  };
+  useLayoutEffect(() => {
+    if (loading || didRestoreScrollRef.current) return;
+
+    const savedScroll = restoreScrollRef.current;
+    if (savedScroll === null) return;
+
+    // Restore scroll after the filtered page slice is rendered so we do not flash at the top first.
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScroll, behavior: 'auto' });
+      didRestoreScrollRef.current = true;
+      restoreScrollRef.current = null;
+      sessionStorage.removeItem(PRODUCTS_SCROLL_KEY);
+    });
+  }, [loading, paginatedProducts.length]);
+
+  const handleCreateProduct = useCallback(() => {
+    saveScrollPosition();
+    navigate(`/products/edit/new?${searchParams.toString()}`);
+  }, [navigate, saveScrollPosition, searchParams]);
+
+  const handleEditProduct = useCallback((product) => {
+    saveScrollPosition();
+    navigate(`/products/edit/${product.id}?${searchParams.toString()}`);
+  }, [navigate, saveScrollPosition, searchParams]);
 
   const handleDeleteProduct = async (id, name) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
     try {
       await deleteProduct(id);
+      const nextProducts = products.filter((product) => product.id !== id);
+      setProducts(nextProducts);
+      writeProductsCache({ products: nextProducts, categories });
       alert('Product deleted successfully');
-      loadProductsAndCategories();
     } catch (error) {
       console.error('Error deleting product:', error);
       alert('Failed to delete product');
@@ -115,9 +256,14 @@ export default function Products() {
     if (newStock === null || newStock === currentStock.toString()) return;
 
     try {
-      await updateProduct(id, { stock_quantity: parseInt(newStock) });
+      const parsedStock = parseInt(newStock, 10);
+      await updateProduct(id, { stock_quantity: parsedStock });
+      const nextProducts = products.map((product) =>
+        product.id === id ? { ...product, stock_quantity: parsedStock } : product
+      );
+      setProducts(nextProducts);
+      writeProductsCache({ products: nextProducts, categories });
       alert('Stock updated successfully');
-      loadProductsAndCategories();
     } catch (error) {
       console.error('Error updating stock:', error);
       alert('Failed to update stock');
@@ -133,7 +279,7 @@ export default function Products() {
   };
 
   const toggleSelectAllVisible = () => {
-    const visibleIds = filteredProducts.map((product) => product.id);
+    const visibleIds = paginatedProducts.map((product) => product.id);
     const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedProductIds.includes(id));
     setSelectedProductIds(allSelected ? [] : visibleIds);
   };
@@ -153,7 +299,7 @@ export default function Products() {
       await bulkUpdateProductCategory(selectedProductIds, bulkCategoryId);
       setSelectedProductIds([]);
       setBulkCategoryId('');
-      await loadProductsAndCategories();
+      await loadProductsAndCategories({ preferCache: false });
       alert('Category updated successfully');
     } catch (error) {
       console.error('Error updating product categories:', error);
@@ -181,7 +327,11 @@ export default function Products() {
   const toggleProductStatus = async (productId, currentStatus) => {
     try {
       await updateProductStatus(productId, !currentStatus);
-      loadProductsAndCategories();
+      const nextProducts = products.map((product) =>
+        product.id === productId ? { ...product, isActive: !currentStatus } : product
+      );
+      setProducts(nextProducts);
+      writeProductsCache({ products: nextProducts, categories });
     } catch (error) {
       console.error('Error toggling product status:', error);
       alert('Failed to update product status');
@@ -195,6 +345,9 @@ export default function Products() {
       </div>
     );
   }
+
+  const startIndex = filteredProducts.length === 0 ? 0 : (safeCurrentPage - 1) * PRODUCTS_PER_PAGE + 1;
+  const endIndex = filteredProducts.length === 0 ? 0 : (safeCurrentPage - 1) * PRODUCTS_PER_PAGE + paginatedProducts.length;
 
   return (
     <div>
@@ -219,15 +372,19 @@ export default function Products() {
             <input
               type="text"
               placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                setSearchInput(nextValue);
+                updateQueryParams({ search: nextValue, category: categoryFilter, page: '1' });
+              }}
               className="min-h-[44px] w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 outline-none focus:border-transparent focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <select
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            onChange={(e) => updateQueryParams({ category: e.target.value, search: searchInput, page: '1' })}
             className="min-h-[44px] rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-transparent focus:ring-2 focus:ring-primary"
           >
             <option value="all">All Categories</option>
@@ -265,6 +422,10 @@ export default function Products() {
         )}
       </div>
 
+      <div className="mb-3 text-xs text-gray-400">
+        Showing {startIndex}{startIndex > 0 ? `-${endIndex}` : ''} of {filteredProducts.length} filtered products ({products.length} total)
+      </div>
+
       <div className="overflow-hidden rounded-lg bg-white shadow">
         <div className="overflow-x-auto">
           <table className="min-w-[960px] divide-y divide-gray-200 lg:min-w-full">
@@ -273,7 +434,7 @@ export default function Products() {
                 <th className="w-12 px-6 py-3 text-left">
                   <input
                     type="checkbox"
-                    checked={filteredProducts.length > 0 && filteredProducts.every((product) => selectedProductIds.includes(product.id))}
+                    checked={paginatedProducts.length > 0 && paginatedProducts.every((product) => selectedProductIds.includes(product.id))}
                     onChange={toggleSelectAllVisible}
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                   />
@@ -287,7 +448,7 @@ export default function Products() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {filteredProducts.map((product) => {
+              {paginatedProducts.map((product) => {
                 const stockStatus = getStockStatus(product.stock_quantity);
                 return (
                   <tr key={product.id} className="transition-colors hover:bg-gray-50">
@@ -396,6 +557,32 @@ export default function Products() {
           </table>
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-white px-4 py-3 shadow">
+          <p className="text-sm text-gray-500">
+            Page {safeCurrentPage} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={safeCurrentPage <= 1}
+              onClick={() => updateQueryParams({ category: categoryFilter, search: searchInput, page: String(safeCurrentPage - 1) })}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              disabled={safeCurrentPage >= totalPages}
+              onClick={() => updateQueryParams({ category: categoryFilter, search: searchInput, page: String(safeCurrentPage + 1) })}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

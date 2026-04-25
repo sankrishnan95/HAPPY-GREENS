@@ -1,9 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, UploadCloud, X, Image as ImageIcon, Check } from 'lucide-react';
 import { getProductById, getProducts, createProduct, updateProduct, getCategories } from '../services/product.service';
 import { uploadImages } from '../services/upload.service';
 import { API_BASE_URL } from '../services/api';
+
+const PRODUCTS_CACHE_KEY = 'admin_products_page_cache_v1';
 
 const UNIT_OPTIONS = [
     { value: 'KG', label: 'Kilogram', priceLabel: 'Price per kg', minLabel: 'Minimum grams' },
@@ -23,10 +25,44 @@ const validateQuantityRules = (unit, minQty) => {
     return null;
 };
 
+const updateProductsCache = (productId, payload) => {
+    try {
+        const raw = sessionStorage.getItem(PRODUCTS_CACHE_KEY);
+        if (!raw) return;
+
+        // Keep the list page responsive after save by patching the cached row we already have.
+        const cache = JSON.parse(raw);
+        if (!Array.isArray(cache?.products)) return;
+
+        const nextProducts = cache.products.map((product) =>
+            String(product.id) === String(productId)
+                ? {
+                    ...product,
+                    ...payload,
+                    price: payload.pricePerUnit ?? payload.price ?? product.price,
+                    category_name: cache.categories?.find((category) => String(category.id) === String(payload.category_id))?.name || product.category_name,
+                    images: payload.images || product.images,
+                    image_url: payload.image_url || payload.images?.[0] || product.image_url
+                }
+                : product
+        );
+
+        sessionStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({
+            ...cache,
+            products: nextProducts,
+            savedAt: Date.now()
+        }));
+    } catch {
+        // Ignore cache update failures and fall back to normal fetches.
+    }
+};
+
 export default function ProductEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const isNew = id === 'new';
+    const productsListQuery = location.search || '';
 
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(!isNew);
@@ -126,7 +162,7 @@ export default function ProductEdit() {
         } catch (error) {
             console.error('Error fetching product:', error);
             alert('Failed to load product');
-            navigate('/products');
+            navigate(`/products${productsListQuery}`);
         } finally {
             setLoading(false);
         }
@@ -136,7 +172,6 @@ export default function ProductEdit() {
         const files = Array.from(e.target.files);
         if (!files.length) return;
 
-        // Validation for image types
         const invalidFiles = files.filter(file => !file.type.startsWith('image/'));
         if (invalidFiles.length > 0) {
             alert('Please select only image files (JPEG, PNG, WebP).');
@@ -214,9 +249,10 @@ export default function ProductEdit() {
                 alert('Product created successfully');
             } else {
                 await updateProduct(id, payload);
+                updateProductsCache(id, payload);
                 alert('Product updated successfully');
             }
-            navigate('/products');
+            navigate(`/products${productsListQuery}`);
         } catch (error) {
             console.error('Error saving product:', error);
             alert(error.response?.data?.message || error.message || 'Failed to save product');
@@ -237,7 +273,7 @@ export default function ProductEdit() {
         <div className="max-w-4xl mx-auto pb-12">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate('/products')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <button onClick={() => navigate(`/products${productsListQuery}`)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <ArrowLeft className="w-6 h-6 text-gray-600" />
                     </button>
                     <div>
@@ -281,12 +317,12 @@ export default function ProductEdit() {
                                             category={cat} 
                                             categories={categories} 
                                             selectedIds={formData.category_ids} 
-                                            onToggle={(id) => {
+                                            onToggle={(selectedId) => {
                                                 setFormData(prev => {
-                                                    const isSelected = prev.category_ids.includes(id);
+                                                    const isSelected = prev.category_ids.includes(selectedId);
                                                     const newIds = isSelected
-                                                        ? prev.category_ids.filter(i => i !== id)
-                                                        : [...prev.category_ids, id];
+                                                        ? prev.category_ids.filter(i => i !== selectedId)
+                                                        : [...prev.category_ids, selectedId];
                                                     return {
                                                         ...prev,
                                                         category_ids: newIds,
