@@ -236,6 +236,11 @@ export default function Products() {
     navigate(`/products/edit/${product.id}?${searchParams.toString()}`);
   }, [navigate, saveScrollPosition, searchParams]);
 
+  const handlePageChange = useCallback((nextPage) => {
+    updateQueryParams({ category: categoryFilter, search: searchInput, page: String(nextPage) });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [categoryFilter, searchInput, updateQueryParams]);
+
   const handleDeleteProduct = async (id, name) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
@@ -567,7 +572,7 @@ export default function Products() {
             <button
               type="button"
               disabled={safeCurrentPage <= 1}
-              onClick={() => updateQueryParams({ category: categoryFilter, search: searchInput, page: String(safeCurrentPage - 1) })}
+              onClick={() => handlePageChange(safeCurrentPage - 1)}
               className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Previous
@@ -575,7 +580,7 @@ export default function Products() {
             <button
               type="button"
               disabled={safeCurrentPage >= totalPages}
-              onClick={() => updateQueryParams({ category: categoryFilter, search: searchInput, page: String(safeCurrentPage + 1) })}
+              onClick={() => handlePageChange(safeCurrentPage + 1)}
               className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Next
