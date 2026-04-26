@@ -277,8 +277,8 @@ const Shop = () => {
 
     // Semantic search: re-rank fetched products client-side for better relevance
     const { searchedProducts } = useSemanticSearch(products, { query: q });
-    // Use semantically re-ranked results when there's an active search query, otherwise use original order
-    const displayProducts = q ? searchedProducts : products;
+    // Use semantically re-ranked results when there's an active search query (capped to top 50 for performance)
+    const displayProducts = q ? searchedProducts.slice(0, 50) : products;
 
     return (
         <div className="space-y-4">
