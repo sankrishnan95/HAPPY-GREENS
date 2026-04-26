@@ -19,6 +19,7 @@ const Shop = () => {
     const [page, setPage] = useState(1);
     const productsRef = useRef<HTMLDivElement>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const prevCacheKeyRef = useRef<string | null>(null);
     const category = searchParams.get('category') || '';
     const q = searchParams.get('q') || '';
     const sort = searchParams.get('sort') || '';
@@ -69,53 +70,62 @@ const Shop = () => {
 
     useEffect(() => {
         const lastProductId = sessionStorage.getItem('shop_last_product_id');
+        const cacheKeyChanged = prevCacheKeyRef.current !== null && prevCacheKeyRef.current !== cacheKey;
+        prevCacheKeyRef.current = cacheKey;
 
-        // Try to restore from cache
-        try {
-            const cached = JSON.parse(sessionStorage.getItem(SHOP_CACHE_KEY) || 'null');
-            if (cached && cached.key === cacheKey && cached.products?.length > 0) {
-                // Restore cached state instantly, then refresh it in the background
-                setProducts(cached.products);
-                setPage(cached.page);
-                setTotalPages(cached.totalPages);
-                setLoading(false);
+        // When the category/sort/query changed, always clear stale scroll & product restoration
+        if (cacheKeyChanged) {
+            sessionStorage.removeItem('shop_last_product_id');
+            sessionStorage.removeItem('shop_scroll_y');
+        }
 
-                // Restore scroll position after products render
-                const savedScrollY = sessionStorage.getItem('shop_scroll_y');
-                if (savedScrollY) {
-                    const scrollY = parseInt(savedScrollY, 10);
-                    // Use a small timeout to ensure DOM has rendered with all the product cards
-                    setTimeout(() => {
-                        window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
-                    }, 50);
+        // Only try to restore from cache when returning to the SAME view (e.g. back from product detail)
+        if (!cacheKeyChanged) {
+            try {
+                const cached = JSON.parse(sessionStorage.getItem(SHOP_CACHE_KEY) || 'null');
+                if (cached && cached.key === cacheKey && cached.products?.length > 0) {
+                    // Restore cached state instantly
+                    setProducts(cached.products);
+                    setPage(cached.page);
+                    setTotalPages(cached.totalPages);
+                    setLoading(false);
+
+                    // Restore scroll position after products render
+                    const savedScrollY = sessionStorage.getItem('shop_scroll_y');
+                    if (savedScrollY) {
+                        const scrollY = parseInt(savedScrollY, 10);
+                        setTimeout(() => {
+                            window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+                        }, 50);
+                    }
+
+                    // Still fetch categories if needed
+                    if (allCategories.length === 0) {
+                        getCategories(true).then(res => setAllCategories(res || [])).catch(console.error);
+                    }
+
+                    const cachedHasTargetProduct = lastProductId
+                        ? cached.products.some((product: any) => String(product.id) === lastProductId)
+                        : false;
+
+                    if (cachedHasTargetProduct) {
+                        return;
+                    }
                 }
+            } catch (_) { /* parse error, fall through to fresh fetch */ }
+        }
 
-                // Still fetch categories if needed
-                if (allCategories.length === 0) {
-                    getCategories(true).then(res => setAllCategories(res || [])).catch(console.error);
-                }
-
-                if (lastProductId) {
-                    return;
-                }
-            }
-        } catch (_) { /* parse error, fall through to fresh fetch */ }
-
-        // No valid cache — fresh fetch
+        // Fresh fetch — either cacheKey changed (new category/sort/query) or no valid cache
         const fetchInitialProducts = async () => {
             setLoading(products.length === 0);
             setPage(1);
-            // Clear saved scroll only when not returning to a remembered product
-            if (!lastProductId) {
-                sessionStorage.removeItem('shop_scroll_y');
-            }
             try {
                 const res = await getProducts({ category, q, sort, page: 1, limit: PRODUCTS_PER_PAGE });
                 setProducts(res.products);
                 setTotalPages(res.totalPages);
                 
                 // Scroll to top of products on filter change
-                if (productsRef.current) {
+                if (cacheKeyChanged && productsRef.current) {
                     const yOffset = -100;
                     const element = productsRef.current;
                     const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
@@ -246,6 +256,7 @@ const Shop = () => {
 
     const handleCategoryChange = (cat: string) => {
         const normalizedCategory = cat.trim().toLowerCase();
+        sessionStorage.removeItem('shop_last_product_id');
         updateParams((params) => {
             if (normalizedCategory) params.set('category', normalizedCategory);
             else params.delete('category');
