@@ -121,7 +121,9 @@ const Shop = () => {
             setLoading(products.length === 0);
             setPage(1);
             try {
-                const res = await getProducts({ category, q, sort, page: 1, limit: PRODUCTS_PER_PAGE });
+                // Fetch a large catalog if searching, so client-side semantic search can rank everything
+                const limit = q ? 1000 : PRODUCTS_PER_PAGE;
+                const res = await getProducts({ category, sort, page: 1, limit });
                 setProducts(res.products);
                 setTotalPages(res.totalPages);
                 
@@ -160,7 +162,9 @@ const Shop = () => {
         setLoadingMore(true);
         const nextPage = page + 1;
         try {
-            const res = await getProducts({ category, q, sort, page: nextPage, limit: PRODUCTS_PER_PAGE });
+            // Never pass `q` to backend so frontend semantic search gets the full catalog
+            const limit = q ? 1000 : PRODUCTS_PER_PAGE;
+            const res = await getProducts({ category, sort, page: nextPage, limit });
             setProducts(prev => [...prev, ...res.products]);
             setPage(nextPage);
             setTotalPages(res.totalPages);
