@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { getProducts, getCategories } from '../services/product.service';
 import ProductCard from '../components/ProductCard';
 import { Filter, SlidersHorizontal } from 'lucide-react';
+import { useSemanticSearch } from '../hooks/useSemanticSearch';
 
 const PRODUCTS_PER_PAGE = 30;
 
@@ -270,7 +271,10 @@ const Shop = () => {
         });
     };
 
-
+    // Semantic search: re-rank fetched products client-side for better relevance
+    const { searchedProducts } = useSemanticSearch(products);
+    // Use semantically re-ranked results when there's an active search query, otherwise use original order
+    const displayProducts = q ? searchedProducts : products;
 
     return (
         <div className="space-y-4">
@@ -382,7 +386,7 @@ const Shop = () => {
             ) : (
                 <>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 lg:gap-4 transition-opacity duration-200">
-                        {products.map((product: any) => (
+                        {displayProducts.map((product: any) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
