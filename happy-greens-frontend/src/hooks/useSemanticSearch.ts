@@ -153,14 +153,19 @@ function useDebounce(value: string, delay = 300): string {
 
 interface UseSemanticSearchOptions {
   debounceMs?: number;
+  /** External query string (e.g. from URL params). When provided, the hook
+   *  uses this instead of its own internal state. */
+  query?: string;
 }
 
 export function useSemanticSearch(
   products: any[],
-  { debounceMs = 300 }: UseSemanticSearchOptions = {}
+  { debounceMs = 300, query }: UseSemanticSearchOptions = {}
 ) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedQuery = useDebounce(searchQuery, debounceMs);
+  const [internalQuery, setInternalQuery] = useState('');
+  // Use external query when provided, otherwise fall back to internal state
+  const activeQuery = query !== undefined ? query : internalQuery;
+  const debouncedQuery = useDebounce(activeQuery, debounceMs);
 
   // Synonym map: rebuilt only when products array reference changes
   const synonymMap = useMemo(() => buildSynonymMap(products), [products]);
@@ -190,11 +195,11 @@ export function useSemanticSearch(
 
   // Stable setter reference
   const handleSetSearchQuery = useCallback((value: string | React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(typeof value === 'string' ? value : value.target.value);
+    setInternalQuery(typeof value === 'string' ? value : value.target.value);
   }, []);
 
   return {
-    searchQuery,
+    searchQuery: activeQuery,
     setSearchQuery: handleSetSearchQuery,
     searchedProducts,
   };
