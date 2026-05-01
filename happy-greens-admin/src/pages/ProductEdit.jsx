@@ -6,6 +6,7 @@ import { uploadImages } from '../services/upload.service';
 import { API_BASE_URL } from '../services/api';
 
 const PRODUCTS_CACHE_KEY = 'admin_products_page_cache_v1';
+const PLACEHOLDER_IMAGE_KEY = 'images.unsplash.com/photo-1542838132-92c53300491e';
 
 const UNIT_OPTIONS = [
     { value: 'KG', label: 'Kilogram', priceLabel: 'Price per kg', minLabel: 'Minimum grams' },
@@ -24,6 +25,8 @@ const validateQuantityRules = (unit, minQty) => {
     }
     return null;
 };
+
+const isPlaceholderImage = (value) => typeof value === 'string' && value.includes(PLACEHOLDER_IMAGE_KEY);
 
 const updateProductsCache = (productId, payload) => {
     try {
@@ -195,8 +198,8 @@ export default function ProductEdit() {
 
             setFormData(prev => ({
                 ...prev,
-                images: [...prev.images, ...fullPaths],
-                image_url: prev.image_url || fullPaths[0] || ''
+                images: [...prev.images.filter((image) => !isPlaceholderImage(image)), ...fullPaths],
+                image_url: prev.image_url && !isPlaceholderImage(prev.image_url) ? prev.image_url : fullPaths[0] || ''
             }));
             alert('Images uploaded successfully');
         } catch (error) {
@@ -233,14 +236,15 @@ export default function ProductEdit() {
                 throw new Error(quantityError);
             }
 
-            const finalImages = formData.images.length > 0
-                ? formData.images
+            const nonPlaceholderImages = formData.images.filter((image) => !isPlaceholderImage(image));
+            const finalImages = nonPlaceholderImages.length > 0
+                ? nonPlaceholderImages
                 : (formData.image_url ? [formData.image_url] : []);
 
             const payload = {
                 ...formData,
                 images: finalImages,
-                image_url: finalImages[0] || formData.image_url || '',
+                image_url: finalImages[0] || (isPlaceholderImage(formData.image_url) ? '' : formData.image_url) || '',
                 pricePerUnit: parseFloat(formData.pricePerUnit),
                 price: parseFloat(formData.pricePerUnit),
                 discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
