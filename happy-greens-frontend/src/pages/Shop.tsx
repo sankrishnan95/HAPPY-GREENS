@@ -7,7 +7,8 @@ import { useSemanticSearch } from '../hooks/useSemanticSearch';
 
 const PRODUCTS_PER_PAGE = 30;
 
-const SHOP_CACHE_KEY = 'shop_products_cache_v2';
+const SHOP_CACHE_KEY = 'shop_products_cache_v3';
+const SHOP_CACHE_MAX_AGE_MS = 60 * 1000;
 
 const Shop = () => {
     const [products, setProducts] = useState<any[]>([]);
@@ -64,14 +65,15 @@ const Shop = () => {
                     products,
                     page,
                     totalPages,
+                    savedAt: Date.now(),
                 }));
             } catch (_) { /* quota exceeded, ignore */ }
         }
     }, [products, page, totalPages, cacheKey]);
 
     useEffect(() => {
-        const lastProductId = sessionStorage.getItem('shop_last_product_id');
         const cacheKeyChanged = prevCacheKeyRef.current !== null && prevCacheKeyRef.current !== cacheKey;
+        let restoredFromCache = false;
         prevCacheKeyRef.current = cacheKey;
 
         // When the category/sort/query changed, always clear stale scroll & product restoration
@@ -84,12 +86,14 @@ const Shop = () => {
         if (!cacheKeyChanged) {
             try {
                 const cached = JSON.parse(sessionStorage.getItem(SHOP_CACHE_KEY) || 'null');
-                if (cached && cached.key === cacheKey && cached.products?.length > 0) {
+                const cacheAge = Date.now() - Number(cached?.savedAt || 0);
+                if (cached && cached.key === cacheKey && cached.products?.length > 0 && cacheAge < SHOP_CACHE_MAX_AGE_MS) {
                     // Restore cached state instantly
                     setProducts(cached.products);
                     setPage(cached.page);
                     setTotalPages(cached.totalPages);
                     setLoading(false);
+                    restoredFromCache = true;
 
                     // Restore scroll position after products render
                     const savedScrollY = sessionStorage.getItem('shop_scroll_y');
@@ -105,20 +109,14 @@ const Shop = () => {
                         getCategories(true).then(res => setAllCategories(res || [])).catch(console.error);
                     }
 
-                    const cachedHasTargetProduct = lastProductId
-                        ? cached.products.some((product: any) => String(product.id) === lastProductId)
-                        : false;
-
-                    if (cachedHasTargetProduct) {
-                        return;
-                    }
+                    // Keep the cached render, but still refresh products in the background.
                 }
             } catch (_) { /* parse error, fall through to fresh fetch */ }
         }
 
         // Fresh fetch — either cacheKey changed (new category/sort/query) or no valid cache
         const fetchInitialProducts = async () => {
-            setLoading(products.length === 0);
+            setLoading(!restoredFromCache && products.length === 0);
             setPage(1);
             try {
                 // Fetch a large catalog if searching, so client-side semantic search can rank everything

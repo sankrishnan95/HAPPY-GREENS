@@ -195,7 +195,8 @@ export default function ProductEdit() {
 
             setFormData(prev => ({
                 ...prev,
-                images: [...prev.images, ...fullPaths]
+                images: [...prev.images, ...fullPaths],
+                image_url: prev.image_url || fullPaths[0] || ''
             }));
             alert('Images uploaded successfully');
         } catch (error) {
@@ -232,8 +233,14 @@ export default function ProductEdit() {
                 throw new Error(quantityError);
             }
 
+            const finalImages = formData.images.length > 0
+                ? formData.images
+                : (formData.image_url ? [formData.image_url] : []);
+
             const payload = {
                 ...formData,
+                images: finalImages,
+                image_url: finalImages[0] || formData.image_url || '',
                 pricePerUnit: parseFloat(formData.pricePerUnit),
                 price: parseFloat(formData.pricePerUnit),
                 discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
@@ -416,10 +423,12 @@ export default function ProductEdit() {
                             type="url"
                             value={formData.image_url}
                             onChange={(e) => {
-                                setFormData({ ...formData, image_url: e.target.value });
-                                if (e.target.value && !formData.images.includes(e.target.value)) {
-                                    setFormData(prev => ({ ...prev, images: [...prev.images, e.target.value] }));
-                                }
+                                const nextUrl = e.target.value;
+                                setFormData(prev => ({
+                                    ...prev,
+                                    image_url: nextUrl,
+                                    images: nextUrl && !prev.images.includes(nextUrl) ? [...prev.images, nextUrl] : prev.images
+                                }));
                             }}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                             placeholder="https://example.com/image.jpg"

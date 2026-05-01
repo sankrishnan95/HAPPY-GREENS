@@ -251,14 +251,19 @@ export const createProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: quantityRuleError });
         }
 
-        let initialImages = images;
-        if (image_url && initialImages.length === 0) {
-            initialImages = [image_url];
-        }
+        const normalizedImages = Array.isArray(images)
+            ? images.filter((image: unknown) => typeof image === 'string' && image.trim()).map((image: string) => image.trim())
+            : [];
+        const primaryImageUrl = typeof image_url === 'string' && image_url.trim()
+            ? image_url.trim()
+            : (normalizedImages[0] || '');
+        const initialImages = normalizedImages.length > 0
+            ? normalizedImages
+            : (primaryImageUrl ? [primaryImageUrl] : []);
 
         const result = await pool.query(
             'INSERT INTO products (name, description, price, price_per_unit, discount_price, stock_quantity, category_id, category_ids, image_url, images, unit, min_qty, step_qty, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::int[], $9, $10::jsonb, $11, $12, $13, $14) RETURNING *, discount_price as "discountPrice", is_active as "isActive", price_per_unit as "pricePerUnit", min_qty as "minQty", step_qty as "stepQty"',
-            [safeName, safeDescription, safePricePerUnit, safePricePerUnit, safeDiscountPrice, finalStockQuantity, finalCategoryId, finalCategoryIds, image_url, JSON.stringify(initialImages), safeUnit, safeMinQty, safeStepQty, Boolean(isActive)]
+            [safeName, safeDescription, safePricePerUnit, safePricePerUnit, safeDiscountPrice, finalStockQuantity, finalCategoryId, finalCategoryIds, primaryImageUrl, JSON.stringify(initialImages), safeUnit, safeMinQty, safeStepQty, Boolean(isActive)]
         );
         const baseUrl = getPublicBaseUrl(req);
         res.status(201).json(mapProductMedia(result.rows[0], baseUrl));
@@ -307,8 +312,15 @@ export const updateProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: quantityRuleError });
         }
 
+        const normalizedImages = Array.isArray(images)
+            ? images.filter((image: unknown) => typeof image === 'string' && image.trim()).map((image: string) => image.trim())
+            : [];
+        const primaryImageUrl = typeof image_url === 'string' && image_url.trim()
+            ? image_url.trim()
+            : (normalizedImages[0] || '');
+
         let query = 'UPDATE products SET name = $1, description = $2, price = $3, price_per_unit = $4, discount_price = $5, stock_quantity = $6, image_url = $7, unit = $8, min_qty = $9, step_qty = $10';
-        const params: any[] = [safeName, safeDescription, safePricePerUnit, safePricePerUnit, safeDiscountPrice, finalStockQuantity, image_url, safeUnit, safeMinQty, safeStepQty];
+        const params: any[] = [safeName, safeDescription, safePricePerUnit, safePricePerUnit, safeDiscountPrice, finalStockQuantity, primaryImageUrl, safeUnit, safeMinQty, safeStepQty];
 
         if (category_id !== undefined && category_id !== null && String(category_id).trim() !== '') {
             const finalCategoryId = parseOptionalInt(category_id);
