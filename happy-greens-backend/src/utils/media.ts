@@ -33,6 +33,15 @@ const hasLocalUploadFile = (pathname: string): boolean => {
     return fs.existsSync(localPath);
 };
 
+const isSameOrigin = (url: URL, baseUrl: string): boolean => {
+    if (!baseUrl) return false;
+    try {
+        return url.origin === new URL(baseUrl).origin;
+    } catch {
+        return false;
+    }
+};
+
 export const getPublicBaseUrl = (req: Request): string => {
     const configured = process.env.PUBLIC_BASE_URL?.trim();
     if (configured) {
@@ -68,7 +77,8 @@ export const normalizeMediaUrl = (value: any, baseUrl: string): any => {
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
         try {
             const parsed = new URL(raw);
-            if (parsed.pathname.startsWith('/uploads/') && !hasLocalUploadFile(parsed.pathname)) {
+            const isBackendUploadUrl = isSameOrigin(parsed, baseUrl);
+            if (isBackendUploadUrl && parsed.pathname.startsWith('/uploads/') && !hasLocalUploadFile(parsed.pathname)) {
                 return getFallbackByExtension(parsed.pathname);
             }
             return raw;
