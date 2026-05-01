@@ -325,7 +325,7 @@ export const updateProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: quantityRuleError });
         }
 
-        const { primaryImageUrl } = normalizeProductImages(images, image_url);
+        const { primaryImageUrl, finalImages } = normalizeProductImages(images, image_url);
 
         let query = 'UPDATE products SET name = $1, description = $2, price = $3, price_per_unit = $4, discount_price = $5, stock_quantity = $6, image_url = $7, unit = $8, min_qty = $9, step_qty = $10';
         const params: any[] = [safeName, safeDescription, safePricePerUnit, safePricePerUnit, safeDiscountPrice, finalStockQuantity, primaryImageUrl, safeUnit, safeMinQty, safeStepQty];
@@ -346,7 +346,7 @@ export const updateProduct = async (req: Request, res: Response) => {
 
         if (images !== undefined) {
             query += `, images = $${params.length + 1}::jsonb`;
-            params.push(JSON.stringify(images));
+            params.push(JSON.stringify(finalImages));
         }
 
         if (isActive !== undefined) {

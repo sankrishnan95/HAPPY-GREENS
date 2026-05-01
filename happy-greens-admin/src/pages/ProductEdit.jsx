@@ -28,6 +28,32 @@ const validateQuantityRules = (unit, minQty) => {
 
 const isPlaceholderImage = (value) => typeof value === 'string' && value.includes(PLACEHOLDER_IMAGE_KEY);
 
+const getCleanImages = (data) => {
+    const nonPlaceholderImages = data.images.filter((image) => !isPlaceholderImage(image));
+    return nonPlaceholderImages.length > 0
+        ? nonPlaceholderImages
+        : (data.image_url && !isPlaceholderImage(data.image_url) ? [data.image_url] : []);
+};
+
+const buildProductPayload = (data) => {
+    const finalImages = getCleanImages(data);
+    const minQty = Number(data.minQty);
+
+    return {
+        ...data,
+        images: finalImages,
+        image_url: finalImages[0] || '',
+        pricePerUnit: parseFloat(data.pricePerUnit),
+        price: parseFloat(data.pricePerUnit),
+        discountPrice: data.discountPrice ? parseFloat(data.discountPrice) : null,
+        stock_quantity: parseInt(data.stock_quantity),
+        category_id: data.category_ids[0],
+        category_ids: data.category_ids,
+        minQty,
+        stepQty: minQty,
+    };
+};
+
 const updateProductsCache = (productId, payload) => {
     try {
         const raw = sessionStorage.getItem(PRODUCTS_CACHE_KEY);
@@ -195,13 +221,21 @@ export default function ProductEdit() {
             const data = await uploadImages(payload);
             const uploadedPaths = data.images;
             const fullPaths = uploadedPaths.map((p) => /^https?:\/\//i.test(p) ? p : `${API_BASE_URL}${p}`);
+            const nextFormData = {
+                ...formData,
+                images: [...formData.images.filter((image) => !isPlaceholderImage(image)), ...fullPaths],
+                image_url: formData.image_url && !isPlaceholderImage(formData.image_url) ? formData.image_url : fullPaths[0] || ''
+            };
 
-            setFormData(prev => ({
-                ...prev,
-                images: [...prev.images.filter((image) => !isPlaceholderImage(image)), ...fullPaths],
-                image_url: prev.image_url && !isPlaceholderImage(prev.image_url) ? prev.image_url : fullPaths[0] || ''
-            }));
-            alert('Images uploaded successfully');
+            setFormData(nextFormData);
+
+            if (!isNew) {
+                const payload = buildProductPayload(nextFormData);
+                await updateProduct(id, payload);
+                updateProductsCache(id, payload);
+            }
+
+            alert(isNew ? 'Images uploaded successfully' : 'Images uploaded and saved successfully');
         } catch (error) {
             console.error('Error uploading images:', error);
             alert('Failed to upload images');
@@ -236,24 +270,7 @@ export default function ProductEdit() {
                 throw new Error(quantityError);
             }
 
-            const nonPlaceholderImages = formData.images.filter((image) => !isPlaceholderImage(image));
-            const finalImages = nonPlaceholderImages.length > 0
-                ? nonPlaceholderImages
-                : (formData.image_url ? [formData.image_url] : []);
-
-            const payload = {
-                ...formData,
-                images: finalImages,
-                image_url: finalImages[0] || (isPlaceholderImage(formData.image_url) ? '' : formData.image_url) || '',
-                pricePerUnit: parseFloat(formData.pricePerUnit),
-                price: parseFloat(formData.pricePerUnit),
-                discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
-                stock_quantity: parseInt(formData.stock_quantity),
-                category_id: formData.category_ids[0],
-                category_ids: formData.category_ids,
-                minQty,
-                stepQty: minQty,
-            };
+            const payload = buildProductPayload(formData);
 
             if (isNew) {
                 await createProduct(payload);
