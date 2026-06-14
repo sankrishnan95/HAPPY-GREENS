@@ -5,6 +5,7 @@ const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
 let firebaseEnabled = false;
+const adminUrl = process.env.ADMIN_URL?.replace(/\/+$/, '') || 'https://happygreensadmin.vercel.app';
 
 if (projectId && clientEmail && privateKey) {
     if (!admin.apps.length) {
@@ -42,6 +43,10 @@ export const sendFirebasePushToTokens = async (
         return { sent: 0, invalidTokens: [] as string[] };
     }
 
+    const clickLink = payload.link?.startsWith('http')
+        ? payload.link
+        : `${adminUrl}${payload.link?.startsWith('/') ? payload.link : `/${payload.link || ''}`}`;
+
     const response = await admin.messaging().sendEachForMulticast({
         tokens,
         notification: {
@@ -49,12 +54,12 @@ export const sendFirebasePushToTokens = async (
             body: payload.body,
         },
         data: {
-            link: payload.link || '/',
+            link: clickLink,
             ...(payload.data || {}),
         },
         webpush: {
             fcmOptions: {
-                link: payload.link || '/',
+                link: clickLink,
             },
         },
     });

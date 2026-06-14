@@ -127,14 +127,20 @@ export const enableAdminPushNotifications = async ({ onForegroundMessage } = {})
     const title = payload.notification?.title || payload.data?.title || 'Happy Greens';
     const body = payload.notification?.body || payload.data?.body || 'New admin notification';
 
-    if (document.visibilityState === 'visible') return;
-    new Notification(title, {
+    const notification = new Notification(title, {
       body,
       icon: '/logo.png',
       data: {
         url: payload.data?.link || '/',
       },
     });
+
+    notification.onclick = () => {
+      window.focus();
+      const targetUrl = notification.data?.url || '/';
+      window.location.assign(targetUrl);
+      notification.close();
+    };
   });
 
   return { enabled: true };
