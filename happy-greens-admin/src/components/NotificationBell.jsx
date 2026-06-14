@@ -26,6 +26,7 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [pushState, setPushState] = useState('idle');
+  const [pushError, setPushError] = useState('');
   const panelRef = useRef(null);
   const isMountedRef = useRef(false);
   const hasLoadedInitiallyRef = useRef(false);
@@ -92,11 +93,25 @@ export default function NotificationBell() {
   }, []);
 
   const handleEnablePush = async () => {
-    setPushState('loading');
-    const result = await enableAdminPushNotifications({
-      onForegroundMessage: () => void loadNotifications(),
-    });
-    setPushState(result.enabled ? 'enabled' : 'blocked');
+    try {
+      setPushError('');
+      setPushState('loading');
+      const result = await enableAdminPushNotifications({
+        onForegroundMessage: () => void loadNotifications(),
+      });
+
+      if (result.enabled) {
+        setPushState('enabled');
+        return;
+      }
+
+      setPushError(result.reason || 'Unable to enable push alerts');
+      setPushState('blocked');
+    } catch (error) {
+      console.error('Failed to enable admin push alerts', error);
+      setPushError(error?.message || 'Unable to enable push alerts');
+      setPushState('blocked');
+    }
   };
 
   useEffect(() => {
@@ -193,7 +208,11 @@ export default function NotificationBell() {
                 {pushState === 'loading' ? 'Enabling push...' : 'Enable push alerts'}
               </button>
               {pushState === 'blocked' ? (
-                <p className="mt-2 text-xs font-medium text-rose-700">Browser permission blocked. Enable notifications in site settings.</p>
+                <p className="mt-2 text-xs font-medium text-rose-700">
+                  {pushError === 'permission_denied'
+                    ? 'Browser permission blocked. Enable notifications in site settings.'
+                    : pushError || 'Unable to enable push alerts.'}
+                </p>
               ) : null}
             </div>
           ) : null}

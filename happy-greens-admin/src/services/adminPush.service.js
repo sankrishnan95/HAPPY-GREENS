@@ -23,6 +23,14 @@ const isConfigured = Boolean(
 
 let foregroundUnsubscribe = null;
 
+const withTimeout = (promise, ms, reason) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(reason)), ms);
+    }),
+  ]);
+
 const getFirebaseApp = () => {
   if (!isConfigured) return null;
   return getApps()[0] || initializeApp(firebaseConfig);
@@ -50,22 +58,38 @@ export const enableAdminPushNotifications = async ({ onForegroundMessage } = {})
   const supported = await isSupported().catch(() => false);
   if (!supported) return { enabled: false, reason: 'not_supported' };
 
-  const permission = await Notification.requestPermission();
+  const permission = await withTimeout(
+    Notification.requestPermission(),
+    15000,
+    'notification_permission_timeout'
+  );
   if (permission !== 'granted') return { enabled: false, reason: 'permission_denied' };
 
   const app = getFirebaseApp();
   if (!app) return { enabled: false, reason: 'not_configured' };
 
-  const registration = await navigator.serviceWorker.register(getServiceWorkerUrl());
+  const registration = await withTimeout(
+    navigator.serviceWorker.register(getServiceWorkerUrl()),
+    15000,
+    'service_worker_registration_timeout'
+  );
   const messaging = getMessaging(app);
-  const token = await getToken(messaging, {
-    vapidKey,
-    serviceWorkerRegistration: registration,
-  });
+  const token = await withTimeout(
+    getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: registration,
+    }),
+    20000,
+    'firebase_token_timeout'
+  );
 
   if (!token) return { enabled: false, reason: 'token_unavailable' };
 
-  await registerPushSubscription(token);
+  await withTimeout(
+    registerPushSubscription(token),
+    15000,
+    'push_subscription_registration_timeout'
+  );
 
   if (foregroundUnsubscribe) {
     foregroundUnsubscribe();
