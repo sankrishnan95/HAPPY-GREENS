@@ -31,6 +31,27 @@ const withTimeout = (promise, ms, reason) =>
     }),
   ]);
 
+const waitForActiveServiceWorker = async (registration) => {
+  if (registration.active) return registration;
+
+  const readyRegistration = await navigator.serviceWorker.ready;
+  if (readyRegistration.active) return readyRegistration;
+
+  return new Promise((resolve, reject) => {
+    const worker = registration.installing || registration.waiting;
+    if (!worker) {
+      reject(new Error('service_worker_not_active'));
+      return;
+    }
+
+    worker.addEventListener('statechange', () => {
+      if (worker.state === 'activated') {
+        resolve(registration);
+      }
+    });
+  });
+};
+
 const getFirebaseApp = () => {
   if (!isConfigured) return null;
   return getApps()[0] || initializeApp(firebaseConfig);
@@ -73,11 +94,16 @@ export const enableAdminPushNotifications = async ({ onForegroundMessage } = {})
     15000,
     'service_worker_registration_timeout'
   );
+  const activeRegistration = await withTimeout(
+    waitForActiveServiceWorker(registration),
+    15000,
+    'service_worker_activation_timeout'
+  );
   const messaging = getMessaging(app);
   const token = await withTimeout(
     getToken(messaging, {
       vapidKey,
-      serviceWorkerRegistration: registration,
+      serviceWorkerRegistration: activeRegistration,
     }),
     20000,
     'firebase_token_timeout'

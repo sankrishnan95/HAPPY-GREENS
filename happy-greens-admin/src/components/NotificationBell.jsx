@@ -33,7 +33,7 @@ const getPushErrorMessage = (error) => {
     return 'Firebase could not create a push token. Check the admin Firebase VAPID key.';
   }
   if (lower.includes('service_worker')) {
-    return 'Push service worker failed to register. Refresh the admin page and try again.';
+    return 'Push service worker was not active yet. Refresh the admin page and try again.';
   }
   return message;
 };
