@@ -1,4 +1,5 @@
 import { pool } from '../db';
+import { sendFirebasePushToTokens } from './firebase-admin.service';
 
 type DbClient = {
     query: (text: string, params?: any[]) => Promise<any>;
@@ -40,6 +41,57 @@ export const createUserNotification = async (
     );
 };
 
+export const upsertAdminPushSubscription = async (userId: number, token: string, platform = 'admin-web') => {
+    await pool.query(
+        `INSERT INTO push_subscriptions (user_id, token, platform, updated_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (token)
+         DO UPDATE SET user_id = EXCLUDED.user_id, platform = EXCLUDED.platform, updated_at = NOW()`,
+        [userId, token, platform]
+    );
+};
+
+export const deletePushSubscription = async (userId: number, token: string) => {
+    await pool.query(
+        `DELETE FROM push_subscriptions
+         WHERE user_id = $1
+           AND token = $2`,
+        [userId, token]
+    );
+};
+
+const sendPushNotificationToUser = async (userId: number, notification: NotificationInput) => {
+    try {
+        const tokenResult = await pool.query(
+            `SELECT token
+             FROM push_subscriptions
+             WHERE user_id = $1`,
+            [userId]
+        );
+        const tokens = tokenResult.rows.map((row: any) => String(row.token)).filter(Boolean);
+        if (tokens.length === 0) return;
+
+        const result = await sendFirebasePushToTokens(tokens, {
+            title: notification.title,
+            body: notification.message,
+            link: notification.link || '/',
+            data: {
+                type: notification.type,
+            },
+        });
+
+        if (result.invalidTokens.length > 0) {
+            await pool.query(
+                `DELETE FROM push_subscriptions
+                 WHERE token = ANY($1::text[])`,
+                [result.invalidTokens]
+            );
+        }
+    } catch (error) {
+        console.warn('[Push] Failed to send push notification:', error);
+    }
+};
+
 export const createAdminNotifications = async (
     db: DbClient,
     notification: NotificationInput
@@ -51,7 +103,9 @@ export const createAdminNotifications = async (
     );
 
     for (const admin of adminResult.rows) {
-        await createUserNotification(db, Number(admin.id), notification);
+        const adminId = Number(admin.id);
+        await createUserNotification(db, adminId, notification);
+        void sendPushNotificationToUser(adminId, notification);
     }
 };
 

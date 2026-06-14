@@ -28,3 +28,48 @@ export const verifyFirebaseIdToken = async (idToken: string) => {
 
     return admin.auth().verifyIdToken(idToken);
 };
+
+export const sendFirebasePushToTokens = async (
+    tokens: string[],
+    payload: {
+        title: string;
+        body: string;
+        link?: string | null;
+        data?: Record<string, string>;
+    }
+) => {
+    if (!firebaseEnabled || tokens.length === 0) {
+        return { sent: 0, invalidTokens: [] as string[] };
+    }
+
+    const response = await admin.messaging().sendEachForMulticast({
+        tokens,
+        notification: {
+            title: payload.title,
+            body: payload.body,
+        },
+        data: {
+            link: payload.link || '/',
+            ...(payload.data || {}),
+        },
+        webpush: {
+            fcmOptions: {
+                link: payload.link || '/',
+            },
+        },
+    });
+
+    const invalidTokens = response.responses
+        .map((result, index) => {
+            const code = result.error?.code || '';
+            return code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token'
+                ? tokens[index]
+                : null;
+        })
+        .filter((token): token is string => Boolean(token));
+
+    return {
+        sent: response.successCount,
+        invalidTokens,
+    };
+};

@@ -290,6 +290,22 @@ export const ensureNotificationsSchema = async (): Promise<void> => {
         ON notifications(recipient_user_id, is_read, created_at DESC)
     `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token TEXT NOT NULL UNIQUE,
+            platform VARCHAR(40) NOT NULL DEFAULT 'admin-web',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id
+        ON push_subscriptions(user_id)
+    `);
+
     console.log('[Schema Bootstrap] notifications schema ensured');
 };
 

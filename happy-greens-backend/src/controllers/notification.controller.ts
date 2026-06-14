@@ -4,10 +4,16 @@ import {
     listNotificationsForUser,
     markAllNotificationsAsRead,
     markNotificationAsRead,
+    upsertAdminPushSubscription,
+    deletePushSubscription,
 } from '../services/notification.service';
 
 const getAuthenticatedUserId = (req: Request) => {
     return Number((req as any).user?.id);
+};
+
+const isAuthenticatedAdmin = (req: Request) => {
+    return (req as any).user?.role === 'admin';
 };
 
 export const getNotifications = async (req: Request, res: Response) => {
@@ -73,6 +79,49 @@ export const readAllNotifications = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error marking all notifications as read:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const registerAdminPushSubscription = async (req: Request, res: Response) => {
+    try {
+        if (!isAuthenticatedAdmin(req)) {
+            return res.status(403).json({ message: 'Admin access required' });
+        }
+
+        const userId = getAuthenticatedUserId(req);
+        const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+        const platform = typeof req.body?.platform === 'string' ? req.body.platform.trim().slice(0, 40) : 'admin-web';
+
+        if (!token) {
+            return res.status(400).json({ message: 'Push token is required' });
+        }
+
+        await upsertAdminPushSubscription(userId, token, platform || 'admin-web');
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error registering admin push subscription:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const unregisterAdminPushSubscription = async (req: Request, res: Response) => {
+    try {
+        if (!isAuthenticatedAdmin(req)) {
+            return res.status(403).json({ message: 'Admin access required' });
+        }
+
+        const userId = getAuthenticatedUserId(req);
+        const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+
+        if (!token) {
+            return res.status(400).json({ message: 'Push token is required' });
+        }
+
+        await deletePushSubscription(userId, token);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error unregistering admin push subscription:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markAllNotificationsRead, markNotificationRead } from '../services/notification.service';
+import { enableAdminPushNotifications, isAdminPushConfigured } from '../services/adminPush.service';
 
 const ENABLE_NOTIFICATION_POLLING = true;
 const NOTIFICATION_POLL_INTERVAL_MS = 30000;
@@ -24,6 +25,7 @@ export default function NotificationBell() {
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [pushState, setPushState] = useState('idle');
   const panelRef = useRef(null);
   const isMountedRef = useRef(false);
   const hasLoadedInitiallyRef = useRef(false);
@@ -65,6 +67,16 @@ export default function NotificationBell() {
       void loadNotifications();
     }
 
+    if (isAdminPushConfigured() && window.Notification?.permission === 'granted') {
+      void enableAdminPushNotifications({
+        onForegroundMessage: () => void loadNotifications(),
+      }).then((result) => {
+        if (isMountedRef.current) {
+          setPushState(result.enabled ? 'enabled' : 'idle');
+        }
+      });
+    }
+
     const intervalId = ENABLE_NOTIFICATION_POLLING
       ? window.setInterval(() => {
           void loadNotifications();
@@ -78,6 +90,14 @@ export default function NotificationBell() {
       }
     };
   }, []);
+
+  const handleEnablePush = async () => {
+    setPushState('loading');
+    const result = await enableAdminPushNotifications({
+      onForegroundMessage: () => void loadNotifications(),
+    });
+    setPushState(result.enabled ? 'enabled' : 'blocked');
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -161,6 +181,22 @@ export default function NotificationBell() {
               Mark all read
             </button>
           </div>
+
+          {isAdminPushConfigured() && pushState !== 'enabled' ? (
+            <div className="border-b border-slate-100 bg-emerald-50/60 px-4 py-3">
+              <button
+                type="button"
+                onClick={handleEnablePush}
+                disabled={pushState === 'loading'}
+                className="rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {pushState === 'loading' ? 'Enabling push...' : 'Enable push alerts'}
+              </button>
+              {pushState === 'blocked' ? (
+                <p className="mt-2 text-xs font-medium text-rose-700">Browser permission blocked. Enable notifications in site settings.</p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="max-h-[24rem] overflow-y-auto">
             {loading ? (

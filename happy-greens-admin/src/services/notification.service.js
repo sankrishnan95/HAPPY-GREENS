@@ -14,3 +14,18 @@ export const markAllNotificationsRead = async () => {
   const { data } = await api.patch('/notifications/read-all');
   return data;
 };
+
+export const registerPushSubscription = async (token) => {
+  const { data } = await api.post('/notifications/push-subscriptions', {
+    token,
+    platform: 'admin-web',
+  });
+  return data;
+};
+
+export const unregisterPushSubscription = async (token) => {
+  const { data } = await api.delete('/notifications/push-subscriptions', {
+    data: { token },
+  });
+  return data;
+};
