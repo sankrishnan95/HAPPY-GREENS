@@ -20,6 +20,24 @@ const formatRelativeTime = (value) => {
   return `${diffDays}d ago`;
 };
 
+const getPushErrorMessage = (error) => {
+  const message = String(error || '');
+  const lower = message.toLowerCase();
+
+  if (!message) return 'Unable to enable push alerts.';
+  if (message === 'permission_denied') return 'Browser permission blocked. Enable notifications in site settings.';
+  if (lower.includes('push service error')) {
+    return 'Browser push service failed. In Brave, enable Google services for push messaging or test once in Chrome. Also check the Firebase VAPID key.';
+  }
+  if (lower.includes('token') || lower.includes('vapid')) {
+    return 'Firebase could not create a push token. Check the admin Firebase VAPID key.';
+  }
+  if (lower.includes('service_worker')) {
+    return 'Push service worker failed to register. Refresh the admin page and try again.';
+  }
+  return message;
+};
+
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
@@ -209,9 +227,7 @@ export default function NotificationBell() {
               </button>
               {pushState === 'blocked' ? (
                 <p className="mt-2 text-xs font-medium text-rose-700">
-                  {pushError === 'permission_denied'
-                    ? 'Browser permission blocked. Enable notifications in site settings.'
-                    : pushError || 'Unable to enable push alerts.'}
+                  {getPushErrorMessage(pushError)}
                 </p>
               ) : null}
             </div>
