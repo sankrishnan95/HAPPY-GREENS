@@ -1,14 +1,61 @@
-import { Menu, LogOut, Search, User } from 'lucide-react';
+import { useState } from 'react';
+import { KeyRound, LogOut, Menu, Search, User, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { removeToken } from '../utils/auth';
 import NotificationBell from './NotificationBell';
+import { changePassword } from '../services/auth.service';
 
 export default function Header({ onMenuToggle }) {
   const navigate = useNavigate();
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const handleLogout = () => {
     removeToken();
     navigate('/login');
+  };
+
+  const resetPasswordModal = () => {
+    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setPasswordError('');
+    setPasswordSuccess('');
+    setPasswordSaving(false);
+  };
+
+  const handlePasswordChange = async (event) => {
+    event.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters.');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New password and confirm password do not match.');
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      setPasswordSuccess('Password changed. Please login again.');
+      window.setTimeout(() => {
+        removeToken();
+        navigate('/login', { replace: true });
+      }, 900);
+    } catch (error) {
+      setPasswordError(error?.response?.data?.message || 'Failed to change password.');
+      setPasswordSaving(false);
+    }
   };
 
   return (
@@ -53,6 +100,18 @@ export default function Header({ onMenuToggle }) {
           </div>
 
           <button
+            type="button"
+            onClick={() => {
+              resetPasswordModal();
+              setPasswordModalOpen(true);
+            }}
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-100"
+          >
+            <KeyRound className="h-4 w-4" />
+            Change Password
+          </button>
+
+          <button
             onClick={handleLogout}
             className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-rose-100"
           >
@@ -61,6 +120,87 @@ export default function Header({ onMenuToggle }) {
           </button>
         </div>
       </div>
+
+      {passwordModalOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.25)]">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <p className="text-sm font-bold text-slate-900">Change admin password</p>
+                <p className="mt-1 text-xs text-slate-500">Use a strong password. You will login again after saving.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  resetPasswordModal();
+                  setPasswordModalOpen(false);
+                }}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordChange} className="space-y-4 p-5">
+              {passwordError ? (
+                <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+                  {passwordError}
+                </div>
+              ) : null}
+
+              {passwordSuccess ? (
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+                  {passwordSuccess}
+                </div>
+              ) : null}
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Current password</span>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100"
+                  required
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">New password</span>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(event) => setPasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100"
+                  minLength={8}
+                  required
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Confirm new password</span>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(event) => setPasswordForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100"
+                  minLength={8}
+                  required
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={passwordSaving}
+                className="w-full rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {passwordSaving ? 'Saving...' : 'Save new password'}
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

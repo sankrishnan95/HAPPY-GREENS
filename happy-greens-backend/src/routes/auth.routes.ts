@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
-import { register, login, forgotPassword, resetPassword, googleLogin, firebasePhoneLogin, sendOtp, verifyOtp, sendPhoneVerificationOtp, verifyPhoneVerificationOtp, getProfile, updateProfile, getProfileAddresses, createProfileAddress, updateProfileAddress, deleteProfileAddress, setDefaultProfileAddress } from '../controllers/auth.controller';
+import { authenticate, requireAdmin } from '../middleware/auth';
+import { register, login, forgotPassword, resetPassword, googleLogin, firebasePhoneLogin, sendOtp, verifyOtp, sendPhoneVerificationOtp, verifyPhoneVerificationOtp, getProfile, updateProfile, getProfileAddresses, createProfileAddress, updateProfileAddress, deleteProfileAddress, setDefaultProfileAddress, changePassword } from '../controllers/auth.controller';
 
 const router = Router();
 
@@ -8,6 +8,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.patch('/change-password', authenticate, requireAdmin, changePassword);
 router.post('/google', googleLogin);
 router.post('/firebase', firebasePhoneLogin);
 router.get('/profile', authenticate, getProfile);

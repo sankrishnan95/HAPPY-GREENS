@@ -168,6 +168,51 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
+export const changePassword = async (req: Request, res: Response) => {
+    const userId = Number((req as any).user?.id);
+    const role = String((req as any).user?.role || '');
+    const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
+    const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
+
+    if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    if (!currentPassword || newPassword.length < 8) {
+        return res.status(400).json({ message: 'Current password and a new password of at least 8 characters are required' });
+    }
+
+    if (currentPassword === newPassword) {
+        return res.status(400).json({ message: 'New password must be different from the current password' });
+    }
+
+    try {
+        const userResult = await pool.query('SELECT id, password_hash FROM users WHERE id = $1 AND role = $2 LIMIT 1', [userId, 'admin']);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ message: 'Admin user not found' });
+        }
+
+        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, userResult.rows[0].password_hash);
+        if (!isCurrentPasswordValid) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(newPassword, salt);
+
+        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, userId]);
+
+        return res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        console.error('Error changing password:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
 export const forgotPassword = async (req: Request, res: Response) => {
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
     if (!email || !email.includes('@')) {

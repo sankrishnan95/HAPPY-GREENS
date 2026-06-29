@@ -18,7 +18,7 @@ export const ensureAdminFromEnv = async (): Promise<void> => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(adminPassword, salt);
 
-    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1 LIMIT 1', [adminEmail]);
+    const existingUser = await pool.query('SELECT id, role, full_name FROM users WHERE email = $1 LIMIT 1', [adminEmail]);
 
     if (existingUser.rows.length === 0) {
         await pool.query(
@@ -32,12 +32,11 @@ export const ensureAdminFromEnv = async (): Promise<void> => {
 
     await pool.query(
         `UPDATE users
-         SET password_hash = $1,
-             full_name = $2,
+         SET full_name = COALESCE(NULLIF(full_name, ''), $1),
              role = 'admin'
-         WHERE id = $3`,
-        [passwordHash, adminFullName, existingUser.rows[0].id]
+         WHERE id = $2`,
+        [adminFullName, existingUser.rows[0].id]
     );
 
-    console.log(`[Admin Bootstrap] Admin credentials synced for ${adminEmail}`);
+    console.log(`[Admin Bootstrap] Admin user ensured for ${adminEmail}`);
 };
