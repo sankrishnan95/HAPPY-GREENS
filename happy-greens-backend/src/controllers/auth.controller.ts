@@ -12,6 +12,15 @@ import { isPondicherryPincode } from '../config/pondicherry-pincodes';
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const AUTH_TOKEN_EXPIRES_IN = process.env.AUTH_TOKEN_EXPIRES_IN || '365d';
+
+const createAuthToken = (id: number, role: string) => {
+    return jwt.sign(
+        { id, role },
+        JWT_SECRET,
+        { expiresIn: AUTH_TOKEN_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
+    );
+};
 
 const normalizePhone = (phone: unknown): string | null => {
     if (typeof phone !== 'string') return null;
@@ -129,7 +138,7 @@ export const register = async (req: Request, res: Response) => {
             [email, passwordHash, full_name]
         );
 
-        const token = jwt.sign({ id: newUser.rows[0].id, role: newUser.rows[0].role }, JWT_SECRET, { expiresIn: '1d' });
+        const token = createAuthToken(newUser.rows[0].id, newUser.rows[0].role);
 
         res.status(201).json({ user: newUser.rows[0], token });
     } catch (error) {
@@ -156,7 +165,7 @@ export const login = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        const token = createAuthToken(user.id, user.role);
 
         res.json({
             user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, phone: user.phone, phone_verified: user.phone_verified },
@@ -328,7 +337,7 @@ export const googleLogin = async (req: Request, res: Response) => {
         }
 
         const user = userResult.rows[0];
-        const jwtToken = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        const jwtToken = createAuthToken(user.id, user.role);
 
         res.json({
             user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, phone: user.phone, phone_verified: user.phone_verified },
@@ -763,7 +772,7 @@ export const firebasePhoneLogin = async (req: Request, res: Response) => {
         }
 
         const user = userResult.rows[0];
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        const token = createAuthToken(user.id, user.role);
 
         return res.json({
             user,
@@ -814,7 +823,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
         }
 
         // Issue JWT
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        const token = createAuthToken(user.id, user.role);
 
         res.json({
             user: {
