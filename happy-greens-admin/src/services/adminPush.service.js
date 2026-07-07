@@ -15,7 +15,7 @@ const firebaseConfig = {
 
 const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
-const isConfigured = Boolean(
+const isConfigured = Capacitor.isNativePlatform() ? true : Boolean(
   firebaseConfig.apiKey &&
   firebaseConfig.authDomain &&
   firebaseConfig.projectId &&
