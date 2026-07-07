@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { register, googleLogin } from '../services/auth.service';
 import { GoogleLogin } from '@react-oauth/google';
 import { ArrowLeft } from 'lucide-react';
 import Button from '../components/Button';
-import { isNativeGoogleSignInAvailable, signInWithNativeGoogle } from '../services/nativeGoogleAuth.service';
+import { getNativeGoogleSignInErrorMessage, initializeNativeGoogleSignIn, isNativeGoogleSignInAvailable, signInWithNativeGoogle } from '../services/nativeGoogleAuth.service';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -14,6 +14,14 @@ const Register = () => {
     const [error, setError] = useState('');
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     const showNativeGoogleLogin = isNativeGoogleSignInAvailable();
+
+    useEffect(() => {
+        if (!showNativeGoogleLogin) return;
+
+        initializeNativeGoogleSignIn().catch((err) => {
+            console.error('Native Google sign-in initialization failed', err);
+        });
+    }, [showNativeGoogleLogin]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -43,7 +51,7 @@ const Register = () => {
             setUser(data.user, data.token);
             navigate('/');
         } catch (err: any) {
-            setError(err?.message || err?.response?.data?.message || 'Google registration failed');
+            setError(err?.response?.data?.message || getNativeGoogleSignInErrorMessage(err));
         }
     };
 

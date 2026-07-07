@@ -5,7 +5,7 @@ import { login, googleLogin } from '../services/auth.service';
 import { GoogleLogin } from '@react-oauth/google';
 import Button from '../components/Button';
 import { ArrowLeft } from 'lucide-react';
-import { isNativeGoogleSignInAvailable, signInWithNativeGoogle } from '../services/nativeGoogleAuth.service';
+import { getNativeGoogleSignInErrorMessage, initializeNativeGoogleSignIn, isNativeGoogleSignInAvailable, signInWithNativeGoogle } from '../services/nativeGoogleAuth.service';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -21,6 +21,14 @@ const Login = () => {
             navigate('/');
         }
     }, [user, navigate]);
+
+    useEffect(() => {
+        if (!showNativeGoogleLogin) return;
+
+        initializeNativeGoogleSignIn().catch((err) => {
+            console.error('Native Google sign-in initialization failed', err);
+        });
+    }, [showNativeGoogleLogin]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,7 +68,7 @@ const Login = () => {
             setUser(data.user, data.token);
             navigate('/');
         } catch (err: any) {
-            setError(err?.message || err?.response?.data?.message || 'Google login failed');
+            setError(err?.response?.data?.message || getNativeGoogleSignInErrorMessage(err));
         } finally {
             setLoading(false);
         }

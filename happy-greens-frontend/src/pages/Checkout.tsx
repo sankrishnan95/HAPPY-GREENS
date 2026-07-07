@@ -72,7 +72,7 @@ const hasMeaningfulDraft = (draft: Partial<CheckoutDraft>) =>
 const Checkout = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { cart, user, clearCart, coupon } = useStore();
+    const { cart, user, clearCart, coupon, setCoupon } = useStore();
     const subtotal = cart.reduce((acc, item) => acc + calculateLineTotal(item, item.quantity), 0);
     const clientOrderTokenRef = useRef(
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -288,7 +288,7 @@ const Checkout = () => {
                         quantity: item.quantity,
                     })),
                     pointsUsed: loyaltyDiscount,
-                    couponCode: coupon?.code,
+                    couponCode: couponDiscountAmount > 0 ? coupon?.code : undefined,
                 });
 
                 const paymentResult = await new Promise<any>((resolve, reject) => {
@@ -366,7 +366,7 @@ const Checkout = () => {
                 paymentIntentId,
                 paymentDetails,
                 pointsUsed: loyaltyDiscount,
-                couponCode: coupon?.code,
+                couponCode: couponDiscountAmount > 0 ? coupon?.code : undefined,
                 clientOrderToken: clientOrderTokenRef.current
             };
 
@@ -386,9 +386,15 @@ const Checkout = () => {
             localStorage.removeItem(draftStorageKey);
             clearCart();
             navigate('/orders');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Checkout error:', error);
-            toast.error('Failed to place order. Please try again.');
+            const message = error?.response?.data?.message || error?.message || 'Failed to place order. Please try again.';
+            if (String(message).toLowerCase().includes('coupon')) {
+                setCoupon(null);
+                toast.error(`${message}. Coupon removed. Please place the order again.`);
+            } else {
+                toast.error(message);
+            }
             setIsSubmitting(false);
         }
     };

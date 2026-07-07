@@ -14,7 +14,7 @@ export const isNativeGoogleSignInAvailable = () => {
     return Capacitor.isNativePlatform() && Boolean(googleClientId);
 };
 
-export const signInWithNativeGoogle = async () => {
+export const initializeNativeGoogleSignIn = async () => {
     if (!googleClientId) {
         throw new Error('Google login is not configured');
     }
@@ -25,7 +25,32 @@ export const signInWithNativeGoogle = async () => {
         });
     }
 
-    await initializationPromise;
+    try {
+        await initializationPromise;
+    } catch (error) {
+        initializationPromise = null;
+        throw error;
+    }
+};
+
+export const getNativeGoogleSignInErrorMessage = (error: any) => {
+    const code = String(error?.code || error?.error || '');
+    const message = String(error?.message || '');
+    const combined = `${code} ${message}`.toLowerCase();
+
+    if (combined.includes('sign_in_canceled') || combined.includes('cancel')) {
+        return 'Google sign-in was closed before it completed.';
+    }
+
+    if (combined.includes('client') || combined.includes('developer') || combined.includes('configuration')) {
+        return 'Google sign-in is not configured correctly for this app build.';
+    }
+
+    return message || 'Google login failed';
+};
+
+export const signInWithNativeGoogle = async () => {
+    await initializeNativeGoogleSignIn();
 
     const result = await GoogleSignIn.signIn({
         nonce: createNonce(),
