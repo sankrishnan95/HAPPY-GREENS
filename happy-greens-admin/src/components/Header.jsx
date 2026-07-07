@@ -61,19 +61,24 @@ export default function Header({ onMenuToggle }) {
   return (
     <header className="border-b border-slate-200/80 bg-white/95 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-start gap-3 sm:items-center">
-          <button
-            type="button"
-            onClick={onMenuToggle}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 lg:hidden"
-            aria-label="Toggle sidebar"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-3 sm:items-center">
+            <button
+              type="button"
+              onClick={onMenuToggle}
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 lg:hidden"
+              aria-label="Toggle sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
 
-          <div>
-            <h2 className="text-[24px] font-bold leading-tight text-slate-900">Admin Panel</h2>
-            <p className="mt-1 text-sm text-slate-500">Manage your grocery store with cleaner, faster visibility.</p>
+            <div>
+              <h2 className="text-[20px] sm:text-[24px] font-bold leading-tight text-slate-900">Admin Panel</h2>
+              <p className="mt-0.5 hidden text-sm text-slate-500 sm:block">Manage your grocery store with cleaner visibility.</p>
+            </div>
+          </div>
+          <div className="block lg:hidden ml-4">
+            <NotificationBell />
           </div>
         </div>
 
@@ -87,7 +92,9 @@ export default function Header({ onMenuToggle }) {
             />
           </div>
 
-          <NotificationBell />
+          <div className="hidden lg:block">
+            <NotificationBell />
+          </div>
 
           <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 text-white shadow-[0_10px_24px_rgba(16,185,129,0.25)]">

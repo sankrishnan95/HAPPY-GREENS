@@ -211,11 +211,21 @@ export default function NotificationBell() {
     }
   };
 
+  const handleToggle = () => {
+    setOpen((current) => {
+      const willOpen = !current;
+      if (willOpen && unreadCount > 0) {
+        handleReadAll();
+      }
+      return willOpen;
+    });
+  };
+
   return (
     <div className="relative" ref={panelRef}>
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={handleToggle}
         className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
         aria-label="Notifications"
       >
