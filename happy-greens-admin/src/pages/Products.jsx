@@ -367,7 +367,8 @@ export default function Products() {
 
     try {
       const parsedStock = parseInt(newStock, 10);
-      await updateProduct(id, { stock_quantity: parsedStock });
+      const product = products.find(p => p.id === id);
+      await updateProduct(id, { ...product, stock_quantity: parsedStock });
       const nextProducts = products.map((product) =>
         product.id === id ? { ...product, stock_quantity: parsedStock } : product
       );
@@ -382,7 +383,8 @@ export default function Products() {
 
   const handleUpdatePrice = async (id, field, newValue) => {
     try {
-      await updateProduct(id, { [field]: newValue });
+      const product = products.find(p => p.id === id);
+      await updateProduct(id, { ...product, [field]: newValue });
       const nextProducts = products.map((product) =>
         product.id === id ? { ...product, [field]: newValue } : product
       );
