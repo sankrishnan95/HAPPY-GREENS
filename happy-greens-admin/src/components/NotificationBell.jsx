@@ -5,6 +5,7 @@ import { getNotifications, markAllNotificationsRead, markNotificationRead } from
 import { enableAdminPushNotifications, isAdminPushConfigured } from '../services/adminPush.service';
 import { Capacitor } from '@capacitor/core';
 import { Badge } from '@capawesome/capacitor-badge';
+import { PushNotifications } from '@capacitor/push-notifications';
 
 const ENABLE_NOTIFICATION_POLLING = true;
 const NOTIFICATION_POLL_INTERVAL_MS = 30000;
@@ -88,14 +89,30 @@ export default function NotificationBell() {
       void loadNotifications();
     }
 
-    if (isAdminPushConfigured() && window.Notification?.permission === 'granted') {
-      void enableAdminPushNotifications({
-        onForegroundMessage: () => void loadNotifications(),
-      }).then((result) => {
-        if (isMountedRef.current) {
-          setPushState(result.enabled ? 'enabled' : 'idle');
-        }
-      });
+    if (isAdminPushConfigured()) {
+      if (Capacitor.isNativePlatform()) {
+        // Native Auto-init if already granted
+        PushNotifications.checkPermissions().then((status) => {
+          if (status.receive === 'granted') {
+            void enableAdminPushNotifications({
+              onForegroundMessage: () => void loadNotifications(),
+            }).then((result) => {
+              if (isMountedRef.current) {
+                setPushState(result.enabled ? 'enabled' : 'idle');
+              }
+            });
+          }
+        });
+      } else if (window.Notification?.permission === 'granted') {
+        // Web Auto-init
+        void enableAdminPushNotifications({
+          onForegroundMessage: () => void loadNotifications(),
+        }).then((result) => {
+          if (isMountedRef.current) {
+            setPushState(result.enabled ? 'enabled' : 'idle');
+          }
+        });
+      }
     }
 
     const intervalId = ENABLE_NOTIFICATION_POLLING
