@@ -2,6 +2,26 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { App as CapApp } from '@capacitor/app';
+
+// Initialize Capacitor plugins on native platforms
+if (Capacitor.isNativePlatform()) {
+  StatusBar.setStyle({ style: Style.Dark });
+  StatusBar.setBackgroundColor({ color: '#15803d' });
+  SplashScreen.hide();
+
+  // Handle Android hardware back button
+  CapApp.addListener('backButton', ({ canGoBack }) => {
+    if (canGoBack) {
+      window.history.back();
+    } else {
+      CapApp.exitApp();
+    }
+  });
+}
 
 const STALE_DEPLOY_RECOVERY_KEY = 'happy-greens-admin:stale-deploy-recovery';
 

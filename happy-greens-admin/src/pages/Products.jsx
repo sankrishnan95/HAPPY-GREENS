@@ -1,8 +1,113 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency } from '../utils/format';
-import { Search, Plus, Edit2, Trash2, Package } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Package, Check, X } from 'lucide-react';
 import { getProducts, deleteProduct, updateProductStatus, updateProduct, getCategories, bulkUpdateProductCategory } from '../services/product.service';
+
+/* ── Inline editable price cell ── */
+function InlinePriceEdit({ value, onSave, prefix = '₹', className = '' }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef(null);
+
+  const startEditing = () => {
+    setDraft(value != null ? String(value) : '');
+    setEditing(true);
+  };
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const cancel = () => {
+    setEditing(false);
+    setDraft('');
+  };
+
+  const commit = async () => {
+    const parsed = parseFloat(draft);
+    if (isNaN(parsed) || parsed < 0) {
+      cancel();
+      return;
+    }
+    if (parsed === Number(value)) {
+      cancel();
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(parsed);
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Escape') {
+      cancel();
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-gray-400">{prefix}</span>
+        <input
+          ref={inputRef}
+          type="number"
+          step="0.01"
+          min="0"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={commit}
+          disabled={saving}
+          className="w-20 rounded border border-primary/40 bg-primary/5 px-1.5 py-0.5 text-sm font-semibold text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50"
+        />
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={commit}
+          disabled={saving}
+          className="rounded p-0.5 text-green-600 hover:bg-green-50"
+          title="Save"
+        >
+          <Check className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={cancel}
+          disabled={saving}
+          className="rounded p-0.5 text-gray-400 hover:bg-gray-100"
+          title="Cancel"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={startEditing}
+      className={`group inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-primary/5 ${className}`}
+      title="Click to edit price"
+    >
+      <span>{formatCurrency(value)}</span>
+      <Edit2 className="h-3 w-3 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100" />
+    </button>
+  );
+}
 
 const PRODUCTS_CACHE_KEY = 'admin_products_page_cache_v1';
 const PRODUCTS_SCROLL_KEY = 'admin_products_scroll_v1';
@@ -275,6 +380,20 @@ export default function Products() {
     }
   };
 
+  const handleUpdatePrice = async (id, field, newValue) => {
+    try {
+      await updateProduct(id, { [field]: newValue });
+      const nextProducts = products.map((product) =>
+        product.id === id ? { ...product, [field]: newValue } : product
+      );
+      setProducts(nextProducts);
+      writeProductsCache({ products: nextProducts, categories });
+    } catch (error) {
+      console.error('Error updating price:', error);
+      alert('Failed to update price');
+    }
+  };
+
   const toggleProductSelection = (productId) => {
     setSelectedProductIds((current) =>
       current.includes(productId)
@@ -498,17 +617,23 @@ export default function Products() {
                     <td className="whitespace-nowrap px-6 py-4">
                       {product.discountPrice ? (
                         <>
-                          <div className="text-sm font-semibold text-gray-400 line-through">
-                            {formatCurrency(product.price)}
-                          </div>
-                          <div className="text-sm font-bold text-green-600">
-                            {formatCurrency(product.discountPrice)}
-                          </div>
+                          <InlinePriceEdit
+                            value={product.price}
+                            onSave={(val) => handleUpdatePrice(product.id, 'price', val)}
+                            className="text-sm font-semibold text-gray-400 line-through"
+                          />
+                          <InlinePriceEdit
+                            value={product.discountPrice}
+                            onSave={(val) => handleUpdatePrice(product.id, 'discountPrice', val)}
+                            className="text-sm font-bold text-green-600"
+                          />
                         </>
                       ) : (
-                        <div className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(product.price)}
-                        </div>
+                        <InlinePriceEdit
+                          value={product.price}
+                          onSave={(val) => handleUpdatePrice(product.id, 'price', val)}
+                          className="text-sm font-semibold text-gray-900"
+                        />
                       )}
                       <div className="text-xs text-gray-500">
                         per {getUnitLabel(product.unit)}

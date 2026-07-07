@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -115,4 +115,34 @@ code {
     width: 0;
     height: 0;
     display: none;
+}
+
+/* ── Capacitor / Mobile Optimizations ── */
+:root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+}
+
+body {
+    padding-top: var(--sat);
+    padding-bottom: var(--sab);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+}
+
+/* Smoother touch scrolling */
+.overflow-y-auto,
+.overflow-x-auto,
+.sidebar-scroll-hidden {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text selection on interactive elements for native feel */
+button, a, [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
 }

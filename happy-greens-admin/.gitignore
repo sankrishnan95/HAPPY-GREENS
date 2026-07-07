@@ -5,3 +5,7 @@ dist
 .env.*.local
 .DS_Store
 Thumbs.db
+
+# Capacitor Android
+android/app/build/
+android/.gradle/
