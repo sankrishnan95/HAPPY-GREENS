@@ -5,6 +5,7 @@ import { register, googleLogin } from '../services/auth.service';
 import { GoogleLogin } from '@react-oauth/google';
 import { ArrowLeft } from 'lucide-react';
 import Button from '../components/Button';
+import { isNativeGoogleSignInAvailable, signInWithNativeGoogle } from '../services/nativeGoogleAuth.service';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -12,6 +13,7 @@ const Register = () => {
     const [formData, setFormData] = useState({ full_name: '', email: '', password: '' });
     const [error, setError] = useState('');
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const showNativeGoogleLogin = isNativeGoogleSignInAvailable();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,6 +33,17 @@ const Register = () => {
             navigate('/');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Google registration failed');
+        }
+    };
+
+    const handleNativeGoogleLogin = async () => {
+        try {
+            const idToken = await signInWithNativeGoogle();
+            const data = await googleLogin(idToken);
+            setUser(data.user, data.token);
+            navigate('/');
+        } catch (err: any) {
+            setError(err?.message || err?.response?.data?.message || 'Google registration failed');
         }
     };
 
@@ -59,7 +72,17 @@ const Register = () => {
 
                 {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center border border-red-200">{error}</div>}
 
-                {googleClientId && (
+                {showNativeGoogleLogin ? (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="lg"
+                        className="mb-6 w-full border-white/70 bg-white/80 text-gray-800 shadow-sm"
+                        onClick={handleNativeGoogleLogin}
+                    >
+                        Sign up with Google
+                    </Button>
+                ) : googleClientId && (
                     <div className="mb-6 flex justify-center">
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}

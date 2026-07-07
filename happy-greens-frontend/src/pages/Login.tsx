@@ -5,6 +5,7 @@ import { login, googleLogin } from '../services/auth.service';
 import { GoogleLogin } from '@react-oauth/google';
 import Button from '../components/Button';
 import { ArrowLeft } from 'lucide-react';
+import { isNativeGoogleSignInAvailable, signInWithNativeGoogle } from '../services/nativeGoogleAuth.service';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const showNativeGoogleLogin = isNativeGoogleSignInAvailable();
 
     useEffect(() => {
         if (user) {
@@ -49,6 +51,21 @@ const Login = () => {
         }
     };
 
+    const handleNativeGoogleLogin = async () => {
+        setError('');
+        setLoading(true);
+        try {
+            const idToken = await signInWithNativeGoogle();
+            const data = await googleLogin(idToken);
+            setUser(data.user, data.token);
+            navigate('/');
+        } catch (err: any) {
+            setError(err?.message || err?.response?.data?.message || 'Google login failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
             {/* Background image */}
@@ -78,7 +95,18 @@ const Login = () => {
 
                 {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm text-center font-medium border border-red-200">{error}</div>}
 
-                {googleClientId && (
+                {showNativeGoogleLogin ? (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="lg"
+                        className="mb-6 w-full border-white/70 bg-white/80 text-gray-800 shadow-sm"
+                        onClick={handleNativeGoogleLogin}
+                        isLoading={loading}
+                    >
+                        Continue with Google
+                    </Button>
+                ) : googleClientId && (
                     <div className="mb-6 flex justify-center">
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}

@@ -3,7 +3,8 @@ import { useStore } from '../store/useStore';
 import { captureFrontendException } from '../lib/monitoring/sentry';
 
 const DEPLOYED_API_BASE_URL = 'https://happy-greens-18n3.onrender.com/api';
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || DEPLOYED_API_BASE_URL;
+const configuredApiRoot = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (configuredApiRoot ? `${configuredApiRoot}/api` : DEPLOYED_API_BASE_URL);
 export const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const api = axios.create({
