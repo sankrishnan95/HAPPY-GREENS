@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "517103870239",
+    "project_id": "happygreensauth",
+    "storage_bucket": "happygreensauth.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:517103870239:android:80664641d704811a88502a",
+        "android_client_info": {
+          "package_name": "com.happygreens.admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCw17x4tYbDfInweSMljpTceuAMAqZiEGI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

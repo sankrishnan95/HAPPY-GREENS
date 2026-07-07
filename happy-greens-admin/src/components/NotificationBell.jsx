@@ -3,6 +3,8 @@ import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markAllNotificationsRead, markNotificationRead } from '../services/notification.service';
 import { enableAdminPushNotifications, isAdminPushConfigured } from '../services/adminPush.service';
+import { Capacitor } from '@capacitor/core';
+import { Badge } from '@capawesome/capacitor-badge';
 
 const ENABLE_NOTIFICATION_POLLING = true;
 const NOTIFICATION_POLL_INTERVAL_MS = 30000;
@@ -109,6 +111,17 @@ export default function NotificationBell() {
       }
     };
   }, []);
+
+  // Update native app badge when unreadCount changes
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      if (unreadCount > 0) {
+        Badge.set({ count: unreadCount }).catch(console.error);
+      } else {
+        Badge.clear().catch(console.error);
+      }
+    }
+  }, [unreadCount]);
 
   const handleEnablePush = async () => {
     try {

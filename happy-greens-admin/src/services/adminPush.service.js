@@ -1,6 +1,9 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging';
 import { registerPushSubscription } from './notification.service';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { Badge } from '@capawesome/capacitor-badge';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -72,6 +75,66 @@ const getServiceWorkerUrl = () => {
 export const isAdminPushConfigured = () => isConfigured;
 
 export const enableAdminPushNotifications = async ({ onForegroundMessage } = {}) => {
+  if (Capacitor.isNativePlatform()) {
+    return enableNativePushNotifications({ onForegroundMessage });
+  }
+  return enableWebPushNotifications({ onForegroundMessage });
+};
+
+const enableNativePushNotifications = async ({ onForegroundMessage }) => {
+  if (!isConfigured) {
+    return { enabled: false, reason: 'not_configured' };
+  }
+
+  try {
+    let permStatus = await PushNotifications.checkPermissions();
+
+    if (permStatus.receive === 'prompt') {
+      permStatus = await PushNotifications.requestPermissions();
+    }
+
+    if (permStatus.receive !== 'granted') {
+      return { enabled: false, reason: 'permission_denied' };
+    }
+
+    // Register with Apple / Google to receive push via APNS/FCM
+    await PushNotifications.register();
+
+    // Listeners
+    PushNotifications.removeAllListeners();
+
+    PushNotifications.addListener('registration', async (token) => {
+      // The token string is the FCM token on Android
+      try {
+        await registerPushSubscription(token.value);
+      } catch (err) {
+        console.error('Failed to send native push token to backend:', err);
+      }
+    });
+
+    PushNotifications.addListener('registrationError', (error) => {
+      console.error('Error on native push registration:', error);
+    });
+
+    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      onForegroundMessage?.(notification);
+    });
+
+    PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+      const data = notification.notification.data;
+      if (data && data.link) {
+        window.location.assign(data.link);
+      }
+    });
+
+    return { enabled: true };
+  } catch (error) {
+    console.error('Failed to configure native push:', error);
+    return { enabled: false, reason: error.message };
+  }
+};
+
+const enableWebPushNotifications = async ({ onForegroundMessage }) => {
   if (!isConfigured || !('serviceWorker' in navigator) || !('Notification' in window)) {
     return { enabled: false, reason: 'not_configured' };
   }
