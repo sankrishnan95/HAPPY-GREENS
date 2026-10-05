@@ -250,7 +250,7 @@ function AppLayout() {
                                     <Link to="/privacy-policy" className="transition-colors hover:text-white">Privacy Policy</Link>
                                     <Link to="/terms-and-conditions" className="transition-colors hover:text-white">Terms &amp; Conditions</Link>
                                     <Link to="/refund-cancellation-policy" className="transition-colors hover:text-white">Refund Policy</Link>
-                                    {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-lime-300/50 bg-green-700 px-4 py-2 font-semibold text-white transition hover:bg-green-600"><AndroidIcon className="h-5 w-5" />Download Android app</a>}
+                                    {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} download="Happy-Greens-Storefront.apk" className="inline-flex items-center gap-2 rounded-full border border-lime-300/50 bg-green-700 px-4 py-2 font-semibold text-white transition hover:bg-green-600"><AndroidIcon className="h-5 w-5" />Download Android app</a>}
                                 </div>
                                 <p className="text-sm text-white/60 mt-2 sm:mt-4">&copy; 2026 Happy Greens. All rights reserved.</p>
                             </div>

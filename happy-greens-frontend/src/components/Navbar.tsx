@@ -165,7 +165,7 @@ const Navbar = () => {
                             <Link to="/shop" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-green-700">Shop</Link>
                             {user && <Link to="/wishlist" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-rose-600">Wishlist</Link>}
                             {user && <Link to="/rewards" className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-amber-600"><Star className="h-4 w-4" />Rewards</Link>}
-                            {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-sm font-bold text-white shadow-md ring-1 ring-green-700/20 transition hover:bg-green-700"><AndroidIcon className="h-5 w-5" />Get the Android app</a>}
+                            {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} download="Happy-Greens-Storefront.apk" className="inline-flex items-center gap-2 rounded-full bg-green-600 px-4 py-2 text-sm font-bold text-white shadow-md ring-1 ring-green-700/20 transition hover:bg-green-700"><AndroidIcon className="h-5 w-5" />Get the Android app</a>}
                             <Link to={user ? '/profile' : '/login'} className="inline-flex items-center gap-2 rounded-full border border-[#dbe7d0] bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"><User className="h-4 w-4" /><span>{user ? user.full_name : 'Login'}</span></Link>
                         </div>
                     </div>
@@ -190,7 +190,7 @@ const Navbar = () => {
                                     <ChevronRight className="h-4 w-4 text-slate-400" />
                                 </Link>
                             ))}
-                            {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center justify-between rounded-2xl bg-green-600 px-3 py-3 text-sm font-bold text-white shadow-md transition hover:bg-green-700"><span className="inline-flex items-center gap-2"><AndroidIcon className="h-5 w-5" />Get the Android app</span><ChevronRight className="h-4 w-4 text-white/80" /></a>}
+                            {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} download="Happy-Greens-Storefront.apk" onClick={() => setMenuOpen(false)} className="flex items-center justify-between rounded-2xl bg-green-600 px-3 py-3 text-sm font-bold text-white shadow-md transition hover:bg-green-700"><span className="inline-flex items-center gap-2"><AndroidIcon className="h-5 w-5" />Get the Android app</span><ChevronRight className="h-4 w-4 text-white/80" /></a>}
                         </div>
                     </aside>
                 </div>
