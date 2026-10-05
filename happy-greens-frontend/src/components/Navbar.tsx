@@ -1,9 +1,10 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShoppingCart, User, Search, Star, Heart, Menu, X, ChevronRight } from 'lucide-react';
+import { ShoppingCart, User, Search, Star, Heart, Menu, X, ChevronRight, Download } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { ANDROID_APP_DOWNLOAD_URL } from '../config/appDownload';
 import OptimizedImage from './OptimizedImage';
 import NotificationBell from './NotificationBell';
 
@@ -163,6 +164,7 @@ const Navbar = () => {
                             <Link to="/shop" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-green-700">Shop</Link>
                             {user && <Link to="/wishlist" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-rose-600">Wishlist</Link>}
                             {user && <Link to="/rewards" className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-amber-600"><Star className="h-4 w-4" />Rewards</Link>}
+                            {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-white"><Download className="h-4 w-4" />Get the Android app</a>}
                             <Link to={user ? '/profile' : '/login'} className="inline-flex items-center gap-2 rounded-full border border-[#dbe7d0] bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"><User className="h-4 w-4" /><span>{user ? user.full_name : 'Login'}</span></Link>
                         </div>
                     </div>
@@ -187,6 +189,7 @@ const Navbar = () => {
                                     <ChevronRight className="h-4 w-4 text-slate-400" />
                                 </Link>
                             ))}
+                            {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-semibold text-green-700 transition hover:bg-[#f5f8f0]"><span className="inline-flex items-center gap-2"><Download className="h-4 w-4" />Get the Android app</span><ChevronRight className="h-4 w-4 text-slate-400" /></a>}
                         </div>
                     </aside>
                 </div>
