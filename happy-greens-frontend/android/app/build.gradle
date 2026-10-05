@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def releaseStorePath = System.getenv('HAPPY_GREENS_RELEASE_KEYSTORE')
+def releaseStorePassword = System.getenv('HAPPY_GREENS_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = System.getenv('HAPPY_GREENS_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('HAPPY_GREENS_RELEASE_KEY_PASSWORD')
+def hasReleaseSigningConfig = [releaseStorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
+
 android {
     namespace = "com.happygreens.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +22,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasReleaseSigningConfig) {
+                storeFile file(releaseStorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasReleaseSigningConfig) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

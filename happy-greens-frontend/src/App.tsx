@@ -1,5 +1,7 @@
-import { ReactNode, Suspense, lazy, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom';
+import { ReactNode, Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, useNavigationType, Link } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import Navbar from './components/Navbar';
 import AndroidIcon from './components/AndroidIcon';
 import { ANDROID_APP_DOWNLOAD_URL } from './config/appDownload';
@@ -182,6 +184,73 @@ const AuthRedirectHandler = () => {
     return null;
 };
 
+const NativeBackButtonHandler = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const navigationType = useNavigationType();
+    const routeStack = useRef<string[]>([]);
+    const currentRoute = `${location.pathname}${location.search}${location.hash}`;
+
+    useEffect(() => {
+        const stack = routeStack.current;
+
+        if (stack.length === 0) {
+            stack.push(currentRoute);
+            return;
+        }
+
+        if (navigationType === 'PUSH') {
+            if (stack[stack.length - 1] !== currentRoute) stack.push(currentRoute);
+            return;
+        }
+
+        if (navigationType === 'REPLACE') {
+            stack[stack.length - 1] = currentRoute;
+            return;
+        }
+
+        const previousIndex = stack.lastIndexOf(currentRoute);
+        if (previousIndex >= 0) {
+            stack.splice(previousIndex + 1);
+        } else {
+            stack.push(currentRoute);
+        }
+    }, [currentRoute, navigationType]);
+
+    useEffect(() => {
+        if (!Capacitor.isNativePlatform()) return;
+
+        let isDisposed = false;
+        let listener: { remove: () => Promise<void> } | undefined;
+
+        CapacitorApp.addListener('backButton', () => {
+            const stack = routeStack.current;
+            if (stack.length > 1) {
+                stack.pop();
+                navigate(stack[stack.length - 1], { replace: true });
+            } else if (location.pathname !== '/') {
+                stack[0] = '/';
+                navigate('/', { replace: true });
+            } else {
+                void CapacitorApp.exitApp();
+            }
+        }).then((handle) => {
+            if (isDisposed) {
+                void handle.remove();
+            } else {
+                listener = handle;
+            }
+        });
+
+        return () => {
+            isDisposed = true;
+            void listener?.remove();
+        };
+    }, [location.pathname, navigate]);
+
+    return null;
+};
+
 const authPaths = new Set(['/login', '/register', '/forgot-password', '/reset-password']);
 
 function AppLayout() {
@@ -193,6 +262,7 @@ function AppLayout() {
             <ScrollToTop />
             <PageTracker />
             <AuthRedirectHandler />
+            <NativeBackButtonHandler />
             <div className="min-h-screen flex flex-col">
                 <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
                 {!isAuthPage && <Navbar />}
