@@ -21,7 +21,7 @@ const formatRelativeTime = (value: string) => {
     return `${diffDays}d ago`;
 };
 
-const NotificationBell = () => {
+const NotificationBell = ({ menuItem = false }: { menuItem?: boolean }) => {
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<AppNotification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -153,12 +153,17 @@ const NotificationBell = () => {
             <button
                 type="button"
                 onClick={() => setOpen((current) => !current)}
-                className="safe-touch relative inline-flex items-center justify-center rounded-2xl border border-[#dbe7d0] bg-white text-slate-700 shadow-sm"
+                className={menuItem
+                    ? 'safe-touch flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold text-slate-800'
+                    : 'safe-touch relative inline-flex items-center justify-center rounded-2xl border border-[#dbe7d0] bg-white text-slate-700 shadow-sm'}
                 aria-label="Notifications"
             >
                 <Bell className="h-5 w-5" />
+                {menuItem && <span>Notifications</span>}
                 {unreadCount > 0 ? (
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-green-600 px-1 text-[10px] font-bold text-white">
+                    <span className={menuItem
+                        ? 'ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-green-600 px-1 text-[10px] font-bold text-white'
+                        : 'absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-green-600 px-1 text-[10px] font-bold text-white'}>
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 ) : null}

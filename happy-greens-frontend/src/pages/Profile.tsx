@@ -1,4 +1,4 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useEffect, useState } from 'react';
 import { getOrders } from '../services/order.service';
@@ -29,6 +29,7 @@ const emptyAddressForm: AddressPayload = {
 
 const Profile = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, logout, setUser, token } = useStore((state) => ({ user: state.user, logout: state.logout, setUser: state.setUser, token: state.token }));
 
     const [isEditing, setIsEditing] = useState(false);
@@ -90,6 +91,16 @@ const Profile = () => {
         };
         fetchAddresses();
     }, [user, token]);
+
+    useEffect(() => {
+        if (location.hash !== '#saved-addresses') return;
+
+        const timeoutId = window.setTimeout(() => {
+            document.getElementById('saved-addresses')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [location.hash]);
 
     useEffect(() => {
         setProfileForm({
@@ -274,7 +285,7 @@ const Profile = () => {
         <div className="mx-auto max-w-3xl">
             <h1 className="mb-8 text-3xl font-bold">My Profile</h1>
 
-            <div className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div id="saved-addresses" className="mb-6 scroll-mt-24 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold">Account Information</h2>
                     {!isEditing && (

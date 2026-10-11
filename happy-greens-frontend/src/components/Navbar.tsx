@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShoppingCart, User, Search, Star, Heart, Menu, X, ChevronRight } from 'lucide-react';
+import { ShoppingCart, User, Search, Star, Heart, MoreVertical, X, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -65,8 +65,13 @@ const Navbar = () => {
 
     const quickLinks = [
         { label: 'Shop', to: '/shop' },
-        ...(user ? [{ label: 'Rewards', to: '/rewards' }] : []),
-        ...(user ? [{ label: 'Wishlist', to: '/wishlist' }] : []),
+        { label: 'Help & Support', to: '/help-support' },
+        ...(user ? [
+            { label: 'Rewards', to: '/rewards' },
+            { label: 'Wishlist', to: '/wishlist' },
+            { label: 'Order History', to: '/orders' },
+            { label: 'Saved Addresses', to: '/profile#saved-addresses' },
+        ] : []),
         { label: user ? 'Profile' : 'Login', to: user ? '/profile' : '/login' },
     ];
 
@@ -76,15 +81,6 @@ const Navbar = () => {
                 <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-3 py-3 sm:px-4 md:px-5">
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2.5">
-                            <button
-                                type="button"
-                                onClick={() => setMenuOpen(true)}
-                                className="safe-touch inline-flex items-center justify-center rounded-2xl border border-[#dbe7d0] bg-white text-slate-700 shadow-sm md:hidden"
-                                aria-label="Open menu"
-                            >
-                                <Menu className="h-5 w-5" />
-                            </button>
-
                             <Link to="/" className="flex min-w-0 items-center gap-2.5" onClick={() => setMenuOpen(false)}>
                                 <img
                                     src="/logo.png"
@@ -101,11 +97,11 @@ const Navbar = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {user && <NotificationBell />}
+                            {user && <div className="hidden md:block"><NotificationBell /></div>}
                             {user && (
                                 <Link
                                     to="/wishlist"
-                                    className="safe-touch relative inline-flex items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-rose-600 shadow-sm"
+                                    className="safe-touch relative hidden items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-rose-600 shadow-sm md:inline-flex"
                                     aria-label="Wishlist"
                                 >
                                     <Heart className="h-5 w-5 fill-rose-300" />
@@ -125,6 +121,17 @@ const Navbar = () => {
                                     </span>
                                 )}
                             </Link>
+
+                            <button
+                                type="button"
+                                onClick={() => setMenuOpen(true)}
+                                className="safe-touch inline-flex items-center justify-center rounded-2xl border border-[#dbe7d0] bg-white text-slate-700 shadow-sm md:hidden"
+                                aria-label="Open shortcuts menu"
+                                aria-haspopup="dialog"
+                                aria-expanded={menuOpen}
+                            >
+                                <MoreVertical className="h-5 w-5" />
+                            </button>
                         </div>
                     </div>
 
@@ -190,6 +197,11 @@ const Navbar = () => {
                                     <ChevronRight className="h-4 w-4 text-slate-400" />
                                 </Link>
                             ))}
+                            {user && menuOpen && (
+                                <div className="rounded-2xl transition hover:bg-[#f5f8f0]">
+                                    <NotificationBell menuItem />
+                                </div>
+                            )}
                             {ANDROID_APP_DOWNLOAD_URL && <a href={ANDROID_APP_DOWNLOAD_URL} download="Happy-Greens-Storefront.apk" onClick={() => setMenuOpen(false)} className="flex items-center justify-between rounded-2xl bg-green-600 px-3 py-3 text-sm font-bold text-white shadow-md transition hover:bg-green-700"><span className="inline-flex items-center gap-2"><AndroidIcon className="h-5 w-5" />Get the Android app</span><ChevronRight className="h-4 w-4 text-white/80" /></a>}
                         </div>
                     </aside>

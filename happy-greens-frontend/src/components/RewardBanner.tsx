@@ -50,7 +50,7 @@ const RewardBanner = () => {
                 </p>
                 <Link 
                     to="/rewards"
-                    className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 transition-colors px-6 py-2.5 text-sm font-semibold text-white backdrop-blur-sm group"
+                    className="hidden md:inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 transition-colors px-6 py-2.5 text-sm font-semibold text-white backdrop-blur-sm group"
                 >
                     View Rewards
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

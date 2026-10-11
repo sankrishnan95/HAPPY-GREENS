@@ -6,7 +6,6 @@ import Navbar from './components/Navbar';
 import AndroidIcon from './components/AndroidIcon';
 import AndroidStartupIntro from './components/AndroidStartupIntro';
 import { ANDROID_APP_DOWNLOAD_URL } from './config/appDownload';
-import ChatbotWidget from './components/ChatbotWidget';
 import { Toaster } from 'react-hot-toast';
 import { trackPageView } from './services/analytics.service';
 import { checkBackendHealth } from './services/api';
@@ -26,6 +25,7 @@ const OrdersList = lazy(() => import('./pages/OrdersList'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail'));
 const Rewards = lazy(() => import('./pages/Rewards'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
+const HelpSupport = lazy(() => import('./pages/HelpSupport'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
 const RefundCancellationPolicy = lazy(() => import('./pages/RefundCancellationPolicy'));
@@ -320,6 +320,7 @@ function AppLayout() {
                             <Route path="/orders/:id" element={<OrderDetail />} />
                             <Route path="/rewards" element={<Rewards />} />
                             <Route path="/wishlist" element={<Wishlist />} />
+                            <Route path="/help-support" element={<HelpSupport />} />
                             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                             <Route path="/refund-cancellation-policy" element={<RefundCancellationPolicy />} />
@@ -363,7 +364,6 @@ function AppLayout() {
                         </div>
                     </footer>
                     )}
-                    {!isAuthPage && <ChatbotWidget />}
                 </div>
         </>
     );
