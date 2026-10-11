@@ -137,273 +137,128 @@
     background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.5), rgba(148, 163, 184, 0.18));
   }
 
-  .delivery-loader__spark {
+  .delivery-loader__character {
     position: absolute;
-    left: 0.8rem;
-    height: 0.12rem;
-    border-radius: 999px;
-    background: rgba(148, 163, 184, 0.55);
-    animation: delivery-spark-fade 0.9s ease-in-out infinite;
+    left: 50%;
+    bottom: 1.05rem;
+    width: 4.6rem;
+    height: 5.2rem;
+    transform: translateX(-50%);
+    transform-origin: 50% 100%;
+    animation: delivery-character-bounce 0.58s cubic-bezier(0.33, 0, 0.67, 1) infinite alternate;
   }
 
-  .delivery-loader__spark--one {
-    bottom: 1.5rem;
-    width: 1rem;
-    animation-delay: 0s;
-  }
-
-  .delivery-loader__spark--two {
-    bottom: 2.05rem;
-    width: 0.7rem;
-    animation-delay: -0.2s;
-  }
-
-  .delivery-loader__spark--three {
-    bottom: 2.55rem;
-    width: 0.48rem;
-    animation-delay: -0.35s;
-  }
-
-  .delivery-loader__scooter {
-    position: absolute;
-    left: 0.7rem;
-    bottom: 0.95rem;
-    width: 8.2rem;
-    height: 5rem;
-    animation: delivery-scooter-move 2s ease-in-out infinite;
-  }
-
-  .delivery-loader__crate {
-    position: absolute;
-    left: 0.45rem;
-    top: 0.9rem;
-    width: 1.9rem;
-    height: 1.5rem;
-    border-radius: 0.5rem 0.5rem 0.38rem 0.38rem;
-    background: linear-gradient(180deg, #f59e0b, #d97706);
-    box-shadow: inset 0 -0.12rem 0 rgba(0, 0, 0, 0.14);
-  }
-
-  .delivery-loader__crate::before,
-  .delivery-loader__crate::after {
+  .delivery-loader__character::after {
     content: "";
     position: absolute;
-    top: 0.22rem;
-    bottom: 0.18rem;
-    width: 0.12rem;
-    background: rgba(120, 53, 15, 0.22);
+    left: 25%;
+    right: 25%;
+    bottom: -0.32rem;
+    height: 0.36rem;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.16);
+    filter: blur(2px);
+    animation: delivery-character-shadow 0.58s ease-in-out infinite alternate;
   }
 
-  .delivery-loader__crate::before {
-    left: 0.5rem;
+  .delivery-loader__character svg {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(0 0.22rem 0.16rem rgba(15, 23, 42, 0.12));
   }
 
-  .delivery-loader__crate::after {
-    right: 0.5rem;
+  .character-face__eye {
+    fill: #26332a;
   }
 
-  .delivery-loader__veg {
-    position: absolute;
-    display: block;
-    border-radius: 999px;
+  .character-face__cheek {
+    fill: #ffb0a0;
+    opacity: 0.9;
   }
 
-  .delivery-loader__veg--leaf {
-    left: 0.2rem;
-    top: -0.32rem;
-    width: 0.68rem;
-    height: 0.68rem;
-    background: #22c55e;
-    box-shadow: 0.45rem 0.06rem 0 #4ade80;
+  .character-face__smile {
+    fill: none;
+    stroke: #743c32;
+    stroke-linecap: round;
+    stroke-width: 3;
   }
 
-  .delivery-loader__veg--orange {
-    right: 0.2rem;
-    top: -0.24rem;
-    width: 0.64rem;
-    height: 0.64rem;
-    background: #fb923c;
+  .character-shine {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.82);
+    stroke-linecap: round;
+    stroke-width: 4;
   }
 
-  .delivery-loader__rider {
-    position: absolute;
-    left: 2.55rem;
-    top: 0.1rem;
-    width: 2rem;
-    height: 2.45rem;
-    animation: delivery-rider-bob 0.85s ease-in-out infinite;
+  .character-tomato__body {
+    fill: #f04438;
+    stroke: #d92d20;
+    stroke-width: 2;
   }
 
-  .delivery-loader__helmet {
-    position: absolute;
-    left: 0.35rem;
-    top: 0;
-    width: 0.98rem;
-    height: 0.82rem;
-    border-radius: 0.68rem 0.68rem 0.32rem 0.32rem;
-    background: linear-gradient(180deg, #16a34a, #15803d);
-    box-shadow: inset 0 -0.12rem 0 rgba(0, 0, 0, 0.12);
+  .character-tomato__leaf {
+    fill: #26934a;
+    stroke: #16713a;
+    stroke-width: 1.5;
   }
 
-  .delivery-loader__face {
-    position: absolute;
-    left: 0.52rem;
-    top: 0.35rem;
-    width: 0.62rem;
-    height: 0.62rem;
-    border-radius: 999px;
-    background: #f6c9a2;
+  .character-coffee__cup {
+    fill: #dfb77f;
+    stroke: #b88750;
+    stroke-width: 2;
   }
 
-  .delivery-loader__body {
-    position: absolute;
-    left: 0.28rem;
-    top: 0.72rem;
-    width: 1.15rem;
-    height: 1.42rem;
-    border-radius: 0.68rem 0.68rem 0.36rem 0.36rem;
-    background: linear-gradient(180deg, #22c55e, #16a34a);
-    transform: skew(-8deg);
+  .character-coffee__lid,
+  .character-coffee__rim {
+    fill: #1e3932;
   }
 
-  .delivery-loader__arm {
-    position: absolute;
-    left: 1.02rem;
-    top: 1rem;
-    width: 0.7rem;
-    height: 0.16rem;
-    border-radius: 999px;
-    background: #f6c9a2;
-    transform: rotate(-12deg);
-    transform-origin: left center;
+  .character-coffee__sleeve {
+    fill: #00704a;
   }
 
-  .delivery-loader__scarf {
-    position: absolute;
-    left: 0.3rem;
-    top: 0.82rem;
-    width: 0.6rem;
-    height: 0.22rem;
-    border-radius: 999px;
-    background: #ef4444;
-    box-shadow: 0.24rem 0.18rem 0 -0.04rem #ef4444;
+  .character-coffee__logo {
+    fill: #fffdf7;
   }
 
-  .delivery-loader__bike {
-    position: absolute;
-    left: 1.55rem;
-    bottom: 0;
-    width: 5.3rem;
-    height: 2.95rem;
+  .character-coffee__logo-mark {
+    fill: #00704a;
   }
 
-  .delivery-loader__handle {
-    position: absolute;
-    right: 0.86rem;
-    top: 0.28rem;
-    width: 0.98rem;
-    height: 0.14rem;
-    border-radius: 999px;
-    background: #1f2937;
-    transform: rotate(20deg);
-    transform-origin: right center;
+  .character-coffee__brand {
+    fill: #fff;
+    font-size: 5px;
+    font-weight: 700;
+    letter-spacing: 0.15px;
+    text-anchor: middle;
   }
 
-  .delivery-loader__mirror {
-    position: absolute;
-    right: 0.7rem;
-    top: 0.04rem;
-    width: 0.28rem;
-    height: 0.28rem;
-    border-radius: 999px;
-    border: 0.08rem solid #1f2937;
-    background: #dbeafe;
+  .character-shampoo__cap {
+    fill: #276749;
+    stroke: #1f513b;
+    stroke-width: 2;
   }
 
-  .delivery-loader__seat {
-    position: absolute;
-    left: 1.15rem;
-    top: 0.76rem;
-    width: 1.08rem;
-    height: 0.24rem;
-    border-radius: 999px;
-    background: #1f2937;
+  .character-shampoo__body {
+    fill: #f6c5d0;
+    stroke: #cf8195;
+    stroke-width: 2;
   }
 
-  .delivery-loader__frame {
-    position: absolute;
-    left: 0.5rem;
-    right: 0.6rem;
-    top: 0.88rem;
-    bottom: 0.76rem;
-    border-radius: 1.1rem 1.1rem 0.68rem 0.68rem;
-    background: linear-gradient(180deg, #22c55e, #15803d);
-    clip-path: polygon(9% 8%, 75% 8%, 100% 56%, 79% 92%, 28% 92%, 0% 56%);
-    box-shadow: inset 0 -0.14rem 0 rgba(0, 0, 0, 0.12);
+  .character-shampoo__label {
+    fill: #fff8e8;
   }
 
-  .delivery-loader__panel {
-    position: absolute;
-    left: 1rem;
-    top: 1rem;
-    width: 1.4rem;
-    height: 0.84rem;
-    border-radius: 0.75rem 0.45rem 0.5rem 0.4rem;
-    background: rgba(255, 255, 255, 0.16);
+  .character-shampoo__flower {
+    fill: #f0a34a;
+    stroke: #cf813b;
+    stroke-width: 1;
   }
 
-  .delivery-loader__headlight {
-    position: absolute;
-    right: 0.94rem;
-    top: 0.88rem;
-    width: 0.38rem;
-    height: 0.38rem;
-    border-radius: 999px;
-    background: #fde68a;
-    box-shadow: 0 0 0.45rem rgba(253, 230, 138, 0.8);
-  }
 
-  .delivery-loader__fender {
-    position: absolute;
-    right: 0.52rem;
-    bottom: 0.78rem;
-    width: 0.92rem;
-    height: 0.26rem;
-    border-radius: 999px 999px 0.3rem 0.3rem;
-    background: #166534;
-  }
-
-  .delivery-loader__exhaust {
-    position: absolute;
-    left: 0.78rem;
-    bottom: 0.84rem;
-    width: 0.8rem;
-    height: 0.16rem;
-    border-radius: 999px;
-    background: #475569;
-  }
-
-  .delivery-loader__wheel {
-    position: absolute;
-    bottom: 0;
-    width: 1.05rem;
-    height: 1.05rem;
-    border-radius: 999px;
-    border: 0.18rem solid #0f172a;
-    background:
-      radial-gradient(circle at center, #cbd5e1 0 0.16rem, transparent 0.16rem),
-      radial-gradient(circle at center, transparent 0 0.34rem, rgba(15, 23, 42, 0.18) 0.34rem 0.36rem, transparent 0.36rem),
-      #fff;
-    animation: delivery-wheel-spin 0.7s linear infinite;
-  }
-
-  .delivery-loader__wheel--front {
-    right: 0.34rem;
-  }
-
-  .delivery-loader__wheel--back {
-    left: 0.58rem;
-  }
 }
 
 @layer utilities {
@@ -437,40 +292,29 @@
   }
 }
 
-@keyframes delivery-scooter-move {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(4.4rem);
-  }
-}
-
-@keyframes delivery-rider-bob {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(0.1rem);
-  }
-}
-
-@keyframes delivery-wheel-spin {
+@keyframes delivery-character-bounce {
   from {
-    transform: rotate(0deg);
+    transform: translate(-50%, 0) rotate(-4deg);
   }
   to {
-    transform: rotate(360deg);
+    transform: translate(-50%, -0.8rem) rotate(4deg);
   }
 }
 
-@keyframes delivery-spark-fade {
-  0%, 100% {
-    opacity: 0.15;
-    transform: translateX(0);
+@keyframes delivery-character-shadow {
+  from {
+    transform: scaleX(1);
+    opacity: 0.2;
   }
-  50% {
-    opacity: 0.55;
-    transform: translateX(-0.18rem);
+  to {
+    transform: scaleX(0.62);
+    opacity: 0.1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delivery-loader__character,
+  .delivery-loader__character::after {
+    animation-duration: 1.8s;
   }
 }

@@ -14,14 +14,37 @@ if (-not $javaHome) {
 $androidSdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
 $gradleHome = Join-Path $env:TEMP 'HappyGreens-Gradle'
 $androidUserHome = Join-Path $env:TEMP 'HappyGreens-Android'
+$frontendDir = Join-Path $repoRoot 'happy-greens-frontend'
 $signedApk = Join-Path $androidDir 'app\build\outputs\apk\release\app-release.apk'
 $apksigner = Join-Path $androidSdk 'build-tools\36.0.0\apksigner.bat'
 $destination = Join-Path $repoRoot 'Happy-Greens-Storefront.apk'
+$downloadDestination = Join-Path $frontendDir 'public\downloads\Happy-Greens-Storefront.apk'
+$npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
+$npxCommand = Get-Command npx.cmd -ErrorAction SilentlyContinue
 
 foreach ($path in @($keystorePath, $javaHome, $androidSdk, $apksigner)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "Required release build file or tool was not found: $path"
     }
+}
+
+if (-not $npmCommand -or -not $npxCommand) {
+    throw 'Node.js npm and npx were not found on PATH. Open a new PowerShell window after installing Node.js, then retry.'
+}
+
+Push-Location $frontendDir
+try {
+    & $npmCommand.Source run build
+    if ($LASTEXITCODE -ne 0) {
+        throw "Storefront frontend build failed with exit code $LASTEXITCODE."
+    }
+
+    & $npxCommand.Source cap sync android
+    if ($LASTEXITCODE -ne 0) {
+        throw "Capacitor Android sync failed with exit code $LASTEXITCODE."
+    }
+} finally {
+    Pop-Location
 }
 
 $storeSecure = Read-Host 'Enter the existing storefront keystore password (input is hidden)' -AsSecureString
@@ -66,7 +89,8 @@ try {
     }
 
     Copy-Item -LiteralPath $signedApk -Destination $destination -Force
-    Get-Item -LiteralPath $destination | Select-Object FullName, Length, LastWriteTime
+    Copy-Item -LiteralPath $signedApk -Destination $downloadDestination -Force
+    Get-Item -LiteralPath $destination, $downloadDestination | Select-Object FullName, Length, LastWriteTime
     Write-Output 'APK signature verified against the storefront Android OAuth SHA-1.'
 } finally {
     Remove-Item Env:HAPPY_GREENS_RELEASE_KEYSTORE -ErrorAction SilentlyContinue

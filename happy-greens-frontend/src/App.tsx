@@ -4,6 +4,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import Navbar from './components/Navbar';
 import AndroidIcon from './components/AndroidIcon';
+import AndroidStartupIntro from './components/AndroidStartupIntro';
 import { ANDROID_APP_DOWNLOAD_URL } from './config/appDownload';
 import ChatbotWidget from './components/ChatbotWidget';
 import { Toaster } from 'react-hot-toast';
@@ -30,38 +31,73 @@ const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
 const RefundCancellationPolicy = lazy(() => import('./pages/RefundCancellationPolicy'));
 const MonitoringDebug = lazy(() => import('./pages/MonitoringDebug'));
 
+const loadingCharacters = ['tomato', 'coffee', 'shampoo'] as const;
+type LoadingCharacter = (typeof loadingCharacters)[number];
+
+const RandomStoreCharacter = () => {
+    const [character, setCharacter] = useState<LoadingCharacter>(() =>
+        loadingCharacters[Math.floor(Math.random() * loadingCharacters.length)],
+    );
+
+    useEffect(() => {
+        const intervalId = window.setInterval(() => {
+            setCharacter((current) => {
+                const nextCharacters = loadingCharacters.filter((item) => item !== current);
+                return nextCharacters[Math.floor(Math.random() * nextCharacters.length)];
+            });
+        }, 1150);
+
+        return () => window.clearInterval(intervalId);
+    }, []);
+
+    return (
+        <div className={`delivery-loader__character delivery-loader__character--${character}`} key={character} aria-hidden="true">
+            {character === 'tomato' ? (
+                <svg viewBox="0 0 100 110" role="presentation">
+                    <path className="character-tomato__leaf" d="M49 22C38 9 29 15 36 27c-13-8-19 1-6 10-14 0-13 11 3 12h35c15-3 13-14 0-14 12-11 3-20-9-9 2-15-9-18-15-4Z" />
+                    <path className="character-tomato__body" d="M50 28c-10-9-30-7-38 8-13 24-5 59 20 66 9 3 13-2 18-2s10 5 19 2c25-7 33-42 20-66-8-15-28-17-39-8Z" />
+                    <ellipse className="character-face__cheek" cx="28" cy="65" rx="7" ry="4" />
+                    <ellipse className="character-face__cheek" cx="72" cy="65" rx="7" ry="4" />
+                    <ellipse className="character-face__eye" cx="39" cy="54" rx="3.5" ry="5" />
+                    <ellipse className="character-face__eye" cx="61" cy="54" rx="3.5" ry="5" />
+                    <path className="character-face__smile" d="M40 67q10 12 20 0" />
+                    <path className="character-shine" d="M22 43q4-9 12-10" />
+                </svg>
+            ) : character === 'coffee' ? (
+                <svg viewBox="0 0 100 110" role="presentation">
+                    <path className="character-coffee__cup" d="M25 27h50l-7 70q-18 9-36 0Z" />
+                    <path className="character-coffee__lid" d="M22 22q0-5 6-5h44q6 0 6 5v7H22Z" />
+                    <path className="character-coffee__rim" d="M25 29h50v5H25z" />
+                    <path className="character-coffee__sleeve" d="M28 49h44l-3 31H31Z" />
+                    <circle className="character-coffee__logo" cx="50" cy="63" r="10" />
+                    <path className="character-coffee__logo-mark" d="M50 56c-5 0-6 5-3 8l3 3 3-3c3-3 2-8-3-8Zm-1-3h2l1 2h-4z" />
+                    <text className="character-coffee__brand" x="50" y="78">STARBUCKS</text>
+                    <ellipse className="character-face__eye" cx="42" cy="88" rx="2.8" ry="3.5" />
+                    <ellipse className="character-face__eye" cx="57" cy="88" rx="2.8" ry="3.5" />
+                    <path className="character-face__smile" d="M45 96q5 5 10 0" />
+                    <path className="character-shine" d="m31 38 2 5" />
+                </svg>
+            ) : (
+                <svg viewBox="0 0 100 110" role="presentation">
+                    <path className="character-shampoo__cap" d="M40 13h20v12H40zM36 25h28v11H36z" />
+                    <path className="character-shampoo__body" d="M35 35q0-5 6-5h18q6 0 6 5v8q11 7 11 19v24q0 9-9 9H33q-9 0-9-9V62q0-12 11-19Z" />
+                    <path className="character-shampoo__label" d="M31 55h38v25H31z" />
+                    <path className="character-shampoo__flower" d="M50 58c-5-8-11 0-4 4-9-2-9 7 0 6-6 6 1 11 5 4 4 7 11 2 5-4 9 1 9-8 0-6 7-4 1-12-4-4Z" />
+                    <ellipse className="character-face__eye" cx="42" cy="88" rx="2.6" ry="3.4" />
+                    <ellipse className="character-face__eye" cx="57" cy="88" rx="2.6" ry="3.4" />
+                    <path className="character-face__smile" d="M44 96q5 5 10 0" />
+                    <path className="character-shine" d="M31 60q1-8 7-11" />
+                </svg>
+            )}
+        </div>
+    );
+};
+
 const StorefrontLoader = ({ label }: { label?: string }) => (
     <div className="flex flex-col items-center justify-center text-center">
         <div className="delivery-loader" aria-hidden="true">
             <div className="delivery-loader__track" />
-            <div className="delivery-loader__spark delivery-loader__spark--one" />
-            <div className="delivery-loader__spark delivery-loader__spark--two" />
-            <div className="delivery-loader__spark delivery-loader__spark--three" />
-            <div className="delivery-loader__scooter">
-                <div className="delivery-loader__crate">
-                    <span className="delivery-loader__veg delivery-loader__veg--leaf" />
-                    <span className="delivery-loader__veg delivery-loader__veg--orange" />
-                </div>
-                <div className="delivery-loader__rider">
-                    <span className="delivery-loader__helmet" />
-                    <span className="delivery-loader__face" />
-                    <span className="delivery-loader__body" />
-                    <span className="delivery-loader__arm" />
-                    <span className="delivery-loader__scarf" />
-                </div>
-                <div className="delivery-loader__bike">
-                    <span className="delivery-loader__handle" />
-                    <span className="delivery-loader__mirror" />
-                    <span className="delivery-loader__seat" />
-                    <span className="delivery-loader__frame" />
-                    <span className="delivery-loader__panel" />
-                    <span className="delivery-loader__headlight" />
-                    <span className="delivery-loader__fender" />
-                    <span className="delivery-loader__exhaust" />
-                    <span className="delivery-loader__wheel delivery-loader__wheel--front" />
-                    <span className="delivery-loader__wheel delivery-loader__wheel--back" />
-                </div>
-            </div>
+            <RandomStoreCharacter />
         </div>
         {label ? <p className="mt-4 text-sm font-medium text-slate-600">{label}</p> : null}
     </div>
@@ -335,11 +371,14 @@ function AppLayout() {
 
 function App() {
     return (
-        <Router>
-            <BackendReadinessGate>
-                <AppLayout />
-            </BackendReadinessGate>
-        </Router>
+        <>
+            <Router>
+                <BackendReadinessGate>
+                    <AppLayout />
+                </BackendReadinessGate>
+            </Router>
+            <AndroidStartupIntro />
+        </>
     );
 }
 
