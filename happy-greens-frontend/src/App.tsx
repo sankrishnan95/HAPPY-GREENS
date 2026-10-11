@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import AndroidIcon from './components/AndroidIcon';
 import AndroidStartupIntro from './components/AndroidStartupIntro';
 import { ANDROID_APP_DOWNLOAD_URL } from './config/appDownload';
+import ChatbotWidget from './components/ChatbotWidget';
 import { Toaster } from 'react-hot-toast';
 import { trackPageView } from './services/analytics.service';
 import { checkBackendHealth } from './services/api';
@@ -364,6 +365,7 @@ function AppLayout() {
                         </div>
                     </footer>
                     )}
+                    {!isAuthPage && <ChatbotWidget />}
                 </div>
         </>
     );
