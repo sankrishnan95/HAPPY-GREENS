@@ -1,12 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 
 export default function AndroidStartupIntro() {
     const [isVisible, setIsVisible] = useState(() => Capacitor.getPlatform() === 'android');
-    const [needsPlaybackTap, setNeedsPlaybackTap] = useState(false);
     const [isFadingOut, setIsFadingOut] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const closeTimerRef = useRef<number | null>(null);
+
+    const closeIntro = useCallback(() => {
+        if (closeTimerRef.current !== null) return;
+
+        setIsFadingOut(true);
+        closeTimerRef.current = window.setTimeout(() => setIsVisible(false), 500);
+    }, []);
 
     useEffect(() => {
         if (!isVisible) return;
@@ -15,10 +21,30 @@ export default function AndroidStartupIntro() {
         if (!video) return;
 
         video.muted = true;
-        void video.play()
-            .then(() => setNeedsPlaybackTap(false))
-            .catch(() => setNeedsPlaybackTap(true));
-    }, [isVisible]);
+        video.playsInline = true;
+
+        const tryPlayback = () => {
+            if (video.paused) {
+                void video.play().catch(() => {
+                    // Retry when the local video has enough data to begin playback.
+                });
+            }
+        };
+
+        video.addEventListener('loadeddata', tryPlayback);
+        video.addEventListener('canplay', tryPlayback);
+        tryPlayback();
+
+        const playbackTimeout = window.setTimeout(() => {
+            if (video.paused) closeIntro();
+        }, 8000);
+
+        return () => {
+            video.removeEventListener('loadeddata', tryPlayback);
+            video.removeEventListener('canplay', tryPlayback);
+            window.clearTimeout(playbackTimeout);
+        };
+    }, [closeIntro, isVisible]);
 
     useEffect(() => () => {
         if (closeTimerRef.current !== null) {
@@ -26,23 +52,7 @@ export default function AndroidStartupIntro() {
         }
     }, []);
 
-    const closeIntro = () => {
-        if (closeTimerRef.current !== null) return;
-
-        setIsFadingOut(true);
-        closeTimerRef.current = window.setTimeout(() => setIsVisible(false), 500);
-    };
-
     if (!isVisible) return null;
-
-    const startPlayback = () => {
-        const video = videoRef.current;
-        if (!video) return;
-
-        void video.play()
-            .then(() => setNeedsPlaybackTap(false))
-            .catch(() => setIsVisible(false));
-    };
 
     return (
         <div
@@ -59,22 +69,9 @@ export default function AndroidStartupIntro() {
                 playsInline
                 preload="auto"
                 aria-label="Happy Greens introduction video"
-                onPlaying={() => {
-                    setNeedsPlaybackTap(false);
-                }}
                 onEnded={closeIntro}
                 onError={closeIntro}
             />
-
-            {needsPlaybackTap && (
-                <button
-                    type="button"
-                    onClick={startPlayback}
-                    className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-green-800 shadow-lg"
-                >
-                    Play introduction
-                </button>
-            )}
         </div>
     );
 }
