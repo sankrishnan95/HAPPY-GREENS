@@ -70,9 +70,8 @@ const RandomStoreCharacter = () => {
                     <path className="character-coffee__lid" d="M22 22q0-5 6-5h44q6 0 6 5v7H22Z" />
                     <path className="character-coffee__rim" d="M25 29h50v5H25z" />
                     <path className="character-coffee__sleeve" d="M28 49h44l-3 31H31Z" />
-                    <circle className="character-coffee__logo" cx="50" cy="63" r="10" />
-                    <path className="character-coffee__logo-mark" d="M50 56c-5 0-6 5-3 8l3 3 3-3c3-3 2-8-3-8Zm-1-3h2l1 2h-4z" />
-                    <text className="character-coffee__brand" x="50" y="78">STARBUCKS</text>
+                    <ellipse className="character-coffee__bean" cx="50" cy="64" rx="6" ry="9" />
+                    <path className="character-coffee__bean-line" d="M47 70q7-6 6-13" />
                     <ellipse className="character-face__eye" cx="42" cy="88" rx="2.8" ry="3.5" />
                     <ellipse className="character-face__eye" cx="57" cy="88" rx="2.8" ry="3.5" />
                     <path className="character-face__smile" d="M45 96q5 5 10 0" />

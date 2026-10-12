@@ -4,7 +4,6 @@ import { Capacitor } from '@capacitor/core';
 export default function AndroidStartupIntro() {
     const [isVisible, setIsVisible] = useState(() => Capacitor.getPlatform() === 'android');
     const [needsPlaybackTap, setNeedsPlaybackTap] = useState(false);
-    const [isRevealed, setIsRevealed] = useState(false);
     const [isFadingOut, setIsFadingOut] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const closeTimerRef = useRef<number | null>(null);
@@ -47,7 +46,7 @@ export default function AndroidStartupIntro() {
 
     return (
         <div
-            className={`fixed inset-0 z-[9999] overflow-hidden bg-black transition-opacity duration-700 ease-out ${isRevealed && !isFadingOut ? 'opacity-100' : 'opacity-0'}`}
+            className={`fixed inset-0 z-[9999] overflow-hidden bg-black transition-opacity duration-700 ease-out ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}
             role="dialog"
             aria-label="Happy Greens introduction"
         >
@@ -60,9 +59,7 @@ export default function AndroidStartupIntro() {
                 playsInline
                 preload="auto"
                 aria-label="Happy Greens introduction video"
-                onCanPlay={() => setIsRevealed(true)}
                 onPlaying={() => {
-                    setIsRevealed(true);
                     setNeedsPlaybackTap(false);
                 }}
                 onEnded={closeIntro}

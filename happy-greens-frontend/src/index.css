@@ -217,23 +217,18 @@
   }
 
   .character-coffee__sleeve {
-    fill: #00704a;
+    fill: #8a5a3b;
   }
 
-  .character-coffee__logo {
+  .character-coffee__bean {
     fill: #fffdf7;
   }
 
-  .character-coffee__logo-mark {
-    fill: #00704a;
-  }
-
-  .character-coffee__brand {
-    fill: #fff;
-    font-size: 5px;
-    font-weight: 700;
-    letter-spacing: 0.15px;
-    text-anchor: middle;
+  .character-coffee__bean-line {
+    fill: none;
+    stroke: #8a5a3b;
+    stroke-linecap: round;
+    stroke-width: 1.5;
   }
 
   .character-shampoo__cap {
