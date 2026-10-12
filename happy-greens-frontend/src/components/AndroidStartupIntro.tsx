@@ -31,16 +31,16 @@ export default function AndroidStartupIntro() {
             }
         };
 
-        video.addEventListener('loadeddata', tryPlayback);
         video.addEventListener('canplay', tryPlayback);
-        tryPlayback();
+        if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+            tryPlayback();
+        }
 
         const playbackTimeout = window.setTimeout(() => {
             if (video.paused) closeIntro();
         }, 8000);
 
         return () => {
-            video.removeEventListener('loadeddata', tryPlayback);
             video.removeEventListener('canplay', tryPlayback);
             window.clearTimeout(playbackTimeout);
         };
@@ -64,9 +64,9 @@ export default function AndroidStartupIntro() {
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full object-cover"
                 src="/happy-greens-intro.mp4"
-                autoPlay
                 muted
                 playsInline
+                controls={false}
                 preload="auto"
                 aria-label="Happy Greens introduction video"
                 onEnded={closeIntro}
