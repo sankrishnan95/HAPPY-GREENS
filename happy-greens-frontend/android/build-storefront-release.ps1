@@ -32,19 +32,31 @@ if (-not $npmCommand -or -not $npxCommand) {
     throw 'Node.js npm and npx were not found on PATH. Open a new PowerShell window after installing Node.js, then retry.'
 }
 
-Push-Location $frontendDir
-try {
-    & $npmCommand.Source run build
-    if ($LASTEXITCODE -ne 0) {
-        throw "Storefront frontend build failed with exit code $LASTEXITCODE."
-    }
+$previousDownloadBackup = $null
+if (Test-Path -LiteralPath $downloadDestination) {
+    $previousDownloadBackup = Join-Path $env:TEMP ("Happy-Greens-Storefront-download-$([guid]::NewGuid().ToString('N')).apk")
+    Move-Item -LiteralPath $downloadDestination -Destination $previousDownloadBackup
+}
 
-    & $npxCommand.Source cap sync android
-    if ($LASTEXITCODE -ne 0) {
-        throw "Capacitor Android sync failed with exit code $LASTEXITCODE."
+try {
+    Push-Location $frontendDir
+    try {
+        & $npmCommand.Source run build
+        if ($LASTEXITCODE -ne 0) {
+            throw "Storefront frontend build failed with exit code $LASTEXITCODE."
+        }
+
+        & $npxCommand.Source cap sync android
+        if ($LASTEXITCODE -ne 0) {
+            throw "Capacitor Android sync failed with exit code $LASTEXITCODE."
+        }
+    } finally {
+        Pop-Location
     }
 } finally {
-    Pop-Location
+    if ($previousDownloadBackup -and (Test-Path -LiteralPath $previousDownloadBackup)) {
+        Move-Item -LiteralPath $previousDownloadBackup -Destination $downloadDestination -Force
+    }
 }
 
 $storeSecure = Read-Host 'Enter the existing storefront keystore password (input is hidden)' -AsSecureString
